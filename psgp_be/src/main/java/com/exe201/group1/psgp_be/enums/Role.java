@@ -6,6 +6,7 @@ import java.util.List;
 
 public enum Role {
     BUYER,
+    ADMIN,
     SELLER;
 
     public List<SimpleGrantedAuthority> getAuthorities() {
