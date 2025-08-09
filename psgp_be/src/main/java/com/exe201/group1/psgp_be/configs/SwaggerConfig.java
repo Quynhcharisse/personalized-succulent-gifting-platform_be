@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
         info = @Info(
                 title = "PES",
                 version = "1.0",
-                description = "The Preschool Enrollment System"
+                description = "Personalized succulent gifting platform"
         ),
 
         servers = {

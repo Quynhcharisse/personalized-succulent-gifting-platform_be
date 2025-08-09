@@ -7,9 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
-    ResponseEntity<ResponseObject> login  (LoginRequest request, HttpServletResponse response);
+    ResponseEntity<ResponseObject> login(LoginRequest request, HttpServletResponse response);
 
-    ResponseEntity<ResponseObject> logout(HttpServletResponse response);
-
-    ResponseEntity<ResponseObject> refresh  (HttpServletRequest request, HttpServletResponse response);
+    ResponseEntity<ResponseObject> refresh(HttpServletRequest request, HttpServletResponse response);
 }

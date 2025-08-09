@@ -1,19 +1,24 @@
 package com.exe201.group1.psgp_be.models;
 
 import com.exe201.group1.psgp_be.enums.Role;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -37,9 +42,6 @@ public class Account implements UserDetails {
     @Column(length = 150)
     String email;
 
-    @Column(name = "password")
-    String password;
-
     @Enumerated(EnumType.STRING)
     @Column(length = 15)
     Role role;
@@ -50,20 +52,10 @@ public class Account implements UserDetails {
     @Column(name = "`created_at`")
     LocalDateTime createdAt;
 
-    @Column(length = 50)
-    String name;
-
-    @Column(length = 11)
-    String phone;
-
-    @Column(length = 10)
-    String gender;
-
-    @Column(length = 150)
-    String address;
-
-    @Column(name = "avatar_url")
-    String avatarUrl;
+    @OneToOne(mappedBy = "account", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    User user;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -77,7 +69,7 @@ public class Account implements UserDetails {
 
     @Override
     public String getPassword() {
-        return password;
+        return "";
     }
 
     @Override

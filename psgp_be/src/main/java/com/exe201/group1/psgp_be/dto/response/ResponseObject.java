@@ -14,6 +14,5 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResponseObject {
     String message;
-    boolean success;
     Object data;
 }
