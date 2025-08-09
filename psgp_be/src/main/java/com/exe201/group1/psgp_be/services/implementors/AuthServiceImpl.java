@@ -2,21 +2,28 @@ package com.exe201.group1.psgp_be.services.implementors;
 
 import com.exe201.group1.psgp_be.dto.requests.LoginRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
+import com.exe201.group1.psgp_be.enums.Role;
 import com.exe201.group1.psgp_be.models.Account;
+import com.exe201.group1.psgp_be.models.AccountRequest;
+import com.exe201.group1.psgp_be.models.User;
+import com.exe201.group1.psgp_be.models.Wishlist;
 import com.exe201.group1.psgp_be.repositories.AccountRepo;
+import com.exe201.group1.psgp_be.repositories.AccountRequestRepo;
+import com.exe201.group1.psgp_be.repositories.UserRepo;
+import com.exe201.group1.psgp_be.repositories.WishlistRepo;
 import com.exe201.group1.psgp_be.services.AuthService;
 import com.exe201.group1.psgp_be.services.JWTService;
 import com.exe201.group1.psgp_be.utils.CookieUtil;
-import jakarta.servlet.http.Cookie;
+import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,124 +31,137 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    @Value("${security-access-expiration}")
+    @Value("${jwt.expiration.access-token}")
     private long accessExpiration;
 
-    @Value("${security-refresh-expiration}")
+    @Value("${jwt.expiration.refresh-token}")
     private long refreshExpiration;
 
     private final AccountRepo accountRepo;
+
+    private final AccountRequestRepo accountRequestRepo;
+
+    private final UserRepo userRepo;
+
+    private final WishlistRepo wishlistRepo;
 
     private final JWTService jwtService;
 
     @Override
     public ResponseEntity<ResponseObject> login(LoginRequest request, HttpServletResponse response) {
-        Account account = accountRepo.findByEmailAndActive(request.getEmail(), true).orElse(null);
+        Account account = accountRepo.findByEmail(request.getEmail()).orElse(null);
+        AccountRequest accountRequest = accountRequestRepo.findByEmail(request.getEmail()).orElse(null);
 
-        if (account == null
-                || account.getPassword() == null
-                || account.getEmail() == null
-                || account.getPassword().isEmpty()
-                || account.getEmail().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    ResponseObject.builder()
-                            .message("Invalid email or password")
-                            .success(false)
-                            .data(null)
-                            .build()
-            );
+        if (accountRequest != null) {
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "This email is requested to be a partner", null);
         }
 
-        String error = loginValidation(request, accountRepo);
-
-        if (!error.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    ResponseObject.builder()
-                            .message(error)
-                            .success(false)
-                            .data(null)
-                            .build()
-            );
+        if (request.getEmail() == null || request.getEmail().isEmpty()) {
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Email is required", null);
         }
 
-        String newAccess = jwtService.generateAccessToken(account);
-        String newRefresh = jwtService.generateRefreshToken(account);
+        if (account == null) {
+            return register(request, response);
+        }
 
-        CookieUtil.createCookie(response, newAccess, newRefresh, accessExpiration, refreshExpiration);
+        if (!account.isActive()) {
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Account is banned", null);
+        }
 
-        return ResponseEntity.status(HttpStatus.OK).body(
-                ResponseObject.builder()
-                        .message("Login successfully")
-                        .success(true)
-                        .data(buildLoginBody(account))
+        String access = jwtService.generateAccessToken(account);
+        String refresh = jwtService.generateRefreshToken(account);
+
+        CookieUtil.createCookies(response, access, refresh, accessExpiration, refreshExpiration);
+
+        return ResponseBuilder.build(HttpStatus.OK, "Login successfully", buildAccountData(account));
+    }
+
+
+    private ResponseEntity<ResponseObject> register(LoginRequest request, HttpServletResponse response) {
+        // Create Account
+        Account account = accountRepo.save(
+                Account.builder()
+                        .email(request.getEmail())
+                        .role(Role.BUYER)
+                        .active(true)
+                        .createdAt(LocalDateTime.now())
                         .build()
         );
-    }
 
-    private Map<String, Object> buildLoginBody(Account account) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("email", account.getEmail());
-        body.put("role", account.getRole().name());
-        return body;
-    }
-
-    private String loginValidation(LoginRequest request, AccountRepo accountRepo) {
-
-        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
-            return "Email is required.";
-        }
-        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
-            return "Password is required.";
-        }
-
-        Account acc = accountRepo.findByEmailAndPasswordAndActive(request.getEmail(), request.getPassword(), true).orElse(null);
-        if (acc == null) {
-            return "Email or password is required.";
-        }
-        return "";
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> logout(HttpServletResponse response) {
-        CookieUtil.removeCookie(response);
-        return ResponseEntity.status(HttpStatus.OK).body(
-                ResponseObject.builder()
-                        .message("Logout successfully")
-                        .success(true)
-                        .data(null)
+        // Create User
+        User user = userRepo.save(
+                User.builder()
+                        .account(account)
+                        .name("N/A")
+                        .phone("N/A")
+                        .gender("N/A")
+                        .address("N/A")
+                        .avatarUrl("N/A")
                         .build()
         );
+
+        // Create Wishlist for the user
+        Wishlist wishlist = wishlistRepo.save(
+                Wishlist.builder()
+                        .buyer(user)
+                        .version(1)
+                        .build()
+        );
+
+        // Set the user in account and save
+        account.setUser(user);
+        accountRepo.save(account);
+
+        String access = jwtService.generateAccessToken(account);
+        String refresh = jwtService.generateRefreshToken(account);
+
+        CookieUtil.createCookies(response, access, refresh, accessExpiration, refreshExpiration);
+
+        return ResponseBuilder.build(HttpStatus.OK, "Login successfully", buildAccountData(account));
+    }
+
+    private Map<String, Object> buildAccountData(Account account) {
+        Map<String, Object> accountData = new HashMap<>();
+        accountData.put("email", account.getEmail());
+        accountData.put("createdAt", account.getCreatedAt());
+        accountData.put("role", account.getRole());
+        if (!account.getRole().equals(Role.ADMIN)) {
+            accountData.put("user", buildUserData(account));
+        }
+        return accountData;
+    }
+
+    private Map<String, Object> buildUserData(Account account) {
+        User user = account.getUser();
+        if (user == null) {
+            return null;
+        }
+
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("name", user.getName());
+        userData.put("phone", user.getPhone());
+        userData.put("gender", user.getGender());
+        userData.put("address", user.getAddress());
+        userData.put("avatarUrl", user.getAvatarUrl());
+        userData.put("fengShui", user.getFengShui());
+        userData.put("zodiac", user.getZodiac());
+        return userData;
     }
 
     @Override
     public ResponseEntity<ResponseObject> refresh(HttpServletRequest request, HttpServletResponse response) {
-        Cookie refreshToken = CookieUtil.getCookie(request, "refresh");
+        Account currentAcc = CookieUtil.extractAccountFromCookie(request, jwtService, accountRepo);
 
-        if (refreshToken != null && jwtService.checkIfNotExpired(refreshToken.getValue())) {
-
-            String email = jwtService.extractEmailFromJWT(refreshToken.getValue());
-            Account account = accountRepo.findByEmailAndActive(email, true).orElse(null);
-
-            if (account != null) {
-                String newAccessToken = jwtService.generateAccessToken(account);
-
-                CookieUtil.createCookie(response, newAccessToken, refreshToken.getValue(), accessExpiration, refreshExpiration);
-
-                return ResponseEntity.status(HttpStatus.OK).body(
-                        ResponseObject.builder()
-                                .message("Refresh access token successfully")
-                                .success(true)
-                                .data(null)
-                                .build()
-                );
-            }
+        if (currentAcc == null) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "No user found", null);
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                ResponseObject.builder()
-                        .message("Refresh token is invalid or expired")
-                        .success(false)
-                        .data(null)
-                        .build()
-        );
+
+        String newAccess = jwtService.generateAccessToken(currentAcc);
+
+        String newRefresh = jwtService.generateRefreshToken(currentAcc);
+
+        CookieUtil.createCookies(response, newAccess, newRefresh, accessExpiration, refreshExpiration);
+
+        return ResponseBuilder.build(HttpStatus.OK, "Refresh access token successfully", null);
     }
 }

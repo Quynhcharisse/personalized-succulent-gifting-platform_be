@@ -25,11 +25,6 @@ public class AuthController {
         return authService.login(request, response);
     }
 
-    @GetMapping("/logout")
-    public ResponseEntity<ResponseObject> logout(HttpServletResponse response) {
-        return authService.logout(response);
-    }
-
     @PostMapping("/refresh")
     public ResponseEntity<ResponseObject> refresh(HttpServletRequest request, HttpServletResponse response) {
         return authService.refresh(request, response);
