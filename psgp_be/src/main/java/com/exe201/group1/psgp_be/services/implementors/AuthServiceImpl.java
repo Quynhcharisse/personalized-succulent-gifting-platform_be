@@ -52,11 +52,11 @@ public class AuthServiceImpl implements AuthService {
         Account account = accountRepo.findByEmail(request.getEmail()).orElse(null);
         AccountRequest accountRequest = accountRequestRepo.findByEmail(request.getEmail()).orElse(null);
 
-        if (accountRequest != null) {
+        if(accountRequest != null){
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "This email is requested to be a partner", null);
         }
 
-        if (request.getEmail() == null || request.getEmail().isEmpty()) {
+        if(request.getEmail() == null || request.getEmail().isEmpty()){
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Email is required", null);
         }
 
@@ -84,7 +84,7 @@ public class AuthServiceImpl implements AuthService {
                         .email(request.getEmail())
                         .role(Role.BUYER)
                         .active(true)
-                        .createdAt(LocalDateTime.now())
+                        .registerDate(LocalDateTime.now())
                         .build()
         );
 
@@ -123,7 +123,7 @@ public class AuthServiceImpl implements AuthService {
     private Map<String, Object> buildAccountData(Account account) {
         Map<String, Object> accountData = new HashMap<>();
         accountData.put("email", account.getEmail());
-        accountData.put("createdAt", account.getCreatedAt());
+        accountData.put("registerDate", account.getRegisterDate());
         accountData.put("role", account.getRole());
         if (!account.getRole().equals(Role.ADMIN)) {
             accountData.put("user", buildUserData(account));
