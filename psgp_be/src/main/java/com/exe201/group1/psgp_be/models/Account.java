@@ -49,8 +49,8 @@ public class Account implements UserDetails {
     @Column(name = "`is_active`")
     boolean active;
 
-    @Column(name = "`created_at`")
-    LocalDateTime createdAt;
+    @Column(name = "`register_date`")
+    LocalDateTime registerDate;
 
     @OneToOne(mappedBy = "account", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @EqualsAndHashCode.Exclude
