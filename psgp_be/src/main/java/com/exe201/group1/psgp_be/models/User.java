@@ -81,7 +81,7 @@ public class User {
     @ToString.Exclude
     List<Order> orders;
 
-    @OneToOne(mappedBy = "buyer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "buyer", cascade = CascadeType.ALL)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     Wishlist wishlist;
