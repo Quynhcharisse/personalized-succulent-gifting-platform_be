@@ -100,14 +100,4 @@ public class JWTServiceImpl implements JWTService {
         Date expiration = getClaim(jwt, Claims::getExpiration);
         return expiration != null && !Objects.requireNonNull(expiration).before(new Date());
     }
-
-    private String generateTokenCode(Map<String, Object> claims, String email, long expiredTime) {
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiredTime))
-                .signWith(getSigningKey())
-                .compact();
-    }
 }

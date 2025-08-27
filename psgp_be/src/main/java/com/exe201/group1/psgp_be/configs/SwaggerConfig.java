@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
 
 @OpenAPIDefinition(
         info = @Info(
-                title = "PES",
+                title = "PSGP",
                 version = "1.0",
                 description = "Personalized succulent gifting platform"
         ),

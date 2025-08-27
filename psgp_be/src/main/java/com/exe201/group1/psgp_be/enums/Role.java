@@ -10,6 +10,6 @@ public enum Role {
     SELLER;
 
     public List<SimpleGrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + this.name().toLowerCase()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.name().toUpperCase()));
     }
 }
