@@ -35,28 +35,28 @@ public class AccountServiceImpl implements AccountService {
     public ResponseEntity<ResponseObject> logout(HttpServletRequest request, HttpServletResponse response) {
         Cookie refresh = CookieUtil.getCookie(request, "refresh");
         if (refresh == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Logout failed", null);
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Đăng xuất thất bại", null);
         }
 
         if (!jwtService.checkIfNotExpired(refresh.getValue())) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Token invalid", null);
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Token không hợp lệ", null);
         }
 
         CookieUtil.removeCookies(response);
 
-        return ResponseBuilder.build(HttpStatus.OK, "Logout successfully", null);
+        return ResponseBuilder.build(HttpStatus.OK, "Đăng xuất thành công", null);
     }
 
     @Override
     public ResponseEntity<ResponseObject> getAccessToken(HttpServletRequest request) {
         Cookie access = CookieUtil.getCookie(request, "access");
         if (access == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "No access", null);
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không có quyền truy cập", null);
         }
 
         Account account = CookieUtil.extractAccountFromCookie(request, jwtService, accountRepo);
         if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "No account", null);
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không tìm thấy tài khoản", null);
         }
 
 
@@ -80,11 +80,11 @@ public class AccountServiceImpl implements AccountService {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
 
         if (account == null) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Invalid account", null);
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Tài khoản không hợp lệ", null);
         }
 
         if (account.getUser() == null) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "User profile not found", null);
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Không tìm thấy thông tin người dùng", null);
         }
 
         account.getUser().setName(request.getName());
@@ -99,58 +99,58 @@ public class AccountServiceImpl implements AccountService {
         }
 
         accountRepo.save(account);
-        return ResponseBuilder.build(HttpStatus.OK, "Update information successfully", null);
+        return ResponseBuilder.build(HttpStatus.OK, "Cập nhật thông tin thành công", null);
     }
 
     private String UpdateProfileValidation(UpdateProfileRequest request) {
 
         if (request.getName() == null || request.getName().isEmpty()) {
-            return "Name is required";
+            return "Tên là bắt buộc";
         }
 
         if (request.getName().length() < 3) {
-            return "Name must be at least 3 characters";
+            return "Tên phải có ít nhất 3 ký tự";
         }
 
         if (request.getName().length() > 100) {
-            return "Name must be <= 100 characters";
+            return "Tên phải <= 100 ký tự";
         }
 
         if (request.getPhone() == null || request.getPhone().isEmpty()) {
-            return "Phone is required";
+            return "Số điện thoại là bắt buộc";
         }
 
         // Regex cho số điện thoại VN: bắt đầu bằng 0 hoặc +84, tổng cộng 10–11 số
         if (!request.getPhone().matches("^(0[1-9][0-9]{8,9}|\\+84[1-9][0-9]{7,9})$")) {
-            return "Phone format is invalid";
+            return "Định dạng số điện thoại không hợp lệ";
         }
 
         if (request.getGender() == null || request.getGender().isEmpty()) {
-            return "Gender is required";
+            return "Giới tính là bắt buộc";
         }
 
         String gender = request.getGender().toUpperCase();
         if (!(gender.equals("MALE") || gender.equals("FEMALE"))) {
-            return "Gender must be one of: MALE, FEMALE";
+            return "Giới tính phải là một trong: MALE, FEMALE";
         }
 
         if (request.getAddress() == null || request.getAddress().isEmpty()) {
-            return "Address is required";
+            return "Địa chỉ là bắt buộc";
         }
 
         if (request.getAddress().length() > 255) {
-            return "Address must be <= 255 characters";
+            return "Địa chỉ phải <= 255 ký tự";
         }
 
         if (request.getAvatarUrl() == null || request.getAvatarUrl().isEmpty()) {
-            return "AvatarUrl is required";
+            return "URL ảnh đại diện là bắt buộc";
         }
 
         String lower = request.getAvatarUrl().toLowerCase();
         if (!(lower.endsWith(".jpg") || lower.endsWith(".jpeg") ||
                 lower.endsWith(".png") || lower.endsWith(".gif") ||
                 lower.endsWith(".webp"))) {
-            return "AvatarUrl must be an image (jpg, jpeg, png, gif, webp)";
+            return "URL ảnh đại diện phải là hình ảnh (jpg, jpeg, png, gif, webp)";
         }
 
         return "";
@@ -161,9 +161,9 @@ public class AccountServiceImpl implements AccountService {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
 
         if (account == null) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Invalid account", null);
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Tài khoản không hợp lệ", null);
         }
 
-        return ResponseBuilder.build(HttpStatus.OK, "Get profile successfully", EntityResponseBuilder.buildAccountResponse(account));
+        return ResponseBuilder.build(HttpStatus.OK, "Lấy thông tin hồ sơ thành công", EntityResponseBuilder.buildAccountResponse(account));
     }
 }

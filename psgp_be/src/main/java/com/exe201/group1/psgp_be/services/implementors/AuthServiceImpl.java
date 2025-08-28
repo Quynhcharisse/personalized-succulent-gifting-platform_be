@@ -53,11 +53,11 @@ public class AuthServiceImpl implements AuthService {
         AccountRequest accountRequest = accountRequestRepo.findByEmail(request.getEmail()).orElse(null);
 
         if(accountRequest != null){
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "This email is requested to be a partner", null);
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Email này đã được yêu cầu làm đối tác", null);
         }
 
         if(request.getEmail() == null || request.getEmail().isEmpty()){
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Email is required", null);
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Email là bắt buộc", null);
         }
 
         if (account == null) {
@@ -65,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (!account.isActive()) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Account is banned", null);
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Tài khoản đã bị cấm", null);
         }
 
         String access = jwtService.generateAccessToken(account);
@@ -73,7 +73,7 @@ public class AuthServiceImpl implements AuthService {
 
         CookieUtil.createCookies(response, access, refresh, accessExpiration, refreshExpiration);
 
-        return ResponseBuilder.build(HttpStatus.OK, "Login successfully", buildAccountData(account));
+        return ResponseBuilder.build(HttpStatus.OK, "Đăng nhập thành công", buildAccountData(account));
     }
 
 
@@ -101,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
         );
 
         // Create Wishlist for the user
-        Wishlist wishlist = wishlistRepo.save(
+        wishlistRepo.save(
                 Wishlist.builder()
                         .buyer(user)
                         .version(1)
@@ -117,7 +117,7 @@ public class AuthServiceImpl implements AuthService {
 
         CookieUtil.createCookies(response, access, refresh, accessExpiration, refreshExpiration);
 
-        return ResponseBuilder.build(HttpStatus.OK, "Login successfully", buildAccountData(account));
+        return ResponseBuilder.build(HttpStatus.OK, "Đăng nhập thành công", buildAccountData(account));
     }
 
     private Map<String, Object> buildAccountData(Account account) {
@@ -153,7 +153,7 @@ public class AuthServiceImpl implements AuthService {
         Account currentAcc = CookieUtil.extractAccountFromCookie(request, jwtService, accountRepo);
 
         if (currentAcc == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "No user found", null);
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không tìm thấy người dùng", null);
         }
 
         String newAccess = jwtService.generateAccessToken(currentAcc);
@@ -162,6 +162,6 @@ public class AuthServiceImpl implements AuthService {
 
         CookieUtil.createCookies(response, newAccess, newRefresh, accessExpiration, refreshExpiration);
 
-        return ResponseBuilder.build(HttpStatus.OK, "Refresh access token successfully", null);
+        return ResponseBuilder.build(HttpStatus.OK, "Làm mới access token thành công", null);
     }
 }
