@@ -92,13 +92,17 @@ public class AccountServiceImpl implements AccountService {
         }
         if (action.equalsIgnoreCase("ban")) {
             account.get().setActive(false);
+            accountRepo.save(account.get());
+            return ResponseEntity.ok(ResponseObject.builder()
+                    .message("Tài khoản đã bị cấm")
+                    .data(buildBuyerAccountDetail(account.get())).build());
         }
         if (action.equalsIgnoreCase("unban")) {
             account.get().setActive(true);
         }
         accountRepo.save(account.get());
         return ResponseEntity.ok(ResponseObject.builder()
-                .message("Tài khoản đã bị cấm")
+                .message("Tài khoản đã được kích hoạt")
                 .data(buildBuyerAccountDetail(account.get())).build());
     }
 
