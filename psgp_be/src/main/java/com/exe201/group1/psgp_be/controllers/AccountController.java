@@ -41,7 +41,7 @@ public class AccountController {
     }
 
     @PutMapping("/profile")
-//    @PreAuthorize("hasAnyRole('BUYER', 'SELLER')")
+    @PreAuthorize("hasAnyRole('BUYER', 'SELLER')")
     public ResponseEntity<ResponseObject> updateProfile(@RequestBody UpdateProfileRequest request, HttpServletRequest httpRequest) {
         return accountService.updateProfile(request, httpRequest);
     }
