@@ -5,7 +5,6 @@ import com.exe201.group1.psgp_be.dto.requests.ProcessAccountRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateProfileRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.AccountService;
-import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -52,24 +50,21 @@ public class AccountController {
         return accountService.viewProfile(httpRequest);
     }
 
-    @GetMapping("/buyers")
+    @PostMapping("/buyer/list")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> getAllBuyerAccounts() {
-        return accountService.getAllBuyerAccounts();
+    public ResponseEntity<ResponseObject> getAllBuyerAccounts(HttpServletRequest httpRequest) {
+        return accountService.getAllBuyerAccounts(httpRequest);
     }
 
-    @PutMapping("/buyer/ban")
+    @PutMapping("/ban")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> banBuyerAccount
-            (@RequestBody ProcessAccountRequest request) {
-        return accountService.processStatusOfBuyerAccount(request, "ban");
+    public ResponseEntity<ResponseObject> banAccount(@RequestBody ProcessAccountRequest request) {
+        return accountService.processAccount(request, "ban");
     }
 
-    @PutMapping("/buyer/unban")
+    @PutMapping("/unban")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> unbanBuyerAccount( @RequestBody ProcessAccountRequest request) {
-        return accountService.processStatusOfBuyerAccount(request, "unban");
+    public ResponseEntity<ResponseObject> unbanAccount(@RequestBody ProcessAccountRequest request) {
+        return accountService.processAccount(request, "unban");
     }
-
-
 }
