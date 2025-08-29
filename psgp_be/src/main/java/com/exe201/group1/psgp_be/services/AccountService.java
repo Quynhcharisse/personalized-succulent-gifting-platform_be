@@ -16,7 +16,7 @@ public interface AccountService {
 
     ResponseEntity<ResponseObject> getAccessToken(HttpServletRequest request);
 
-    ResponseEntity<ResponseObject> getAllBuyerAccounts();
+    ResponseEntity<ResponseObject> getAllBuyerAccounts(HttpServletRequest httpRequest);
 
-    ResponseEntity<ResponseObject> processStatusOfBuyerAccount(ProcessAccountRequest request, String action);
+    ResponseEntity<ResponseObject> processAccount(ProcessAccountRequest request, String action);
 }
