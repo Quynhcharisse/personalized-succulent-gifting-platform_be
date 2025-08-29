@@ -1,5 +1,6 @@
 package com.exe201.group1.psgp_be.services;
 
+import com.exe201.group1.psgp_be.dto.requests.ProcessAccountRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateProfileRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,4 +15,8 @@ public interface AccountService {
     ResponseEntity<ResponseObject> viewProfile(HttpServletRequest httRequest);
 
     ResponseEntity<ResponseObject> getAccessToken(HttpServletRequest request);
+
+    ResponseEntity<ResponseObject> getAllBuyerAccounts();
+
+    ResponseEntity<ResponseObject> processStatusOfBuyerAccount(ProcessAccountRequest request, String action);
 }
