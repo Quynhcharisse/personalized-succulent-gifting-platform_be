@@ -1,5 +1,6 @@
 package com.exe201.group1.psgp_be.services.implementors;
 
+import com.exe201.group1.psgp_be.dto.requests.ProcessAccountRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.enums.Role;
 import com.exe201.group1.psgp_be.models.Account;
@@ -64,6 +65,37 @@ public class AdminServiceImpl implements AdminService {
                 .message("Hiển thị thông tin tài khoản người mua thành công")
                 .data(buildBuyerAccountDetail(account.get())).build());
     }
+
+    @Override
+    public ResponseEntity<ResponseObject> banBuyerAccount(ProcessAccountRequest request) {
+        Optional<Account> account = accountRepo.findById(request.getAccountId());
+        if(!account.isPresent()){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseObject.builder().message("Không tìm thấy tài khoản hoặc tài khoản đã bị xóa")
+                            .data(null).build());
+        }
+        account.get().setActive(false);
+        accountRepo.save(account.get());
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Tài khoản đã bị cấm")
+                .data(buildBuyerAccountDetail(account.get())).build());
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> unbanBuyerAccount(ProcessAccountRequest request) {
+        Optional<Account> account = accountRepo.findById(request.getAccountId());
+        if(!account.isPresent()){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseObject.builder().message("Không tìm thấy tài khoản hoặc tài khoản đã bị xóa")
+                            .data(null).build());
+        }
+        account.get().setActive(true);
+        accountRepo.save(account.get());
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Tài khoản đã được kích hoạt")
+                .data(buildBuyerAccountDetail(account.get())).build());
+    }
+
 
     private Map<String, Object> buildBuyerAccountDetail(Account buyerAccount){
 

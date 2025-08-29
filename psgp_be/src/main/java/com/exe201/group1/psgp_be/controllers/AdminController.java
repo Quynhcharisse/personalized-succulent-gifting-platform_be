@@ -1,5 +1,6 @@
 package com.exe201.group1.psgp_be.controllers;
 
+import com.exe201.group1.psgp_be.dto.requests.ProcessAccountRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -61,4 +65,26 @@ public class AdminController {
             @RequestParam int id) {
         return adminService.getProfileBuyerAccount(id);
     }
+
+    @Operation(summary = "Cấm tài khoản")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy tài khoản hoặc tài khoản đã bị xóa")
+    })
+    @PutMapping("/buyer/ban")
+    public ResponseEntity<ResponseObject> banBuyerAccount
+            (@RequestBody ProcessAccountRequest request) {
+        return adminService.banBuyerAccount(request);
+    }
+
+    @Operation(summary = "Kích hoạt tài khoản")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy tài khoản hoặc tài khoản đã bị xóa")
+    })
+    @PutMapping("/buyer/unban")
+    public ResponseEntity<ResponseObject> unbanBuyerAccount( @RequestBody ProcessAccountRequest request) {
+        return adminService.unbanBuyerAccount(request);
+    }
+
 }
