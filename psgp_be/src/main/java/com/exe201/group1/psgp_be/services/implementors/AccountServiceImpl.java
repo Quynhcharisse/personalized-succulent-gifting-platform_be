@@ -65,87 +65,12 @@ public class AccountServiceImpl implements AccountService {
             return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không tìm thấy tài khoản", null);
         }
 
-
         Map<String, Object> data = new HashMap<>();
         data.put("access", access.getValue());
         data.put("id", account.getId());
         data.put("email", account.getEmail());
         data.put("role", account.getRole());
         return ResponseBuilder.build(HttpStatus.OK, "", data);
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> getAllBuyerAccounts() {
-        return ResponseEntity.ok(ResponseObject.builder()
-                .message("Hiển thị toàn bộ danh sách tài khoản người mua thành công")
-                .data(buildListBuyerAccountsDetail(accountRepo.findAllByRole(Role.BUYER)))
-                .build());
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> processStatusOfBuyerAccount(ProcessAccountRequest request, String action) {
-        Optional<Account> account = accountRepo.findById(request.getAccountId());
-        if (!account.isPresent()){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ResponseObject.builder().message("Không tìm thấy tài khoản hoặc tài khoản đã bị xóa")
-                            .data(null).build());
-        }
-        if (action.equalsIgnoreCase("ban")) {
-            account.get().setActive(false);
-            accountRepo.save(account.get());
-            return ResponseEntity.ok(ResponseObject.builder()
-                    .message("Tài khoản đã bị cấm")
-                    .data(buildBuyerAccountDetail(account.get())).build());
-        }
-        if (action.equalsIgnoreCase("unban")) {
-            account.get().setActive(true);
-        }
-        accountRepo.save(account.get());
-        return ResponseEntity.ok(ResponseObject.builder()
-                .message("Tài khoản đã được kích hoạt")
-                .data(buildBuyerAccountDetail(account.get())).build());
-    }
-
-
-    private Map<String, Object> buildBuyerAccountDetail(Account buyerAccount){
-
-        Map<String, Object> response = new HashMap<>();
-        // Buyer Account
-        response.put("accountId", buyerAccount.getId());
-        response.put("email", buyerAccount.getEmail());
-        response.put("registerDate", buyerAccount.getRegisterDate());
-        response.put("active", buyerAccount.isActive());
-        // Buyer Profile User
-        if(buyerAccount.getUser() == null){
-            return Collections.emptyMap();
-        }
-        response.put("name", buyerAccount.getUser().getName());
-        response.put("phone", buyerAccount.getUser().getPhone());
-        response.put("gender", buyerAccount.getUser().getGender());
-        response.put("address", buyerAccount.getUser().getAddress());
-        response.put("avatarUrl", buyerAccount.getUser().getAvatarUrl());
-        response.put("fengShui", buyerAccount.getUser().getFengShui());
-        response.put("zodiac", buyerAccount.getUser().getZodiac());
-        return response;
-    }
-
-    private List<Map<String, Object>> buildListBuyerAccountsDetail(List<Account> buyerAccounts){
-        List<Map<String, Object>> response = new ArrayList<>();
-
-        List<Account> sortedBuyerAccounts = buyerAccounts.stream()
-                .sorted(Comparator.comparing(Account::getRegisterDate).reversed())
-                .toList();
-
-        for(Account buyerAccount : sortedBuyerAccounts){
-
-            Map<String, Object> buyerAccountDetail = buildBuyerAccountDetail(buyerAccount);
-            if (buyerAccountDetail.isEmpty()) {
-                continue;
-            }
-            response.add(buyerAccountDetail);
-
-        }
-        return response;
     }
 
     @Override
@@ -245,5 +170,52 @@ public class AccountServiceImpl implements AccountService {
         }
 
         return ResponseBuilder.build(HttpStatus.OK, "Lấy thông tin hồ sơ thành công", EntityResponseBuilder.buildAccountResponse(account));
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getAllBuyerAccounts(HttpServletRequest httpRequest) {
+       
+        List<Account> buyerList = accountRepo.findAllByRole(Role.BUYER);
+
+        List<Map<String, Object>> body = buyerList.stream()
+                .filter(buyer -> buyer.getUser() != null)
+                .sorted(Comparator.comparing(Account::getRegisterDate).reversed())
+                .map(
+                        buyer -> {
+                            Map<String, Object> data = new HashMap<>();
+                            data.put("id", buyer.getId());
+                            data.put("avatarUrl", buyer.getUser().getAvatarUrl());
+                            data.put("email", buyer.getEmail());
+                            data.put("role", buyer.getRole());
+                            data.put("registerDate", buyer.getRegisterDate());
+                            data.put("active", buyer.getUser().getAccount().isActive());
+                            data.put("name", buyer.getUser().getName());
+                            data.put("phone", buyer.getUser().getPhone());
+                            data.put("gender", buyer.getUser().getGender());
+                            data.put("address", buyer.getUser().getAddress());
+                            return data;
+                        }
+                )
+                .toList();
+
+        return ResponseBuilder.build(HttpStatus.OK, "Hiển thị toàn bộ danh sách tài khoản người mua thành công", body);
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> processAccount (ProcessAccountRequest request, String action) {
+        Optional<Account> account = accountRepo.findById(request.getAccountId());
+        if (account.isEmpty()){
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Không tìm thấy tài khoản hoặc tài khoản đã bị xóa", null);
+        }
+        if (action.equalsIgnoreCase("ban")) {
+            account.get().setActive(false);
+            accountRepo.save(account.get());
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Tài khoản đã bị cấm", null);
+        }
+        if (action.equalsIgnoreCase("unban")) {
+            account.get().setActive(true);
+        }
+        accountRepo.save(account.get());
+        return ResponseBuilder.build(HttpStatus.OK, "Tài khoản đã được kích hoạt", null);
     }
 }
