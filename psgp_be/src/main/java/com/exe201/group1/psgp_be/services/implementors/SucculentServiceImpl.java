@@ -246,13 +246,13 @@ public class SucculentServiceImpl implements SucculentService {
         Map<String, Object> response = new HashMap<>();
         response.put("speciesName", succulent.getSpeciesName());
         response.put("description", succulent.getDescription());
-        response.put("size", succulent.getSize());
-        response.put("status", succulent.getStatus());
+        response.put("size", succulent.getSize().getDisplayName());
+        response.put("status", succulent.getStatus().getDisplayName());
         response.put("quantity", succulent.getQuantity());
         response.put("priceBuy", succulent.getPriceBuy());
         response.put("priceSell", succulent.getPriceSell());
-        response.put("fengShui", succulent.getFengShui());
-        response.put("zodiac", succulent.getZodiac());
+        response.put("fengShui", succulent.getFengShui().getDisplayName());
+        response.put("zodiac", succulent.getZodiac().getDisplayName());
         return response;
     }
 
