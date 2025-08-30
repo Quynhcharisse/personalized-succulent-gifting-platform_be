@@ -5,11 +5,12 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum ProductStatus {
-    ACTIVE("Hoạt động"),
-    INACTIVE("Không hoạt động"),
-    OUT_OF_STOCK("Hết hàng"),
-    DELETED("Đã xóa");
+public enum Status {
 
+    AVAILABLE("Đang còn hàng"),
+    OUT_OF_STOCK("Hết hàng"),
+
+    UNAVAILABLE("Ngưng nhập hàng");
     private final String displayName;
-} 
+
+}
