@@ -244,6 +244,14 @@ public class SucculentServiceImpl implements SucculentService {
 
     private Map<String, Object> buildSucculentDetail(Succulent succulent){
         Map<String, Object> response = new HashMap<>();
+        String fengshui = "";
+        String zodiac = "";
+        if(succulent.getFengShui() != null){
+            fengshui = succulent.getFengShui().getDisplayName();
+        }
+        if(succulent.getZodiac() != null){
+            zodiac = succulent.getZodiac().getDisplayName();
+        }
         response.put("speciesName", succulent.getSpeciesName());
         response.put("description", succulent.getDescription());
         response.put("size", succulent.getSize().getDisplayName());
@@ -251,8 +259,8 @@ public class SucculentServiceImpl implements SucculentService {
         response.put("quantity", succulent.getQuantity());
         response.put("priceBuy", succulent.getPriceBuy());
         response.put("priceSell", succulent.getPriceSell());
-        response.put("fengShui", succulent.getFengShui().getDisplayName());
-        response.put("zodiac", succulent.getZodiac().getDisplayName());
+        response.put("fengShui", fengshui);
+        response.put("zodiac", zodiac);
         return response;
     }
 
