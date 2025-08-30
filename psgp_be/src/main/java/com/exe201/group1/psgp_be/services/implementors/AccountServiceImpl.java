@@ -22,8 +22,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -174,7 +172,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ResponseEntity<ResponseObject> getAllBuyerAccounts(HttpServletRequest httpRequest) {
-       
+
         List<Account> buyerList = accountRepo.findAllByRole(Role.BUYER);
 
         List<Map<String, Object>> body = buyerList.stream()
@@ -202,20 +200,23 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> processAccount (ProcessAccountRequest request, String action) {
+    public ResponseEntity<ResponseObject> processAccount(ProcessAccountRequest request, String action) {
         Optional<Account> account = accountRepo.findById(request.getAccountId());
-        if (account.isEmpty()){
+        if (account.isEmpty()) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Không tìm thấy tài khoản hoặc tài khoản đã bị xóa", null);
         }
+
         if (action.equalsIgnoreCase("ban")) {
             account.get().setActive(false);
             accountRepo.save(account.get());
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Tài khoản đã bị cấm", null);
+            return ResponseBuilder.build(HttpStatus.OK, "Tài khoản đã bị cấm", null); // Sửa từ BAD_REQUEST thành OK
         }
+
         if (action.equalsIgnoreCase("unban")) {
             account.get().setActive(true);
+            accountRepo.save(account.get());
+            return ResponseBuilder.build(HttpStatus.OK, "Tài khoản đã được kích hoạt", null);
         }
-        accountRepo.save(account.get());
-        return ResponseBuilder.build(HttpStatus.OK, "Tài khoản đã được kích hoạt", null);
+        return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Hành động không hợp lệ", null);
     }
 }
