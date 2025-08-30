@@ -43,7 +43,7 @@ public class ProductController {
         return productService.updateProduct(request);
     }
 
-    @PostMapping("/custom/requests")
+    @GetMapping("/custom/requests")
     @PreAuthorize("hasRole('BUYER')")
     public ResponseEntity<ResponseObject> customRequestListByBuyer(HttpServletRequest request) {
         return productService.customRequestListByBuyer(request);
