@@ -1,6 +1,7 @@
 package com.exe201.group1.psgp_be.services.implementors;
 
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
+import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
@@ -62,6 +63,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ResponseEntity<ResponseObject> updateCustomRequest(UpdateCustomRequestRequest request) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> deleteCustomRequest(DeleteCustomRequestRequest request) {
         return null;
     }
 
