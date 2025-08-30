@@ -22,19 +22,19 @@ public class SucculentController {
     private final SucculentService succulentService;
 
     @GetMapping("/succulents")
-//    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> viewAllSucculents() {
         return succulentService.getSucculents();
     }
 
     @PostMapping("/succulent")
-//    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> createSucculent(@RequestBody CreateSucculentRequest request) {
         return succulentService.createSucculent(request);
     }
 
     @PutMapping("/succulent")
-//    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> updateSucculent(@RequestBody UpdateSucculentRequest request) {
         return succulentService.updateSucculent(request);
     }
