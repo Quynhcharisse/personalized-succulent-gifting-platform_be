@@ -1,6 +1,6 @@
 package com.exe201.group1.psgp_be.models;
 
-import com.exe201.group1.psgp_be.enums.ProductStatus;
+import com.exe201.group1.psgp_be.enums.Status;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -67,7 +67,7 @@ public class Product {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    ProductStatus status;
+    Status status;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude

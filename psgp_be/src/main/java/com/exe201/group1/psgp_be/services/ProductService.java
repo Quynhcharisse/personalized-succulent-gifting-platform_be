@@ -1,6 +1,7 @@
 package com.exe201.group1.psgp_be.services;
 
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
