@@ -1,6 +1,8 @@
 package com.exe201.group1.psgp_be.models;
 
 import com.exe201.group1.psgp_be.enums.FengShui;
+import com.exe201.group1.psgp_be.enums.Size;
+import com.exe201.group1.psgp_be.enums.Status;
 import com.exe201.group1.psgp_be.enums.Zodiac;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -22,6 +24,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -40,17 +43,25 @@ public class Succulent {
     @Column(name = "species_name", length = 100)
     String speciesName;
 
-    @Column(name = "sunlight_requirement", length = 100)
-    String sunlightRequirement;
+    @Column(name = "description", length = 300)
+    String description;
 
-    @Column(name = "watering_frequency", length = 100)
-    String wateringFrequency;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    Size size;
 
-    @Column(length = 50)
-    String size;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    Status status;
 
-    @Column(length = 50)
-    String color;
+    @Column(precision = 10)
+    int quantity;
+
+    @Column(precision = 10, scale = 2)
+    BigDecimal priceBuy;
+
+    @Column(precision = 10, scale = 2)
+    BigDecimal priceSell;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "feng_shui", length = 10)
