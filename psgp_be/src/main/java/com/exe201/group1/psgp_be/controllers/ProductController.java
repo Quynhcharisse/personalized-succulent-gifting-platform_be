@@ -1,10 +1,12 @@
 package com.exe201.group1.psgp_be.controllers;
 
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.ProductService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,6 +28,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProductController {
     private final ProductService productService;
 
+                        //=================== succulent =====================\\
+    @GetMapping("/succulents")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> viewAllSucculents() {
+        return productService.getSucculents();
+    }
+
+    @PostMapping("/succulent")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> createSucculent(@RequestBody CreateSucculentRequest request) {
+        return productService.createSucculent(request);
+    }
+
+    @PutMapping("/succulent")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> updateSucculent(@RequestBody UpdateSucculentRequest request) {
+        return productService.updateSucculent(request);
+    }
+
+                        //=================== Product =====================\\
     @PostMapping("/")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request) {
@@ -42,6 +65,7 @@ public class ProductController {
     public ResponseEntity<ResponseObject> updateProduct(ProductUpdateRequest request) {
         return productService.updateProduct(request);
     }
+                            //=================== custom request =====================\\
 
     @GetMapping("/custom/requests")
     @PreAuthorize("hasRole('BUYER')")
