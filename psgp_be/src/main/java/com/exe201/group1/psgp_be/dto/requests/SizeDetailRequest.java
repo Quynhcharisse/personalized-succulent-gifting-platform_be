@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class SizeDetail {
+public class SizeDetailRequest {
     String name;     // ví dụ: TINY,...
     Integer quantity;  // số lượng tương ứng
     BigDecimal priceBuy; //giá

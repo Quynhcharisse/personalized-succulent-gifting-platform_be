@@ -19,6 +19,12 @@ public interface ProductService {
 
     ResponseEntity<ResponseObject> updateSucculent(UpdateSucculentRequest request);
 
+    ResponseEntity<ResponseObject> createAccessory();
+
+    ResponseEntity<ResponseObject> getAccessories();
+
+    ResponseEntity<ResponseObject> updateAccessory();
+
     ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request);
 
     ResponseEntity<ResponseObject> viewProduct();

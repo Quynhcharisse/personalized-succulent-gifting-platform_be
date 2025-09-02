@@ -5,7 +5,7 @@ import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
-import com.exe201.group1.psgp_be.dto.requests.SizeDetail;
+import com.exe201.group1.psgp_be.dto.requests.SizeDetailRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
@@ -50,7 +50,7 @@ public class ProductServiceImpl implements ProductService {
             );
         }
 
-        for (SizeDetail size : request.getSizeDetails()) {
+        for (SizeDetailRequest size : request.getSizeDetailRequests()) {
             succulentRepo.save(Succulent.builder()
                     .speciesName(request.getSpecies_name())
                     .description(request.getDescription())
@@ -257,6 +257,7 @@ public class ProductServiceImpl implements ProductService {
         if(succulent.getZodiac() != null){
             zodiac = succulent.getZodiac().getDisplayName();
         }
+        response.put("id", succulent.getId());
         response.put("speciesName", succulent.getSpeciesName());
         response.put("description", succulent.getDescription());
         response.put("size", succulent.getSize().getDisplayName());
@@ -288,10 +289,10 @@ public class ProductServiceImpl implements ProductService {
 
         String rawStatus = request.getStatus() == null ? "" : request.getStatus().trim();
 
-        if(!Status.OUT_OF_STOCK.getDisplayName().equalsIgnoreCase(rawStatus)
-                &&!Status.AVAILABLE.getDisplayName().equalsIgnoreCase(rawStatus)
-                &&!Status.UNAVAILABLE.getDisplayName().equalsIgnoreCase(rawStatus)){
-            return "Trạng thái không hợp lệ: '" + rawStatus + "'. Giá trị hợp lệ: "
+        if (!Status.OUT_OF_STOCK.getDisplayName().equalsIgnoreCase(rawStatus)
+                && !Status.AVAILABLE.getDisplayName().equalsIgnoreCase(rawStatus)
+                && !Status.UNAVAILABLE.getDisplayName().equalsIgnoreCase(rawStatus)) {
+            return "Trạng thái hàng không hợp lệ: '" + rawStatus + "'. Trạng thái hợp lệ: "
                     + Status.AVAILABLE.getDisplayName() + ", "
                     + Status.OUT_OF_STOCK.getDisplayName() + ", "
                     + Status.UNAVAILABLE.getDisplayName() + ".";
@@ -312,14 +313,57 @@ public class ProductServiceImpl implements ProductService {
             return "Mô tả không được vượt quá 300 ký tự";
         }
 
-        if(request.getPriceBuy().compareTo(BigDecimal.ZERO) <= 0) {
+        if (request.getPriceBuy().compareTo(BigDecimal.ZERO) <= 0) {
             return "Cần nhập giá cây lớn hơn 0";
         }
-        if(request.getQuantity() < 0){
+        if (request.getQuantity() < 0) {
             return "Cần nhập số lượng cây lớn hơn hoặc bằng 0";
         }
-        if(succulentRepo.existsBySpeciesNameIgnoreCaseAndSizeAndIdNot(request.getSpecies_name(), succulent.getSize(), succulent.getId())){
-            return "Loài "+ request.getSpecies_name() + " với kích thước "+ succulent.getSize() +" đã được tạo trong hệ thống";
+        if (succulentRepo.existsBySpeciesNameIgnoreCaseAndSizeAndIdNot(request.getSpecies_name(), succulent.getSize(), succulent.getId())) {
+            return "Loài " + request.getSpecies_name() + " với kích thước " + succulent.getSize() + " đã được tạo trong hệ thống";
+        }
+
+        if (!FengShui.HOA.getDisplayName().equalsIgnoreCase(request.getFengShui())
+                && !FengShui.KIM.getDisplayName().equalsIgnoreCase(request.getFengShui())
+                && !FengShui.THUY.getDisplayName().equalsIgnoreCase(request.getFengShui())
+                && !FengShui.MOC.getDisplayName().equalsIgnoreCase(request.getFengShui())
+                && !FengShui.THO.getDisplayName().equalsIgnoreCase(request.getFengShui())
+                && !request.getFengShui().isEmpty()) {
+            return "Giá trị phong thủy không hợp lệ: '" + request.getFengShui() + "'. Giá trị hợp lệ: "
+                    + FengShui.HOA.getDisplayName() + ", "
+                    + FengShui.KIM.getDisplayName() + ", "
+                    + FengShui.MOC.getDisplayName() + ", "
+                    + FengShui.HOA.getDisplayName() + ", "
+                    + FengShui.THO.getDisplayName() + ".";
+        }
+
+        if (!Zodiac.BACH_DUONG.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.KIM_NGUU.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.SONG_TU.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.CU_GIAI.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.SU_TU.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.XU_NU.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.THIEN_BINH.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.BO_CAP.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.NHAN_MA.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.MA_KET.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.BAO_BINH.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.SONG_NGU.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !request.getZodiac().isEmpty()) {
+
+            return "Cung hoàng đạo không hợp lệ: '" + request.getZodiac() + "'. Giá trị hợp lệ: "
+                    + Zodiac.BACH_DUONG.getDisplayName() + ", "
+                    + Zodiac.KIM_NGUU.getDisplayName() + ", "
+                    + Zodiac.SONG_TU.getDisplayName() + ", "
+                    + Zodiac.CU_GIAI.getDisplayName() + ", "
+                    + Zodiac.SU_TU.getDisplayName() + ", "
+                    + Zodiac.XU_NU.getDisplayName() + ", "
+                    + Zodiac.THIEN_BINH.getDisplayName() + ", "
+                    + Zodiac.BO_CAP.getDisplayName() + ", "
+                    + Zodiac.NHAN_MA.getDisplayName() + ", "
+                    + Zodiac.MA_KET.getDisplayName() + ", "
+                    + Zodiac.BAO_BINH.getDisplayName() + ", "
+                    + Zodiac.SONG_NGU.getDisplayName() + ".";
         }
         return "";
     }
@@ -340,15 +384,15 @@ public class ProductServiceImpl implements ProductService {
             return "Mô tả không được vượt quá 300 ký tự";
         }
 
-        if (request.getSizeDetails() == null || request.getSizeDetails().isEmpty()) {
+        if (request.getSizeDetailRequests() == null || request.getSizeDetailRequests().isEmpty()) {
             return "Vui lòng chọn ít nhất một kích thước";
         }
 
-        if (request.getSizeDetails().size() > 5) {
+        if (request.getSizeDetailRequests().size() > 5) {
             return "Hệ thống chỉ có tối đa 5 kích thước";
         }
 
-        for (SizeDetail size : request.getSizeDetails()) {
+        for (SizeDetailRequest size : request.getSizeDetailRequests()) {
             if(getSizeFromName(size.getName())==null){
                 return "Kích thước không hợp lệ: " + size.getName() + " không tồn tại trong hệ thống";
             }
@@ -361,7 +405,51 @@ public class ProductServiceImpl implements ProductService {
             if(succulentRepo.existsBySpeciesNameIgnoreCaseAndSize(request.getSpecies_name(), getSizeFromName(size.getName()) )){
                 return "Loài "+ request.getSpecies_name() + " với kích thước "+ size.getName() +" đã được tạo trong hệ thống";
             }
+        }
 
+        if(!FengShui.HOA.getDisplayName().equalsIgnoreCase(request.getFengShui())
+                &&!FengShui.KIM.getDisplayName().equalsIgnoreCase(request.getFengShui())
+                &&!FengShui.THUY.getDisplayName().equalsIgnoreCase(request.getFengShui())
+                && !FengShui.MOC.getDisplayName().equalsIgnoreCase(request.getFengShui())
+                && !FengShui.THO.getDisplayName().equalsIgnoreCase(request.getFengShui())
+                && !request.getFengShui().isEmpty()){
+            return "Giá trị phong thủy không hợp lệ: '" + request.getFengShui() + "'. Giá trị hợp lệ: "
+                    + FengShui.HOA.getDisplayName() + ", "
+                    + FengShui.KIM.getDisplayName() + ", "
+                    + FengShui.MOC.getDisplayName() + ", "
+                    + FengShui.HOA.getDisplayName() + ", "
+                    + FengShui.THO.getDisplayName() + ".";
+        }
+        if(request.getZodiac() == null || request.getZodiac().trim().isEmpty()) {
+            return "";
+        }
+        if (!Zodiac.BACH_DUONG.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.KIM_NGUU.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.SONG_TU.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.CU_GIAI.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.SU_TU.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.XU_NU.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.THIEN_BINH.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.BO_CAP.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.NHAN_MA.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.MA_KET.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.BAO_BINH.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !Zodiac.SONG_NGU.getDisplayName().equalsIgnoreCase(request.getZodiac())
+                && !request.getZodiac().isEmpty()) {
+
+            return "Cung hoàng đạo không hợp lệ: '" + request.getZodiac() + "'. Giá trị hợp lệ: "
+                    + Zodiac.BACH_DUONG.getDisplayName() + ", "
+                    + Zodiac.KIM_NGUU.getDisplayName() + ", "
+                    + Zodiac.SONG_TU.getDisplayName() + ", "
+                    + Zodiac.CU_GIAI.getDisplayName() + ", "
+                    + Zodiac.SU_TU.getDisplayName() + ", "
+                    + Zodiac.XU_NU.getDisplayName() + ", "
+                    + Zodiac.THIEN_BINH.getDisplayName() + ", "
+                    + Zodiac.BO_CAP.getDisplayName() + ", "
+                    + Zodiac.NHAN_MA.getDisplayName() + ", "
+                    + Zodiac.MA_KET.getDisplayName() + ", "
+                    + Zodiac.BAO_BINH.getDisplayName() + ", "
+                    + Zodiac.SONG_NGU.getDisplayName() + ".";
         }
         return "";
     }
@@ -389,6 +477,23 @@ public class ProductServiceImpl implements ProductService {
                 return zodiac;
             }
         }
+        return null;
+    }
+
+    // =========================== Accessory ========================== \\
+
+    @Override
+    public ResponseEntity<ResponseObject> createAccessory() {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getAccessories() {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> updateAccessory() {
         return null;
     }
 
