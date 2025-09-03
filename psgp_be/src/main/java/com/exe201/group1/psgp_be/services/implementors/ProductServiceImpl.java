@@ -150,17 +150,6 @@ public class ProductServiceImpl implements ProductService {
         // AVAILABLE
         if(succulent.getStatus().equals(Status.AVAILABLE)){
 
-            //NOT CHANGE STATUS
-            if(request.getQuantity() == 0){
-                succulent.setStatus(Status.OUT_OF_STOCK);
-                updateSucculentInfo(succulent, request);
-                succulentRepo.save(succulent);
-                return ResponseEntity.ok(ResponseObject.builder()
-                        .data(null)
-                        .message("Cập nhật mặt hàng thành công")
-                        .build());
-            }
-
             //AVAILABLE TO UNAVAILABLE
             if(Status.UNAVAILABLE.getDisplayName().equalsIgnoreCase(request.getStatus().trim())) {
                 if(request.getQuantity() > 0){
@@ -197,20 +186,21 @@ public class ProductServiceImpl implements ProductService {
                         .message("Cập nhật mặt hàng thành công")
                         .build());
             }
-
+            //NOT CHANGE STATUS
+            if(request.getQuantity() == 0){
+                succulent.setStatus(Status.OUT_OF_STOCK);
+                updateSucculentInfo(succulent, request);
+                succulentRepo.save(succulent);
+                return ResponseEntity.ok(ResponseObject.builder()
+                        .data(null)
+                        .message("Cập nhật mặt hàng thành công")
+                        .build());
+            }
         }
 
         // OUT-OF-STOCK
         if(Status.OUT_OF_STOCK.equals(succulent.getStatus())) {
-            // NOT CHANGE STATUS
-
-            // Khi quantity >0 tự động tahyd đổi tranng thái
-            if (request.getQuantity() > 0) {
-                succulent.setStatus(Status.AVAILABLE);
-            }
-
             // OUT-OF-STOCK To Available
-
             if (Status.AVAILABLE.getDisplayName().equalsIgnoreCase(request.getStatus().trim())) {
                 if (request.getQuantity() == 0) {
                     return ResponseEntity.status(HttpStatus.CONFLICT).body(
@@ -233,6 +223,11 @@ public class ProductServiceImpl implements ProductService {
                     );
                 }
                 succulent.setStatus(Status.UNAVAILABLE);
+            }
+            // NOT CHANGE STATUS
+            // Khi quantity >0 tự động tahyd đổi tranng thái
+            if (request.getQuantity() > 0) {
+                succulent.setStatus(Status.AVAILABLE);
             }
         }
 
@@ -587,17 +582,6 @@ public class ProductServiceImpl implements ProductService {
         // AVAILABLE
         if(accessory.getStatus().equals(Status.AVAILABLE)){
 
-            //NOT CHANGE STATUS
-            if(request.getQuantity() == 0){
-                accessory.setStatus(Status.OUT_OF_STOCK);
-                updateAccessoryInfo(accessory, request);
-                accessoryRepo.save(accessory);
-                return ResponseEntity.ok(ResponseObject.builder()
-                        .data(null)
-                        .message("Cập nhật mặt hàng thành công")
-                        .build());
-            }
-
             //AVAILABLE TO UNAVAILABLE
             if(Status.UNAVAILABLE.getDisplayName().equalsIgnoreCase(request.getStatus().trim())) {
                 if(request.getQuantity() > 0){
@@ -635,16 +619,21 @@ public class ProductServiceImpl implements ProductService {
                         .build());
             }
 
+            //NOT CHANGE STATUS
+            if(request.getQuantity() == 0){
+                accessory.setStatus(Status.OUT_OF_STOCK);
+                updateAccessoryInfo(accessory, request);
+                accessoryRepo.save(accessory);
+                return ResponseEntity.ok(ResponseObject.builder()
+                        .data(null)
+                        .message("Cập nhật mặt hàng thành công")
+                        .build());
+            }
+
         }
 
         // OUT-OF-STOCK
         if(Status.OUT_OF_STOCK.equals(accessory.getStatus())) {
-            // NOT CHANGE STATUS
-
-            // Khi quantity >0 tự động tahyd đổi tranng thái
-            if (request.getQuantity() > 0) {
-                accessory.setStatus(Status.AVAILABLE);
-            }
 
             // OUT-OF-STOCK To Available
 
@@ -670,6 +659,11 @@ public class ProductServiceImpl implements ProductService {
                     );
                 }
                 accessory.setStatus(Status.UNAVAILABLE);
+            }
+            // NOT CHANGE STATUS
+            // Khi quantity >0 tự động tahyd đổi tranng thái
+            if (request.getQuantity() > 0) {
+                accessory.setStatus(Status.AVAILABLE);
             }
         }
 
@@ -706,16 +700,12 @@ public class ProductServiceImpl implements ProductService {
             return "Mô tả không được vượt quá 300 ký tự";
         }
 
-        if(request.getQuantity() == null || request.getQuantity() < 1) {
-            return "Cần nhập số lượng mặt hàng lớn hơn 0";
+        if (request.getQuantity() < 0) {
+            return "Cần nhập số lượng hàng lớn hơn hoặc bằng 0";
         }
 
         if(request.getPriceBuy() == null || request.getPriceBuy().compareTo(BigDecimal.ZERO) <= 0) {
             return "Cần nhập giá tiền mặt hàng lớn hơn 0";
-        }
-
-        if (accessoryRepo.existsByNameIgnoreCase(request.getName())) {
-            return "Mặt hàng có tên '"+ request.getName() +"' đã được tạo trong hệ thống.";
         }
 
         String rawCategory = request.getCategory() == null ? "" : request.getCategory().trim();
@@ -796,7 +786,7 @@ public class ProductServiceImpl implements ProductService {
         response.put("priceBuy", accessory.getPriceBuy());
         response.put("priceSell", accessory.getPriceSell());
         response.put("quantity", accessory.getQuantity());
-        response.put("category", accessory.getCategory());
+        response.put("category", accessory.getCategory().getDisplayName());
         response.put("status", accessory.getStatus());
         return response;
     }

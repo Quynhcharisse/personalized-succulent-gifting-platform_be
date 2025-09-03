@@ -51,7 +51,7 @@ public class ProductController {
 
     //=================== Accessory =====================\\
 
-    @GetMapping("/accessory")
+    @GetMapping("/accessories")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> getAccessories() {
         return productService.getAccessories();
