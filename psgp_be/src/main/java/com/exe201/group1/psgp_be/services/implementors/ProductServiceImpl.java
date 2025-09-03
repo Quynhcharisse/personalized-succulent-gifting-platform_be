@@ -41,7 +41,7 @@ public class ProductServiceImpl implements ProductService {
 
         String error = validateCreateSucculent(request);
 
-        if (!error.isBlank()) {
+        if (!error.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     ResponseObject.builder()
                             .data(null)
@@ -81,7 +81,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ResponseEntity<ResponseObject> updateSucculent(UpdateSucculentRequest request) {
 
-        if(!succulentRepo.findById(request.getId()).isPresent()){
+        if(succulentRepo.findById(request.getId()).isEmpty()){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                     ResponseObject.builder()
                             .data(null)
