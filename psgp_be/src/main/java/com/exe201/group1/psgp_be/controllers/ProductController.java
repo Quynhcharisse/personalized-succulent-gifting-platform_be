@@ -1,10 +1,12 @@
 package com.exe201.group1.psgp_be.controllers;
 
+import com.exe201.group1.psgp_be.dto.requests.CreateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
@@ -46,6 +48,27 @@ public class ProductController {
     public ResponseEntity<ResponseObject> updateSucculent(@RequestBody UpdateSucculentRequest request) {
         return productService.updateSucculent(request);
     }
+
+    //=================== Accessory =====================\\
+
+    @GetMapping("/accessories")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> getAccessories() {
+        return productService.getAccessories();
+    }
+
+    @PostMapping("/accessory")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> createAccessory(@RequestBody CreateAccessoryRequest request) {
+        return productService.createAccessory(request);
+    }
+
+    @PutMapping("/accessory")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> updateAccessory(@RequestBody UpdateAccessoryRequest request) {
+        return productService.updateAccessory(request);
+    }
+
 
                         //=================== Product =====================\\
     @PostMapping("/")
