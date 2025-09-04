@@ -1,9 +1,7 @@
 package com.exe201.group1.psgp_be.models;
 
-import com.exe201.group1.psgp_be.enums.FengShui;
 import com.exe201.group1.psgp_be.enums.Size;
 import com.exe201.group1.psgp_be.enums.Status;
-import com.exe201.group1.psgp_be.enums.Zodiac;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +11,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -40,11 +40,9 @@ public class Succulent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    @Column(name = "species_name", length = 100)
-    String speciesName;
-
-    @Column(name = "description", length = 300)
-    String description;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "species_id", nullable = false)
+    SucculentSpecies species;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
@@ -63,14 +61,6 @@ public class Succulent {
     @Column(precision = 10, scale = 2)
     BigDecimal priceSell;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "feng_shui", length = 10)
-    FengShui fengShui;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "zodiac", length = 15)
-    Zodiac zodiac;
-
     @OneToMany(mappedBy = "succulent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
@@ -80,4 +70,4 @@ public class Succulent {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     List<CustomProductRequestSucculent> customProductRequestSucculents;
-} 
+}
