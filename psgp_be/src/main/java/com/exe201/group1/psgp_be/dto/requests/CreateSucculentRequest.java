@@ -1,5 +1,7 @@
 package com.exe201.group1.psgp_be.dto.requests;
 
+import com.exe201.group1.psgp_be.enums.FengShui;
+import com.exe201.group1.psgp_be.enums.Zodiac;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,12 +15,9 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateSucculentRequest {
-    String species_name;
+    String speciesName;
     String description;
+    List<FengShui> fengShuiList;
+    List<Zodiac> zodiacList;
     List<SizeDetailRequest> sizeDetailRequests;
-    String fengShui;
-    String zodiac;
 }
-
-
-
