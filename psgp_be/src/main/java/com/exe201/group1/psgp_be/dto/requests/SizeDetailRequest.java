@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SizeDetailRequest {
-    String name;     // ví dụ: TINY,...
-    Integer quantity;  // số lượng tương ứng
-    BigDecimal priceBuy; //giá
+    String name;     
+    BigDecimal priceBuy;
 }

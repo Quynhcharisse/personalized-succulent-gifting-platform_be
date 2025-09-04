@@ -6,6 +6,7 @@ import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
+import com.exe201.group1.psgp_be.dto.requests.ReceiveGoodsRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
@@ -26,6 +27,8 @@ public interface ProductService {
     ResponseEntity<ResponseObject> getAccessories();
 
     ResponseEntity<ResponseObject> updateAccessory(UpdateAccessoryRequest request);
+
+    ResponseEntity<ResponseObject> receiveGoods(ReceiveGoodsRequest request);
 
     ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request);
 

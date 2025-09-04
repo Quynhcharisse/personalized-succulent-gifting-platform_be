@@ -6,6 +6,7 @@ import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
+import com.exe201.group1.psgp_be.dto.requests.ReceiveGoodsRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
@@ -69,11 +70,17 @@ public class ProductController {
         return productService.updateAccessory(request);
     }
 
+    //=================== Nhập hàng từ nhà cung cấp =====================\\
+    @PostMapping("/receive-goods")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> receiveGoods(@RequestBody ReceiveGoodsRequest request) {
+        return productService.receiveGoods(request);
+    }
 
                         //=================== Product =====================\\
     @PostMapping("/")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request) {
+    public ResponseEntity<ResponseObject> createProduct(@RequestBody ProductCreateRequest request) {
         return productService.createProduct(request);
     }
 
@@ -85,7 +92,7 @@ public class ProductController {
 
     @PutMapping("/")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> updateProduct(ProductUpdateRequest request) {
+    public ResponseEntity<ResponseObject> updateProduct(@RequestBody ProductUpdateRequest request) {
         return productService.updateProduct(request);
     }
                             //=================== custom request =====================\\
@@ -98,19 +105,19 @@ public class ProductController {
 
     @PostMapping("/custom/requests")
     @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> createCustomRequest(CreateCustomRequest request) {
+    public ResponseEntity<ResponseObject> createCustomRequest(@RequestBody CreateCustomRequest request) {
         return productService.createCustomRequest(request);
     }
 
     @PutMapping("/custom/requests")
     @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> updateCustomRequest(UpdateCustomRequestRequest request) {
+    public ResponseEntity<ResponseObject> updateCustomRequest(@RequestBody UpdateCustomRequestRequest request) {
         return productService.updateCustomRequest(request);
     }
 
     @DeleteMapping("/custom/requests")
     @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> deleteCustomRequest(DeleteCustomRequestRequest request) {
+    public ResponseEntity<ResponseObject> deleteCustomRequest(@RequestBody DeleteCustomRequestRequest request) {
         return productService.deleteCustomRequest(request);
     }
 }
