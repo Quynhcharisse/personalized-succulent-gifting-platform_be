@@ -454,7 +454,7 @@ public class ProductServiceImpl implements ProductService {
         if (request.getPriceBuy() == null || request.getPriceBuy().compareTo(BigDecimal.ZERO) <= 0) {
             return "Cần nhập giá cây lớn hơn 0";
         }
-        if (request.getQuantity() == null || request.getQuantity() < 0) {
+        if (request.getQuantity() < 0) {
             return "Cần nhập số lượng cây lớn hơn hoặc bằng 0";
         }
         String rawStatus = request.getStatus() == null ? "" : request.getStatus().trim();
@@ -916,7 +916,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private String validateReceiveGoods(ReceiveGoodsRequest request) {
-        if (request.getSupplierId() == null) {
+        if (request.getSupplierId() < 0) {
             return "ID nhà cung cấp là bắt buộc";
         }
 
@@ -938,7 +938,7 @@ public class ProductServiceImpl implements ProductService {
                 return "Loại hàng không hợp lệ. Chỉ chấp nhận SUCCULENT hoặc ACCESSORY";
             }
 
-            if (item.getQuantity() == null || item.getQuantity() <= 0) {
+            if (item.getQuantity() <= 0) {
                 return "Số lượng nhập phải lớn hơn 0";
             }
 
@@ -947,14 +947,14 @@ public class ProductServiceImpl implements ProductService {
             }
 
             if ("SUCCULENT".equals(item.getItemType())) {
-                if (item.getSucculentId() == null) {
+                if (item.getSucculentId() == 0) {
                     return "ID sen đá là bắt buộc cho loại SUCCULENT";
                 }
                 if (succulentRepo.findById(item.getSucculentId()).isEmpty()) {
                     return "Không tìm thấy sen đá với ID: " + item.getSucculentId();
                 }
             } else {
-                if (item.getAccessoryId() == null) {
+                if (item.getAccessoryId() == 0) {
                     return "ID phụ kiện là bắt buộc cho loại ACCESSORY";
                 }
                 if (accessoryRepo.findById(item.getAccessoryId()).isEmpty()) {
