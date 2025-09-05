@@ -12,6 +12,7 @@ import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierStatusRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,8 @@ public interface ProductService {
     ResponseEntity<ResponseObject> getSupplierList(HttpServletRequest httpRequest);
 
     ResponseEntity<ResponseObject> updateSupplier(UpdateSupplierRequest request, HttpServletRequest httpRequest);
+
+    ResponseEntity<ResponseObject> updateSupplierStatus(UpdateSupplierStatusRequest request, HttpServletRequest httpRequest);
 
     ResponseEntity<ResponseObject> createSucculent(CreateSucculentRequest request);
 
