@@ -9,50 +9,53 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Builder
 @Entity
-@Table(name = "`custom_product`")
+@Table(name = "suppliers")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CustomProduct {
+public class Supplier {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "custom_request_id")
-    CustomProductRequest customProductRequest;
+    @Column(name = "supplier_name", length = 100)
+    String supplierName;
 
-    @Column(name = "final_price", precision = 10, scale = 2)
-    BigDecimal finalPrice;
+    @Column(name = "contact_person", length = 100)
+    String contactPerson;
 
-    @Column(name = "image_url", length = 500)
-    String imageUrl;
+    @Column(name = "phone", length = 20)
+    String phone;
 
-    @Column(columnDefinition = "TEXT")
-    String notes;
+    @Column(name = "email", length = 100)
+    String email;
 
-    @Column(name = "is_public_template")
-    Boolean isPublicTemplate;
+    @Column(name = "address", length = 500)
+    String address;
 
-    @Column(length = 20)
+    @Column(name = "description", length = 500)
+    String description;
+
     @Enumerated(EnumType.STRING)
+    @Column(name = "status")
     Status status;
 
     @Column(name = "created_at")
@@ -60,4 +63,10 @@ public class CustomProduct {
 
     @Column(name = "updated_at")
     LocalDateTime updatedAt;
-} 
+
+    @OneToMany(mappedBy = "supplier", cascade = jakarta.persistence.CascadeType.ALL, fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    List<StockMovement> stockMovementList;
+
+}

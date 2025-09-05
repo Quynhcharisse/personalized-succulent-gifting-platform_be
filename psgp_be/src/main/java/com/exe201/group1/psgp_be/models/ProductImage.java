@@ -18,11 +18,11 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`product_image`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductImage {

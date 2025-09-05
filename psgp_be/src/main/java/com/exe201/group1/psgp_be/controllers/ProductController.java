@@ -3,6 +3,7 @@ package com.exe201.group1.psgp_be.controllers;
 import com.exe201.group1.psgp_be.dto.requests.CreateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
@@ -10,6 +11,7 @@ import com.exe201.group1.psgp_be.dto.requests.ReceiveGoodsRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.ProductService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,7 +33,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProductController {
     private final ProductService productService;
 
-                        //=================== succulent =====================\\
+    //=================== supplier =====================\\
+    @PostMapping("/supplier")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseObject> createSupplier(@RequestBody CreateSupplierRequest request) {
+        return productService.createSupplier(request);
+    }
+
+    @PutMapping("/supplier")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseObject> updateSupplier(@RequestBody UpdateSupplierRequest request) {
+        return productService.updateSupplier(request);
+    }
+
+    @GetMapping("/supplier/list")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseObject> getSupplierList() {
+        return productService.getSupplierList();
+    }
+
+    //=================== succulent =====================\\
     @GetMapping("/succulents")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> viewAllSucculents() {
@@ -51,7 +72,6 @@ public class ProductController {
     }
 
     //=================== Accessory =====================\\
-
     @GetMapping("/accessories")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> getAccessories() {
@@ -70,14 +90,14 @@ public class ProductController {
         return productService.updateAccessory(request);
     }
 
-    //=================== Nhập hàng từ nhà cung cấp =====================\\
+    //================== Nhập hàng từ NCC ====================\\
     @PostMapping("/receive-goods")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> receiveGoods(@RequestBody ReceiveGoodsRequest request) {
         return productService.receiveGoods(request);
     }
 
-                        //=================== Product =====================\\
+    //=================== Product =====================\\
     @PostMapping("/")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> createProduct(@RequestBody ProductCreateRequest request) {
@@ -95,8 +115,8 @@ public class ProductController {
     public ResponseEntity<ResponseObject> updateProduct(@RequestBody ProductUpdateRequest request) {
         return productService.updateProduct(request);
     }
-                            //=================== custom request =====================\\
 
+    //=================== custom request =====================\\
     @GetMapping("/custom/requests")
     @PreAuthorize("hasRole('BUYER')")
     public ResponseEntity<ResponseObject> customRequestListByBuyer(HttpServletRequest request) {

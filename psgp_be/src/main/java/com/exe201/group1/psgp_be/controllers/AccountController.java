@@ -24,7 +24,6 @@ public class AccountController {
 
     private final AccountService accountService;
 
-
     @PostMapping("/logout")
     @PreAuthorize("hasAnyRole('BUYER', 'SELLER', 'ADMIN')")
     public ResponseEntity<ResponseObject> logout(HttpServletRequest request, HttpServletResponse response) {

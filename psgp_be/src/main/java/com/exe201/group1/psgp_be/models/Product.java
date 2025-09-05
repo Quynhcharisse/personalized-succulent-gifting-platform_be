@@ -27,11 +27,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`product`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Product {
@@ -72,30 +72,30 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<ProductImage> productImages;
+    List<ProductImage> productImageList;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<ProductSucculent> productSucculents;
+    List<ProductSucculent> productSucculentList;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<ProductAccessory> productAccessories;
+    List<ProductAccessory> productAccessoryList;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<Comment> comments;
+    List<Comment> commentList;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<OrderDetail> orderDetails;
+    List<OrderDetail> orderDetailList;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<WishlistItem> wishlistItems;
+    List<WishlistItem> wishlistItemList;
 } 

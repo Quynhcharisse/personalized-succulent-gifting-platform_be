@@ -15,11 +15,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`post_tag`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PostTag {
