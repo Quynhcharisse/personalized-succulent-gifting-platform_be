@@ -12,6 +12,7 @@ import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierStatusRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.ProductService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,6 +45,12 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> updateSupplier(@RequestBody UpdateSupplierRequest request, HttpServletRequest httpRequest) {
         return productService.updateSupplier(request, httpRequest);
+    }
+
+    @PutMapping("/supplier/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseObject> updateSupplierStatus(@RequestBody UpdateSupplierStatusRequest request, HttpServletRequest httpRequest) {
+        return productService.updateSupplierStatus(request, httpRequest);
     }
 
     @GetMapping("/supplier/list")
