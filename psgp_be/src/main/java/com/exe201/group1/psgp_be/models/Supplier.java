@@ -1,6 +1,7 @@
 package com.exe201.group1.psgp_be.models;
 
 import com.exe201.group1.psgp_be.enums.Status;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -36,13 +37,13 @@ public class Supplier {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    @Column(name = "supplier_name", length = 100)
-    String supplierName;
+    @Column(length = 100)
+    String name;
 
     @Column(name = "contact_person", length = 100)
     String contactPerson;
 
-    @Column(name = "phone", length = 20)
+    @Column(name = "phone", length = 10)
     String phone;
 
     @Column(name = "email", length = 100)
@@ -64,9 +65,8 @@ public class Supplier {
     @Column(name = "updated_at")
     LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "supplier", cascade = jakarta.persistence.CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     List<StockMovement> stockMovementList;
-
 }

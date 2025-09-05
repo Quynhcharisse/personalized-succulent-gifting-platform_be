@@ -18,11 +18,11 @@ import org.springframework.http.ResponseEntity;
 
 public interface ProductService {
 
-    ResponseEntity<ResponseObject> createSupplier(CreateSupplierRequest request);
+    ResponseEntity<ResponseObject> createSupplier(CreateSupplierRequest request, HttpServletRequest httpRequest);
 
-    ResponseEntity<ResponseObject> getSupplierList();
+    ResponseEntity<ResponseObject> getSupplierList(HttpServletRequest httpRequest);
 
-    ResponseEntity<ResponseObject> updateSupplier(UpdateSupplierRequest request);
+    ResponseEntity<ResponseObject> updateSupplier(UpdateSupplierRequest request, HttpServletRequest httpRequest);
 
     ResponseEntity<ResponseObject> createSucculent(CreateSucculentRequest request);
 

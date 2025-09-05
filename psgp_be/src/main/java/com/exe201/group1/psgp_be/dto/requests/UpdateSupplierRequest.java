@@ -14,11 +14,10 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateSupplierRequest {
     int id;
-    String supplierName;
+    String name;
     String contactPerson;
     String phone;
     String email;
     String address;
     String description;
-    String status; // AVAILABLE, UNAVAILABLE
 }
