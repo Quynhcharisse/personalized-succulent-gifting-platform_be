@@ -3,6 +3,7 @@ package com.exe201.group1.psgp_be.services.implementors;
 import com.exe201.group1.psgp_be.dto.requests.CreateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
@@ -11,19 +12,21 @@ import com.exe201.group1.psgp_be.dto.requests.SizeDetailRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.enums.AccessoryCategory;
-import com.exe201.group1.psgp_be.enums.FengShui;
 import com.exe201.group1.psgp_be.enums.Size;
 import com.exe201.group1.psgp_be.enums.Status;
-import com.exe201.group1.psgp_be.enums.Zodiac;
 import com.exe201.group1.psgp_be.models.Accessory;
 import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.models.SucculentSpecies;
+import com.exe201.group1.psgp_be.models.Supplier;
 import com.exe201.group1.psgp_be.repositories.AccessoryRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentSpeciesRepo;
+import com.exe201.group1.psgp_be.repositories.SupplierRepo;
 import com.exe201.group1.psgp_be.services.ProductService;
+import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -46,9 +49,169 @@ public class ProductServiceImpl implements ProductService {
     private final SucculentRepo succulentRepo;
     private final AccessoryRepo accessoryRepo;
     private final SucculentSpeciesRepo succulentSpeciesRepo;
+    private final SupplierRepo supplierRepo;
 
     // =========================== Succulent ========================== \\
+    @Override
+    public ResponseEntity<ResponseObject> createSupplier(CreateSupplierRequest request) {
+        String error = validateCreateSupplier(request);
+        if (!error.isEmpty()) {
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
+        }
 
+        supplierRepo.save(Supplier.builder()
+                .supplierName(request.getSupplierName())
+                .contactPerson(request.getContactPerson())
+                .phone(request.getPhone())
+                .email(request.getEmail())
+                .address(request.getAddress())
+                .description(request.getDescription())
+                .status(Status.AVAILABLE)
+                .build());
+
+        return ResponseBuilder.build(HttpStatus.OK, "Tạo nhà cung cấp thành công", null);
+    }
+
+    private String validateCreateSupplier(CreateSupplierRequest request) {
+        if (request.getSupplierName() == null || request.getSupplierName().trim().isEmpty()) {
+            return "Tên nhà cung cấp là bắt buộc";
+        }
+        if (request.getSupplierName().length() > 100) {
+            return "Tên nhà cung cấp không được vượt quá 100 ký tự";
+        }
+        if (supplierRepo.existsBySupplierNameIgnoreCase(request.getSupplierName())) {
+            return "Nhà cung cấp với tên '" + request.getSupplierName() + "' đã tồn tại";
+        }
+
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            String phone = request.getPhone().trim();
+            if (!phone.matches("^(07|08|03|09)\\d{8}$")) {
+                return "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 07, 08, 03 hoặc 09";
+            }
+        }
+
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            String email = request.getEmail().trim();
+            if (email.length() > 100) {
+                return "Email không được vượt quá 100 ký tự";
+            }
+
+            if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                return "Email không đúng định dạng";
+            }
+        }
+        if (request.getAddress() != null && request.getAddress().length() > 500) {
+            return "Địa chỉ không được vượt quá 500 ký tự";
+        }
+        if (request.getDescription() != null && request.getDescription().length() > 500) {
+            return "Mô tả không được vượt quá 500 ký tự";
+        }
+        return "";
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> updateSupplier(UpdateSupplierRequest request) {
+        Optional<Supplier> supplierOpt = supplierRepo.findById(request.getId());
+        if (supplierOpt.isEmpty()) {
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp với ID: " + request.getId(), null);
+        }
+
+        String error = validateUpdateSupplier(request);
+        if (!error.isEmpty()) {
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
+        }
+
+        Supplier supplier = supplierOpt.get();
+        updateSupplierInfo(supplier, request);
+        supplierRepo.save(supplier);
+
+        return ResponseBuilder.build(HttpStatus.OK, "Cập nhật nhà cung cấp thành công", buildSupplierDetail(supplier));
+    }
+
+    private String validateUpdateSupplier(UpdateSupplierRequest request) {
+        if (request.getSupplierName() == null || request.getSupplierName().trim().isEmpty()) {
+            return "Tên nhà cung cấp là bắt buộc";
+        }
+
+        if (request.getSupplierName().length() > 100) {
+            return "Tên nhà cung cấp không được vượt quá 100 ký tự";
+        }
+
+        if (supplierRepo.existsBySupplierNameIgnoreCaseAndIdNot(request.getSupplierName(), request.getId())) {
+            return "Nhà cung cấp với tên '" + request.getSupplierName() + "' đã tồn tại";
+        }
+
+        if (request.getStatus() != null && !request.getStatus().trim().isEmpty()) {
+            Status status = getStatusFromName(request.getStatus());
+            if (status == null) {
+                return "Trạng thái không hợp lệ: " + request.getStatus();
+            }
+        }
+
+        return "";
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getSupplierList() {
+        List<Supplier> suppliers = supplierRepo.findAll(Sort.by(Sort.Direction.DESC, "id"));
+        return ResponseBuilder.build(HttpStatus.OK, "Lấy danh sách nhà cung cấp thành công", buildSupplierList(suppliers));
+    }
+
+    private void updateSupplierInfo(Supplier supplier, UpdateSupplierRequest request) {
+        supplier.setSupplierName(request.getSupplierName());
+        supplier.setContactPerson(request.getContactPerson());
+        supplier.setPhone(request.getPhone());
+        supplier.setEmail(request.getEmail());
+        supplier.setAddress(request.getAddress());
+        supplier.setDescription(request.getDescription());
+
+        if (request.getStatus() != null && !request.getStatus().trim().isEmpty()) {
+            Status status = getStatusFromName(request.getStatus());
+            if (status != null) {
+                supplier.setStatus(status);
+            }
+        }
+    }
+
+    private Status getStatusFromName(String statusStr) {
+        if (statusStr == null || statusStr.trim().isEmpty()) {
+            return null;
+        }
+
+        for (Status status : Status.values()) {
+            if (status.getDisplayName().equalsIgnoreCase(statusStr.trim())) {
+                return status;
+            }
+        }
+        return null;
+    }
+
+    private Map<String, Object> buildSupplierDetail(Supplier supplier) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", supplier.getId());
+        response.put("supplierName", supplier.getSupplierName());
+        response.put("contactPerson", supplier.getContactPerson());
+        response.put("phone", supplier.getPhone());
+        response.put("email", supplier.getEmail());
+        response.put("address", supplier.getAddress());
+        response.put("description", supplier.getDescription());
+        response.put("status", supplier.getStatus().getDisplayName());
+        response.put("createdAt", supplier.getCreatedAt());
+        response.put("updatedAt", supplier.getUpdatedAt());
+        return response;
+    }
+
+    private List<Map<String, Object>> buildSupplierList(List<Supplier> suppliers) {
+        List<Map<String, Object>> response = new ArrayList<>();
+        for (Supplier supplier : suppliers) {
+            if (supplier != null) {
+                response.add(buildSupplierDetail(supplier));
+            }
+        }
+        return response;
+    }
+
+    // =========================== Succulent ========================== \\
     @Override
     public ResponseEntity<ResponseObject> createSucculent(CreateSucculentRequest request) {
         String error = validateCreateSucculent(request);
@@ -61,22 +224,27 @@ public class ProductServiceImpl implements ProductService {
             );
         }
 
-        var existing = succulentSpeciesRepo.findBySpeciesNameIgnoreCase(request.getSpeciesName());
-        var species = existing != null ? existing : SucculentSpecies.builder()
-                .speciesName(request.getSpeciesName())
-                .description(request.getDescription())
-                .elements(request.getFengShuiList() == null ? new HashSet<>() : new HashSet<>(request.getFengShuiList()))
-                .zodiacs(request.getZodiacList() == null ? new HashSet<>() : new HashSet<>(request.getZodiacList()))
-                .build();
-        if (existing != null) {
+        Optional<SucculentSpecies> existingOpt = succulentSpeciesRepo.findBySpeciesNameIgnoreCase(request.getSpeciesName());
+        SucculentSpecies species;
+
+        if (existingOpt.isPresent()) {
+            species = existingOpt.get();
             species.setDescription(request.getDescription());
             species.setElements(request.getFengShuiList() == null ? new HashSet<>() : new HashSet<>(request.getFengShuiList()));
             species.setZodiacs(request.getZodiacList() == null ? new HashSet<>() : new HashSet<>(request.getZodiacList()));
+        } else {
+            species = SucculentSpecies.builder()
+                    .speciesName(request.getSpeciesName())
+                    .description(request.getDescription())
+                    .elements(request.getFengShuiList() == null ? new HashSet<>() : new HashSet<>(request.getFengShuiList()))
+                    .zodiacs(request.getZodiacList() == null ? new HashSet<>() : new HashSet<>(request.getZodiacList()))
+                    .build();
         }
+
         species = succulentSpeciesRepo.save(species);
 
         for (SizeDetailRequest size : request.getSizeDetailRequests()) {
-            var variant = Succulent.builder()
+            Succulent variant = Succulent.builder()
                     .species(species)
                     .size(getSizeFromName(size.getName()))
                     .priceBuy(size.getPriceBuy())
@@ -203,15 +371,8 @@ public class ProductServiceImpl implements ProductService {
 
             if (request.getQuantity() == 0) {
                 succulent.setStatus(Status.OUT_OF_STOCK);
-                updateSucculentInfo(succulent, request);
-                succulentRepo.save(succulent);
-                return ResponseEntity.ok(ResponseObject.builder()
-                        .data(null)
-                        .message("Cập nhật mặt hàng thành công")
-                        .build());
             }
         }
-
 
         if (Status.OUT_OF_STOCK.equals(succulent.getStatus())) {
             if (Status.AVAILABLE.getDisplayName().equalsIgnoreCase(request.getStatus().trim())) {
@@ -376,26 +537,7 @@ public class ProductServiceImpl implements ProductService {
         return null;
     }
 
-    private FengShui getFengShuiFromName(String name) {
-        for (FengShui fengShui : FengShui.values()) {
-            if (fengShui.getDisplayName().equalsIgnoreCase(name)) {
-                return fengShui;
-            }
-        }
-        return null;
-    }
-
-    private Zodiac getZodiacFromName(String name) {
-        for (Zodiac zodiac : Zodiac.values()) {
-            if (zodiac.getDisplayName().equalsIgnoreCase(name)) {
-                return zodiac;
-            }
-        }
-        return null;
-    }
-
     // =========================== Accessory ========================== \\
-
     @Override
     public ResponseEntity<ResponseObject> createAccessory(CreateAccessoryRequest request) {
         String error = validateCreateAccessory(request, accessoryRepo);
@@ -591,12 +733,6 @@ public class ProductServiceImpl implements ProductService {
             //NOT CHANGE STATUS
             if (request.getQuantity() == 0) {
                 accessory.setStatus(Status.OUT_OF_STOCK);
-                updateAccessoryInfo(accessory, request);
-                accessoryRepo.save(accessory);
-                return ResponseEntity.ok(ResponseObject.builder()
-                        .data(null)
-                        .message("Cập nhật mặt hàng thành công")
-                        .build());
             }
 
         }
@@ -780,8 +916,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private String validateReceiveGoods(ReceiveGoodsRequest request) {
-        if (request.getSupplierName() == null || request.getSupplierName().trim().isEmpty()) {
-            return "Tên nhà cung cấp là bắt buộc";
+        if (request.getSupplierId() == null) {
+            return "ID nhà cung cấp là bắt buộc";
+        }
+
+        // Kiểm tra nhà cung cấp có tồn tại không
+        if (supplierRepo.findById(request.getSupplierId()).isEmpty()) {
+            return "Không tìm thấy nhà cung cấp với ID: " + request.getSupplierId();
         }
 
         if (request.getItems() == null || request.getItems().isEmpty()) {
@@ -812,7 +953,7 @@ public class ProductServiceImpl implements ProductService {
                 if (succulentRepo.findById(item.getSucculentId()).isEmpty()) {
                     return "Không tìm thấy sen đá với ID: " + item.getSucculentId();
                 }
-            } else if ("ACCESSORY".equals(item.getItemType())) {
+            } else {
                 if (item.getAccessoryId() == null) {
                     return "ID phụ kiện là bắt buộc cho loại ACCESSORY";
                 }
@@ -825,9 +966,7 @@ public class ProductServiceImpl implements ProductService {
         return "";
     }
 
-
     // =========================== Product ========================== \\
-
     @Override
     public ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request) {
         return null;
@@ -844,7 +983,6 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // =========================== Custom Request ========================== \\
-
     @Override
     public ResponseEntity<ResponseObject> customRequestListByBuyer(HttpServletRequest request) {
         return null;
@@ -864,6 +1002,4 @@ public class ProductServiceImpl implements ProductService {
     public ResponseEntity<ResponseObject> deleteCustomRequest(DeleteCustomRequestRequest request) {
         return null;
     }
-
 }
-

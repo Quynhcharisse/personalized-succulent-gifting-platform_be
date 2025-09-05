@@ -22,11 +22,11 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`wishlist`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Wishlist {
@@ -45,5 +45,5 @@ public class Wishlist {
     @OneToMany(mappedBy = "wishlist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<WishlistItem> wishlistItems;
+    List<WishlistItem> wishlistItemList;
 }

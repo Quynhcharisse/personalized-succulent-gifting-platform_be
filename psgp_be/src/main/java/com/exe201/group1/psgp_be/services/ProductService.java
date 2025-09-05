@@ -3,6 +3,7 @@ package com.exe201.group1.psgp_be.services;
 import com.exe201.group1.psgp_be.dto.requests.CreateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
@@ -10,11 +11,18 @@ import com.exe201.group1.psgp_be.dto.requests.ReceiveGoodsRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 
 public interface ProductService {
+
+    ResponseEntity<ResponseObject> createSupplier(CreateSupplierRequest request);
+
+    ResponseEntity<ResponseObject> getSupplierList();
+
+    ResponseEntity<ResponseObject> updateSupplier(UpdateSupplierRequest request);
 
     ResponseEntity<ResponseObject> createSucculent(CreateSucculentRequest request);
 
