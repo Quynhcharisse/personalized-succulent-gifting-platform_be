@@ -1,6 +1,6 @@
 package com.exe201.group1.psgp_be.models;
 
-import com.exe201.group1.psgp_be.enums.CommentStatus;
+import com.exe201.group1.psgp_be.enums.Status;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,11 +21,11 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`comment`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Comment {
@@ -46,11 +46,11 @@ public class Comment {
     String content;
 
     @Column
-    Integer rating;
+    int rating;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    CommentStatus status;
+    Status status;
 
     @Column(name = "created_at")
     LocalDateTime createdAt;

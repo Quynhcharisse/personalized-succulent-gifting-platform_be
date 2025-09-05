@@ -7,16 +7,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreateAccessoryRequest {
+public class UpdateSupplierRequest {
+    int id;
     String name;
+    String contactPerson;
+    String phone;
+    String email;
+    String address;
     String description;
-    String category;
-    BigDecimal priceBuy;
 }

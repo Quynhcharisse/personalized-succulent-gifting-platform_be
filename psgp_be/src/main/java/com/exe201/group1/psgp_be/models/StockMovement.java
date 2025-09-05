@@ -1,6 +1,6 @@
 package com.exe201.group1.psgp_be.models;
 
-import com.exe201.group1.psgp_be.enums.Status;
+import com.exe201.group1.psgp_be.enums.StockMovementType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -27,37 +27,48 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 @Entity
-@Table(name = "`custom_product`")
+@Table(name = "stock_movements")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CustomProduct {
+public class StockMovement {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "custom_request_id")
-    CustomProductRequest customProductRequest;
-
-    @Column(name = "final_price", precision = 10, scale = 2)
-    BigDecimal finalPrice;
-
-    @Column(name = "image_url", length = 500)
-    String imageUrl;
-
-    @Column(columnDefinition = "TEXT")
-    String notes;
-
-    @Column(name = "is_public_template")
-    Boolean isPublicTemplate;
-
-    @Column(length = 20)
     @Enumerated(EnumType.STRING)
-    Status status;
+    @Column(name = "movement_type")
+    StockMovementType movementType;
+
+    @Column(name = "item_type", length = 20) // SUCCULENT hoặc ACCESSORY
+    String itemType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "succulent_id")
+    Succulent succulent;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "accessory_id")
+    Accessory accessory;
+
+    @Column(name = "quantity_change")
+    int quantityChange;
+
+    @Column(name = "unit_cost")
+    BigDecimal unitCost;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id")
+    Supplier supplier;
+
+    @Column(name = "reference_code", length = 100)
+    String referenceCode; // Mã hóa đơn, mã đơn hàng...
+
+    @Column(name = "note", length = 500)
+    String note;
 
     @Column(name = "created_at")
     LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    LocalDateTime updatedAt;
-} 
+    @Column(name = "created_by", length = 100)
+    String createdBy;
+}
