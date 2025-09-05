@@ -1,11 +1,12 @@
 package com.exe201.group1.psgp_be.services;
 
-import com.exe201.group1.psgp_be.models.Notification;
-import java.util.List;
+import com.exe201.group1.psgp_be.dto.requests.CreateNotificationRequest;
+import com.exe201.group1.psgp_be.dto.response.ResponseObject;
+import org.springframework.http.ResponseEntity;
 
 public interface NotificationService {
 
-    public Notification createNotification(Integer accountId, String message);
+    ResponseEntity<ResponseObject> createNotification(CreateNotificationRequest request);
 
-    public List<Notification> getAccountNotifications(Integer accountId);
+    ResponseEntity<ResponseObject> getAccountNotifications(Integer accountId);
 }
