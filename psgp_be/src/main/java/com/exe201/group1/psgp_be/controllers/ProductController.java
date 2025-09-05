@@ -36,20 +36,20 @@ public class ProductController {
     //=================== supplier =====================\\
     @PostMapping("/supplier")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> createSupplier(@RequestBody CreateSupplierRequest request) {
-        return productService.createSupplier(request);
+    public ResponseEntity<ResponseObject> createSupplier(@RequestBody CreateSupplierRequest request, HttpServletRequest httpRequest) {
+        return productService.createSupplier(request, httpRequest);
     }
 
     @PutMapping("/supplier")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> updateSupplier(@RequestBody UpdateSupplierRequest request) {
-        return productService.updateSupplier(request);
+    public ResponseEntity<ResponseObject> updateSupplier(@RequestBody UpdateSupplierRequest request, HttpServletRequest httpRequest) {
+        return productService.updateSupplier(request, httpRequest);
     }
 
     @GetMapping("/supplier/list")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> getSupplierList() {
-        return productService.getSupplierList();
+    public ResponseEntity<ResponseObject> getSupplierList(HttpServletRequest httpRequest) {
+        return productService.getSupplierList(httpRequest);
     }
 
     //=================== succulent =====================\\
