@@ -26,11 +26,11 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`user`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class User {
@@ -69,17 +69,17 @@ public class User {
     @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<Product> products;
+    List<Product> productList;
 
     @OneToMany(mappedBy = "buyer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<CustomProductRequest> customProductRequests;
+    List<CustomProductRequest> customProductRequestList;
 
     @OneToMany(mappedBy = "buyer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<Order> orders;
+    List<Order> orderList;
 
     @OneToOne(mappedBy = "buyer", cascade = CascadeType.ALL)
     @EqualsAndHashCode.Exclude
@@ -89,10 +89,10 @@ public class User {
     @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<Post> posts;
+    List<Post> postList;
 
     @OneToMany(mappedBy = "buyer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<Comment> comments;
+    List<Comment> commentList;
 }

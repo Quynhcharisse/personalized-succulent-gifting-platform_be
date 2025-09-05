@@ -1,6 +1,6 @@
 package com.exe201.group1.psgp_be.models;
 
-import com.exe201.group1.psgp_be.enums.PostStatus;
+import com.exe201.group1.psgp_be.enums.Status;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,11 +26,11 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`post`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Post {
@@ -60,15 +60,15 @@ public class Post {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    PostStatus status;
+    Status status;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<PostImage> postImages;
+    List<PostImage> postImageList;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<PostTag> postTags;
+    List<PostTag> postTagList;
 } 

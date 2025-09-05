@@ -29,19 +29,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "succulent_species")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SucculentSpecies {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    Integer id;
 
-    @Column(name = "species_name", length = 100, unique = true, nullable = false)
+    @Column(name = "species_name", length = 100)
     String speciesName;
 
     @Column(name = "description", length = 300)
@@ -62,6 +62,6 @@ public class SucculentSpecies {
     @OneToMany(mappedBy = "species", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<Succulent> variants;
+    List<Succulent> variantList;
 }
 

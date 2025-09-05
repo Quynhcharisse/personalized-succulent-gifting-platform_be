@@ -18,11 +18,11 @@ import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`order_detail`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderDetail {

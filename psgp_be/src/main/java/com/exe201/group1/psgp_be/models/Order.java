@@ -1,6 +1,6 @@
 package com.exe201.group1.psgp_be.models;
 
-import com.exe201.group1.psgp_be.enums.OrderStatus;
+import com.exe201.group1.psgp_be.enums.Status;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,11 +25,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`order`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Order {
@@ -50,8 +50,8 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    OrderStatus status;
+    Status status;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    List<OrderDetail> orderDetails;
+    List<OrderDetail> orderDetailList;
 } 
