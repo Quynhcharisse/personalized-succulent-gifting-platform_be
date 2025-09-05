@@ -27,11 +27,11 @@ import lombok.experimental.FieldDefaults;
 import java.math.BigDecimal;
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`succulent`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Succulent {
@@ -52,7 +52,6 @@ public class Succulent {
     @Column(length = 20)
     Status status;
 
-    @Column(precision = 10)
     int quantity;
 
     @Column(precision = 10, scale = 2)
@@ -64,10 +63,15 @@ public class Succulent {
     @OneToMany(mappedBy = "succulent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<ProductSucculent> productSucculents;
+    List<ProductSucculent> productSucculentList;
 
     @OneToMany(mappedBy = "succulent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<CustomProductRequestSucculent> customProductRequestSucculents;
+    List<CustomProductRequestSucculent> customProductRequestSucculentList;
+
+    @OneToMany(mappedBy = "succulent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    List<StockMovement> stockMovementList;
 }

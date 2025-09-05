@@ -26,11 +26,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`account`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Account implements UserDetails {

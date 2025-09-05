@@ -2,7 +2,17 @@ package com.exe201.group1.psgp_be.models;
 
 import com.exe201.group1.psgp_be.enums.AccessoryCategory;
 import com.exe201.group1.psgp_be.enums.Status;
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,13 +23,14 @@ import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`accessory`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Accessory {
@@ -39,7 +50,7 @@ public class Accessory {
     String description;
 
     @Column
-    Integer quantity;
+    int quantity;
 
     @Column(precision = 10, scale = 2)
     BigDecimal priceBuy;
@@ -51,13 +62,24 @@ public class Accessory {
     @Column(length = 20)
     Status status;
 
-    @OneToMany(mappedBy = "accessory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<ProductAccessory> productAccessories;
+    @Column(name = "created_at")
+    LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "accessory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<CustomProductRequestAccessory> customProductRequestAccessories;
-} 
+    List<ProductAccessory> productAccessoryList;
+
+    @OneToMany(mappedBy = "accessory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    List<CustomProductRequestAccessory> customProductRequestAccessoryList;
+
+    @OneToMany(mappedBy = "accessory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    List<StockMovement> stockMovementList;
+}

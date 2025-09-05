@@ -108,9 +108,7 @@ public class AuthServiceImpl implements AuthService {
                         .build()
         );
 
-        // Set the user in account and save
-        account.setUser(user);
-        accountRepo.save(account);
+        // User đã được set trong Account thông qua cascade, không cần save lại
 
         String access = jwtService.generateAccessToken(account);
         String refresh = jwtService.generateRefreshToken(account);

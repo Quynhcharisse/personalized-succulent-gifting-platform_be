@@ -20,11 +20,11 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`tag`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Tag {
@@ -39,5 +39,5 @@ public class Tag {
     @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<PostTag> postTags;
+    List<PostTag> postTagList;
 } 
