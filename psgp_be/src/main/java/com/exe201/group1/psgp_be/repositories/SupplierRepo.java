@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SupplierRepo extends JpaRepository<Supplier, Integer> {
-    boolean existsBySupplierNameIgnoreCase(String supplierName);
-    boolean existsBySupplierNameIgnoreCaseAndIdNot(String supplierName, int id);
+    boolean existsByNameIgnoreCase(String name);
+    boolean existsByNameIgnoreCaseAndIdNot(String name, int id);
 }

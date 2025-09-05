@@ -1,6 +1,7 @@
 package com.exe201.group1.psgp_be.utils;
 
 import com.exe201.group1.psgp_be.models.Account;
+import com.exe201.group1.psgp_be.models.Supplier;
 import com.exe201.group1.psgp_be.models.User;
 
 import java.util.List;
@@ -27,7 +28,7 @@ public class EntityResponseBuilder {
         return MapUtils.build(keys, values);
     }
 
-    //-------Customer---------//
+    //-------Buyer---------//
     public static Map<String, Object> buildUserResponse(User user) {
         if (user == null) {
             return null;
@@ -48,6 +49,33 @@ public class EntityResponseBuilder {
                 Objects.requireNonNullElse(user.getZodiac(), "")
         );
 
+        return MapUtils.build(keys, values);
+    }
+
+    //-------Supplier---------//
+    public static Map<String, Object> buildSupplierResponse(Supplier supplier) {
+        if (supplier == null) {
+            return null;
+        }
+
+        List<String> keys = List.of(
+                "id", "supplierName", "contactPerson", "phone",
+                "email", "address", "description", "status",
+                "createdAt", "updatedAt"
+        );
+
+        List<Object> values = List.of(
+                supplier.getId(),
+                Objects.requireNonNullElse(supplier.getName(), ""),
+                Objects.requireNonNullElse(supplier.getContactPerson(), ""),
+                Objects.requireNonNullElse(supplier.getPhone(), ""),
+                Objects.requireNonNullElse(supplier.getEmail(), ""),
+                Objects.requireNonNullElse(supplier.getAddress(), ""),
+                Objects.requireNonNullElse(supplier.getDescription(), ""),
+                Objects.requireNonNullElse(supplier.getStatus().getValue(), ""),
+                Objects.requireNonNullElse(supplier.getCreatedAt(), null),
+                Objects.requireNonNullElse(supplier.getUpdatedAt(), null)
+        );
         return MapUtils.build(keys, values);
     }
 
