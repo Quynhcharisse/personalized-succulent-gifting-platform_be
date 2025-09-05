@@ -27,11 +27,11 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
+@Data
 @Builder
+@Entity
 @Table(name = "`custom_product_request`")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CustomProductRequest {
@@ -82,15 +82,15 @@ public class CustomProductRequest {
     @OneToMany(mappedBy = "customProductRequest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<CustomProductRequestSucculent> customProductRequestSucculents;
+    List<CustomProductRequestSucculent> customProductRequestSucculentList;
 
     @OneToMany(mappedBy = "customProductRequest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<CustomProductRequestAccessory> customProductRequestAccessories;
+    List<CustomProductRequestAccessory> customProductRequestAccessoryList;
 
     @OneToMany(mappedBy = "customProductRequest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    List<CustomProduct> customProducts;
+    List<CustomProduct> customProductList;
 } 
