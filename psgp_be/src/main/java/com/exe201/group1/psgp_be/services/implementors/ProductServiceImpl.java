@@ -13,6 +13,7 @@ import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierStatusRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.enums.AccessoryCategory;
 import com.exe201.group1.psgp_be.enums.Role;
@@ -216,7 +217,32 @@ public class ProductServiceImpl implements ProductService {
         if (request.getDescription() != null && request.getDescription().length() > 500) {
             return "Mô tả không được vượt quá 500 ký tự";
         }
+
         return "";
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> updateSupplierStatus(UpdateSupplierStatusRequest request, HttpServletRequest httpRequest) {
+        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
+
+        if (account == null) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
+        }
+
+        if (account.getRole() == null || account.getRole() != Role.ADMIN) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Chỉ có Admin mới có quyền tạo nhà cung cấp", null);
+        }
+
+        Supplier supplier = supplierRepo.findById(request.getId()).orElse(null);
+        if (supplier == null) {
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp: " + request.getId(), null);
+        }
+
+        supplier.setStatus(supplier.getStatus() == Status.ACTIVE ? Status.INACTIVE : Status.ACTIVE);
+        supplier.setUpdatedAt(LocalDateTime.now());
+        supplierRepo.save(supplier);
+
+        return ResponseBuilder.build(HttpStatus.OK, "Cập nhật thành công", null);
     }
 
     @Override
