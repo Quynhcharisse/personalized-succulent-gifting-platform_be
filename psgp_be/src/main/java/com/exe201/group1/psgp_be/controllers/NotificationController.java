@@ -2,8 +2,8 @@ package com.exe201.group1.psgp_be.controllers;
 
 import com.exe201.group1.psgp_be.dto.requests.CreateNotificationRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
-import com.exe201.group1.psgp_be.models.Notification;
 import com.exe201.group1.psgp_be.services.NotificationService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -23,8 +23,8 @@ public class NotificationController {
         return response;
     }
 
-    @GetMapping("/{accountId}")
-    public ResponseEntity<ResponseObject> getNotifications(@PathVariable Integer accountId) {
-        return notificationService.getAccountNotifications(accountId);
+    @GetMapping()
+    public ResponseEntity<ResponseObject> getNotifications(HttpServletRequest request) {
+        return notificationService.getAccountNotifications(request);
     }
 }
