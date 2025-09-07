@@ -62,8 +62,8 @@ public class ProductController {
     //=================== succulent =====================\\
     @GetMapping("/succulents")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> viewAllSucculents() {
-        return productService.getSucculents();
+    public ResponseEntity<ResponseObject> viewSucculentList() {
+        return productService.viewSucculentList();
     }
 
     @PostMapping("/succulent")
@@ -146,5 +146,11 @@ public class ProductController {
     @PreAuthorize("hasRole('BUYER')")
     public ResponseEntity<ResponseObject> deleteCustomRequest(@RequestBody DeleteCustomRequestRequest request) {
         return productService.deleteCustomRequest(request);
+    }
+    
+    @GetMapping("/stats/supplier")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseObject> getTotalSupplierCount(HttpServletRequest httpRequest) {
+        return productService.getTotalSupplierCount(httpRequest);
     }
 }
