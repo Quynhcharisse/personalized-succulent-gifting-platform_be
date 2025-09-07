@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -52,6 +53,12 @@ public class AccountController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> getAllBuyerAccounts(HttpServletRequest httpRequest) {
         return accountService.getAllBuyerAccounts(httpRequest);
+    }
+
+    @GetMapping("/stats/buyer")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseObject> getTotalBuyerCount(HttpServletRequest httpRequest) {
+        return accountService.getTotalBuyerCount(httpRequest);
     }
 
     @PutMapping("/ban")

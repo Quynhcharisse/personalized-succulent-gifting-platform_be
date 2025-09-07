@@ -11,4 +11,5 @@ public interface AccountRepo extends JpaRepository<Account, Integer> {
     Optional<Account> findByEmail(String email);
     Optional<Account> findByEmailAndActive(String email, boolean active);
     List<Account> findAllByRole(Role role);
+    long countByRole(Role role);
 }
