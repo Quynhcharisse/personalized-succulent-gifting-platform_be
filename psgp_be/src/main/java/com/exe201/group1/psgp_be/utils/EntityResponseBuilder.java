@@ -2,6 +2,7 @@ package com.exe201.group1.psgp_be.utils;
 
 import com.exe201.group1.psgp_be.models.Account;
 import com.exe201.group1.psgp_be.models.Supplier;
+import com.exe201.group1.psgp_be.models.Notification;
 import com.exe201.group1.psgp_be.models.User;
 
 import java.util.List;
@@ -77,6 +78,19 @@ public class EntityResponseBuilder {
                 Objects.requireNonNullElse(supplier.getUpdatedAt(), null)
         );
         return MapUtils.build(keys, values);
+    }
+
+    public static  Map<String, Object> buildNotificationsResponse(List<Notification> notifications) {
+        return Map.of(
+                "count", notifications.size(),
+                "notifications", notifications.stream().map(notification -> Map.of(
+                        "id", notification.getId(),
+                        "message", notification.getMessage(),
+                        "isRead", notification.isRead(),
+                        "createdAt", notification.getCreatedAt(),
+                        "accountId", notification.getAccount().getId()
+                )).toList()
+        );
     }
 
 }
