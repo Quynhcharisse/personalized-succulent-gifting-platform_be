@@ -27,9 +27,11 @@ public interface ProductService {
 
     ResponseEntity<ResponseObject> updateSupplierStatus(UpdateSupplierStatusRequest request, HttpServletRequest httpRequest);
 
+    ResponseEntity<ResponseObject> getTotalSupplierCount(HttpServletRequest httpRequest);
+
     ResponseEntity<ResponseObject> createSucculent(CreateSucculentRequest request);
 
-    ResponseEntity<ResponseObject> getSucculents();
+    ResponseEntity<ResponseObject> viewSucculentList();
 
     ResponseEntity<ResponseObject> updateSucculent(UpdateSucculentRequest request);
 

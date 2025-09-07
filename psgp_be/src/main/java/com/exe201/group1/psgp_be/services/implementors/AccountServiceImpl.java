@@ -200,6 +200,22 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    public ResponseEntity<ResponseObject> getTotalBuyerCount(HttpServletRequest httpRequest) {
+        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
+
+        if (account == null || account.getRole() != Role.ADMIN) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Chỉ có Admin mới có quyền xem thống kê", null);
+        }
+
+        long totalBuyerCount = accountRepo.countByRole(Role.BUYER);
+        
+        Map<String, Object> data = new HashMap<>();
+        data.put("totalBuyerCount", totalBuyerCount);
+        
+        return ResponseBuilder.build(HttpStatus.OK, "Lấy tổng số tài khoản người mua thành công", data);
+    }
+
+    @Override
     public ResponseEntity<ResponseObject> processAccount(ProcessAccountRequest request, String action) {
         Optional<Account> account = accountRepo.findById(request.getAccountId());
         if (account.isEmpty()) {
