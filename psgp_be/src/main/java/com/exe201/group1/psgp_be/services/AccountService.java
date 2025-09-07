@@ -18,5 +18,7 @@ public interface AccountService {
 
     ResponseEntity<ResponseObject> getAllBuyerAccounts(HttpServletRequest httpRequest);
 
+    ResponseEntity<ResponseObject> getTotalBuyerCount(HttpServletRequest httpRequest);
+
     ResponseEntity<ResponseObject> processAccount(ProcessAccountRequest request, String action);
 }
