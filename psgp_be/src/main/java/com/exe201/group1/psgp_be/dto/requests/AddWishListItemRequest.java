@@ -7,15 +7,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ProductCreateRequest {
-   String name;
-   String description;
+public class AddWishListItemRequest {
+    Integer productId;
 }
