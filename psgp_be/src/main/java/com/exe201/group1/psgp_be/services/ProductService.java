@@ -1,5 +1,6 @@
 package com.exe201.group1.psgp_be.services;
 
+import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
@@ -14,6 +15,7 @@ import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierStatusRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
+import com.exe201.group1.psgp_be.models.WishlistItem;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 
@@ -56,4 +58,13 @@ public interface ProductService {
     ResponseEntity<ResponseObject> updateCustomRequest(UpdateCustomRequestRequest request);
 
     ResponseEntity<ResponseObject> deleteCustomRequest(DeleteCustomRequestRequest request);
+
+    ResponseEntity<ResponseObject> addItemToWishList(AddWishListItemRequest item);
+
+    ResponseEntity<ResponseObject> getItemsFromWishList();
+
+    ResponseEntity<ResponseObject> removeItemFromWishList(Integer id);
+
+    ResponseEntity<ResponseObject> removeAllItemsFromWishList();
+
 }
