@@ -75,7 +75,6 @@ public class ProductServiceImpl implements ProductService {
     private final JWTService jwtService;
     private final AccountRepo accountRepo;
     private final WishListItemRepo wishListItemRepo;
-    private final ProductRepo productRepo;
 
     // =========================== Supplier ========================== \\
     @Override
