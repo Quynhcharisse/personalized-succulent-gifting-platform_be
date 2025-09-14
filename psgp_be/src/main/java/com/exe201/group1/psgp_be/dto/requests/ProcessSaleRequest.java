@@ -7,21 +7,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ProductCreateRequest {
-    String name;
-    String description;
-    String size;
-    BigDecimal price;
-    Integer quantityInStock;
-    String status;
-    List<Integer> succulentIds;
-    List<Integer> accessoryIds;
+public class ProcessSaleRequest {
+    Integer itemId;
+    String itemType; // "SUCCULENT" or "ACCESSORY"
+    Integer quantity;
+    String orderId;
 }
