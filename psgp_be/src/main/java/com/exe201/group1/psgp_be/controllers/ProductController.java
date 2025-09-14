@@ -79,6 +79,12 @@ public class ProductController {
         return productService.updateSucculent(request);
     }
 
+    @PutMapping("/succulent/quantity")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> updateSucculentQuantity(@RequestBody UpdateSucculentRequest request) {
+        return productService.updateSucculentQuantity(request);
+    }
+
     //=================== Accessory =====================\\
     @GetMapping("/accessories")
     @PreAuthorize("hasRole('SELLER')")
@@ -96,6 +102,12 @@ public class ProductController {
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> updateAccessory(@RequestBody UpdateAccessoryRequest request) {
         return productService.updateAccessory(request);
+    }
+
+    @PutMapping("/accessory/quantity")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> updateAccessoryQuantity(@RequestBody UpdateAccessoryRequest request) {
+        return productService.updateAccessoryQuantity(request);
     }
 
     //=================== Product =====================\\

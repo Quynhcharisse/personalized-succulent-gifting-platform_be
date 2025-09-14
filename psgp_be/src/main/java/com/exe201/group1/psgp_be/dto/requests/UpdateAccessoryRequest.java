@@ -20,6 +20,6 @@ public class UpdateAccessoryRequest {
     String description;
     int quantity;
     String category;
-    BigDecimal priceBuy;
+    BigDecimal priceSell;
     String status;
 }

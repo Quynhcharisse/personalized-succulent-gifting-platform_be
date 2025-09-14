@@ -16,5 +16,5 @@ import java.math.BigDecimal;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SizeDetailRequest {
     String name;     
-    BigDecimal priceBuy;
+    BigDecimal priceSell;
 }
