@@ -303,9 +303,10 @@ public class ProductServiceImpl implements ProductService {
             Succulent variant = Succulent.builder()
                     .species(species)
                     .size(getSizeFromName(size.getName()))
-                    .priceSell(size.getPriceSell()) // Sử dụng priceSell trực tiếp
+                    .priceSell(size.getPriceSell())
                     .quantity(0)
                     .status(Status.OUT_OF_STOCK)
+                    .imageUrl(request.getImageUrl())
                     .build();
             succulentRepo.save(variant);
         }
@@ -328,6 +329,16 @@ public class ProductServiceImpl implements ProductService {
 
         if (request.getDescription().length() > 300) {
             return "Mô tả không được vượt quá 300 ký tự";
+        }
+
+        if (request.getImageUrl() == null || request.getImageUrl().trim().isEmpty()) {
+            return "Image URL is required";
+        }
+        if (!request.getImageUrl().matches("^(http|https)://.*$")) {
+            return "Invalid Image URL format";
+        }
+        if (!request.getImageUrl().matches(".*\\.(jpg|jpeg|png|gif)$")) {
+            return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
         }
 
         if (request.getSizeDetailRequests() == null || request.getSizeDetailRequests().isEmpty()) {
@@ -477,6 +488,7 @@ public class ProductServiceImpl implements ProductService {
     private void updateSucculentInfo(Succulent succulent, UpdateSucculentRequest request) {
         succulent.setPriceSell(request.getPriceSell());
         succulent.setQuantity(request.getQuantity());
+        succulent.setImageUrl(request.getImageUrl());
     }
 
     @Override
@@ -606,6 +618,7 @@ public class ProductServiceImpl implements ProductService {
                 .priceSell(request.getPriceSell()) // Sử dụng priceSell trực tiếp
                 .quantity(0)
                 .status(Status.OUT_OF_STOCK) 
+                .imageUrl(request.getImageUrl())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build());
@@ -850,6 +863,16 @@ public class ProductServiceImpl implements ProductService {
 
         if (request.getDescription().length() > 300) {
             return "Mô tả không được vượt quá 300 ký tự";
+        }
+
+        if (request.getImageUrl() == null || request.getImageUrl().trim().isEmpty()) {
+            return "Image URL is required";
+        }
+        if (!request.getImageUrl().matches("^(http|https)://.*$")) {
+            return "Invalid Image URL format";
+        }
+        if (!request.getImageUrl().matches(".*\\.(jpg|jpeg|png|gif)$")) {
+            return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
         }
 
         // Bỏ check quantity > 0 vì tạo catalog không cần quantity
