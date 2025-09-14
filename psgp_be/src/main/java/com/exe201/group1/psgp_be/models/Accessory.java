@@ -53,9 +53,6 @@ public class Accessory {
     int quantity;
 
     @Column(precision = 10, scale = 2)
-    BigDecimal priceBuy;
-
-    @Column(precision = 10, scale = 2)
     BigDecimal priceSell;
 
     @Enumerated(EnumType.STRING)
@@ -67,7 +64,7 @@ public class Accessory {
 
     @Column(name = "updated_at")
     LocalDateTime updatedAt;
-
+    
     @OneToMany(mappedBy = "accessory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
@@ -77,9 +74,4 @@ public class Accessory {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     List<CustomProductRequestAccessory> customProductRequestAccessoryList;
-
-    @OneToMany(mappedBy = "accessory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<StockMovement> stockMovementList;
 }

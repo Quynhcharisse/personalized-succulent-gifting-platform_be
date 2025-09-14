@@ -64,9 +64,4 @@ public class Supplier {
 
     @Column(name = "updated_at")
     LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<StockMovement> stockMovementList;
 }

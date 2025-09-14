@@ -6,17 +6,14 @@ import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
-import com.exe201.group1.psgp_be.dto.requests.ProcessSaleRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
-import com.exe201.group1.psgp_be.dto.requests.ReceiveGoodsRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierStatusRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
-import com.exe201.group1.psgp_be.models.WishlistItem;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 
@@ -44,8 +41,6 @@ public interface ProductService {
 
     ResponseEntity<ResponseObject> updateAccessory(UpdateAccessoryRequest request);
 
-    ResponseEntity<ResponseObject> receiveGoods(ReceiveGoodsRequest request);
-
     ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request);
 
     ResponseEntity<ResponseObject> viewProduct();
@@ -67,7 +62,4 @@ public interface ProductService {
     ResponseEntity<ResponseObject> removeItemFromWishList(Integer id);
 
     ResponseEntity<ResponseObject> removeAllItemsFromWishList();
-
-    // =========================== Inventory Management ========================== \\
-    ResponseEntity<ResponseObject> processSale(ProcessSaleRequest request, HttpServletRequest httpRequest);
 }

@@ -44,20 +44,20 @@ public class Product {
     @JoinColumn(name = "seller_id")
     User seller;
 
+  
     @Column(length = 200)
     String name;
 
     @Column(columnDefinition = "TEXT")
     String description;
 
+ 
     @Column(length = 50)
     String size;
 
     @Column(precision = 10, scale = 2)
     BigDecimal price;
 
-    @Column(name = "quantity_in_stock")
-    Integer quantityInStock;
 
     @Column(name = "created_at")
     LocalDateTime createdAt;
@@ -68,11 +68,6 @@ public class Product {
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     Status status;
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<ProductImage> productImageList;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude

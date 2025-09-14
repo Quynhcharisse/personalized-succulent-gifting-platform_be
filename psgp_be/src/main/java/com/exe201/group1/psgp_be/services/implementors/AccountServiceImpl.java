@@ -208,10 +208,10 @@ public class AccountServiceImpl implements AccountService {
         }
 
         long totalBuyerCount = accountRepo.countByRole(Role.BUYER);
-        
+
         Map<String, Object> data = new HashMap<>();
         data.put("totalBuyerCount", totalBuyerCount);
-        
+
         return ResponseBuilder.build(HttpStatus.OK, "Lấy tổng số tài khoản người mua thành công", data);
     }
 

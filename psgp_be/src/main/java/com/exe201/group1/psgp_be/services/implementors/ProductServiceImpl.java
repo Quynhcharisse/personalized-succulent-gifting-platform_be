@@ -6,10 +6,8 @@ import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
-import com.exe201.group1.psgp_be.dto.requests.ProcessSaleRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
-import com.exe201.group1.psgp_be.dto.requests.ReceiveGoodsRequest;
 import com.exe201.group1.psgp_be.dto.requests.SizeDetailRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
@@ -21,11 +19,9 @@ import com.exe201.group1.psgp_be.enums.AccessoryCategory;
 import com.exe201.group1.psgp_be.enums.Role;
 import com.exe201.group1.psgp_be.enums.Size;
 import com.exe201.group1.psgp_be.enums.Status;
-import com.exe201.group1.psgp_be.enums.StockMovementType;
 import com.exe201.group1.psgp_be.models.Accessory;
 import com.exe201.group1.psgp_be.models.Account;
 import com.exe201.group1.psgp_be.models.Product;
-import com.exe201.group1.psgp_be.models.StockMovement;
 import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.models.SucculentSpecies;
 import com.exe201.group1.psgp_be.models.Supplier;
@@ -33,7 +29,6 @@ import com.exe201.group1.psgp_be.models.WishlistItem;
 import com.exe201.group1.psgp_be.repositories.AccessoryRepo;
 import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
-import com.exe201.group1.psgp_be.repositories.StockMovementRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentSpeciesRepo;
 import com.exe201.group1.psgp_be.repositories.SupplierRepo;
@@ -70,7 +65,6 @@ public class ProductServiceImpl implements ProductService {
     private final AccessoryRepo accessoryRepo;
     private final SucculentSpeciesRepo succulentSpeciesRepo;
     private final SupplierRepo supplierRepo;
-    private final StockMovementRepo stockMovementRepo;
     private final ProductRepo productRepo;
     private final JWTService jwtService;
     private final AccountRepo accountRepo;
@@ -306,11 +300,81 @@ public class ProductServiceImpl implements ProductService {
         species = succulentSpeciesRepo.save(species);
 
         for (SizeDetailRequest size : request.getSizeDetailRequests()) {
-            Succulent variant = Succulent.builder().species(species).size(getSizeFromName(size.getName())).priceBuy(size.getPriceBuy()).priceSell(calculatePriceSell(size.getPriceBuy())).quantity(0).status(Status.OUT_OF_STOCK).build();
+            Succulent variant = Succulent.builder()
+                    .species(species)
+                    .size(getSizeFromName(size.getName()))
+                    .priceSell(size.getPriceBuy()) // Sử dụng priceBuy làm priceSell trực tiếp
+                    .quantity(0)
+                    .status(Status.OUT_OF_STOCK)
+                    .build();
             succulentRepo.save(variant);
         }
 
-        return ResponseBuilder.build(HttpStatus.OK, "Tạo catalog loài sen đá thành công. Vui lòng nhập hàng từ nhà cung cấp để bán.", null);
+        return ResponseBuilder.build(HttpStatus.OK, "Tạo catalog loài sen đá thành công", null);
+    }
+
+    private String validateCreateSucculent(CreateSucculentRequest request) {
+
+        if (request.getSpeciesName() == null || request.getSpeciesName().trim().isEmpty()) {
+            return "Tên loài là bắt buộc";
+        }
+
+        if (request.getSpeciesName().length() > 100) {
+            return "Tên loài không được vượt quá 100 ký tự";
+        }
+        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
+            return "Mô tả là bắt buộc";
+        }
+
+        if (request.getDescription().length() > 300) {
+            return "Mô tả không được vượt quá 300 ký tự";
+        }
+
+        if (request.getSizeDetailRequests() == null || request.getSizeDetailRequests().isEmpty()) {
+            return "Vui lòng chọn ít nhất một kích thước";
+        }
+
+        if (request.getSizeDetailRequests().size() > 5) {
+            return "Hệ thống chỉ có tối đa 5 kích thước";
+        }
+
+        for (SizeDetailRequest size : request.getSizeDetailRequests()) {
+            if (getSizeFromName(size.getName()) == null) {
+                return "Kích thước không hợp lệ: " + size.getName() + " không tồn tại trong hệ thống";
+            }
+            if (size.getPriceBuy() == null || size.getPriceBuy().compareTo(BigDecimal.ZERO) <= 0) {
+                return "Cần nhập giá bán " + request.getSpeciesName() + " cho kích thước " + size.getName() + " phải lớn hơn 0";
+            }
+            // Bỏ check quantity > 0 vì tạo catalog không cần quantity
+            if (succulentRepo.existsBySpecies_SpeciesNameIgnoreCaseAndSize(request.getSpeciesName(), getSizeFromName(size.getName()))) {
+                return "Loài " + request.getSpeciesName() + " với kích thước " + size.getName() + " đã được tạo trong hệ thống";
+            }
+        }
+        // Validate lists if provided
+        if (request.getFengShuiList() != null) {
+            for (var e : request.getFengShuiList()) {
+                if (e == null) {
+                    return "Danh sách phong thủy chứa giá trị không hợp lệ";
+                }
+            }
+        }
+        if (request.getZodiacList() != null) {
+            for (var z : request.getZodiacList()) {
+                if (z == null) {
+                    return "Danh sách cung hoàng đạo chứa giá trị không hợp lệ";
+                }
+            }
+        }
+        return "";
+    }
+
+    private Size getSizeFromName(String name) {
+        for (Size size : Size.values()) {
+            if (size.getDisplayName().equalsIgnoreCase(name)) {
+                return size;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -405,8 +469,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private void updateSucculentInfo(Succulent succulent, UpdateSucculentRequest request) {
-        succulent.setPriceBuy(request.getPriceBuy());
-        succulent.setPriceSell(calculatePriceSell(request.getPriceBuy()));
+        succulent.setPriceSell(request.getPriceBuy()); // Sử dụng priceBuy làm priceSell
         succulent.setQuantity(request.getQuantity());
     }
 
@@ -418,7 +481,6 @@ public class ProductServiceImpl implements ProductService {
         response.put("speciesName", species.getSpeciesName());
         response.put("description", species.getDescription());
         response.put("quantity", succulent.getQuantity());
-        response.put("priceBuy", succulent.getPriceBuy());
         response.put("priceSell", succulent.getPriceSell());
         response.put("size", succulent.getSize().getDisplayName());
         response.put("status", succulent.getStatus().getValue());
@@ -438,13 +500,10 @@ public class ProductServiceImpl implements ProductService {
         return response;
     }
 
-    private BigDecimal calculatePriceSell(BigDecimal priceBuy) {
-        return priceBuy.multiply(BigDecimal.valueOf(0.1)).add(priceBuy);
-    }
 
     private String validateUpdateSucculent(UpdateSucculentRequest request, Succulent current) {
         if (request.getPriceBuy() == null || request.getPriceBuy().compareTo(BigDecimal.ZERO) <= 0) {
-            return "Cần nhập giá cây lớn hơn 0";
+            return "Cần nhập giá bán lớn hơn 0";
         }
         if (request.getQuantity() < 0) {
             return "Cần nhập số lượng cây lớn hơn hoặc bằng 0";
@@ -471,71 +530,6 @@ public class ProductServiceImpl implements ProductService {
         return "";
     }
 
-    private String validateCreateSucculent(CreateSucculentRequest request) {
-
-        if (request.getSpeciesName() == null || request.getSpeciesName().trim().isEmpty()) {
-            return "Tên loài là bắt buộc";
-        }
-
-        if (request.getSpeciesName().length() > 100) {
-            return "Tên loài không được vượt quá 100 ký tự";
-        }
-        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
-            return "Mô tả là bắt buộc";
-        }
-
-        if (request.getDescription().length() > 300) {
-            return "Mô tả không được vượt quá 300 ký tự";
-        }
-
-        if (request.getSizeDetailRequests() == null || request.getSizeDetailRequests().isEmpty()) {
-            return "Vui lòng chọn ít nhất một kích thước";
-        }
-
-        if (request.getSizeDetailRequests().size() > 5) {
-            return "Hệ thống chỉ có tối đa 5 kích thước";
-        }
-
-        for (SizeDetailRequest size : request.getSizeDetailRequests()) {
-            if (getSizeFromName(size.getName()) == null) {
-                return "Kích thước không hợp lệ: " + size.getName() + " không tồn tại trong hệ thống";
-            }
-            if (size.getPriceBuy() == null || size.getPriceBuy().compareTo(BigDecimal.ZERO) <= 0) {
-                return "Cần nhập giá cây " + request.getSpeciesName() + " cho kích thước " + size.getName() + " phải lớn hơn 0";
-            }
-            // Bỏ check quantity > 0 vì tạo catalog không cần quantity
-            // Quantity sẽ được cập nhật khi nhập hàng từ nhà cung cấp
-            if (succulentRepo.existsBySpecies_SpeciesNameIgnoreCaseAndSize(request.getSpeciesName(), getSizeFromName(size.getName()))) {
-                return "Loài " + request.getSpeciesName() + " với kích thước " + size.getName() + " đã được tạo trong hệ thống";
-            }
-        }
-        // Validate lists if provided
-        if (request.getFengShuiList() != null) {
-            for (var e : request.getFengShuiList()) {
-                if (e == null) {
-                    return "Danh sách phong thủy chứa giá trị không hợp lệ";
-                }
-            }
-        }
-        if (request.getZodiacList() != null) {
-            for (var z : request.getZodiacList()) {
-                if (z == null) {
-                    return "Danh sách cung hoàng đạo chứa giá trị không hợp lệ";
-                }
-            }
-        }
-        return "";
-    }
-
-    private Size getSizeFromName(String name) {
-        for (Size size : Size.values()) {
-            if (size.getDisplayName().equalsIgnoreCase(name)) {
-                return size;
-            }
-        }
-        return null;
-    }
-
     // =========================== Accessory ========================== \\
     @Override
     public ResponseEntity<ResponseObject> createAccessory(CreateAccessoryRequest request) {
@@ -543,76 +537,22 @@ public class ProductServiceImpl implements ProductService {
         if (!error.isEmpty()) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
         }
-        accessoryRepo.save(Accessory.builder().name(request.getName()).description(request.getDescription()).category(getAccessoryCategoryFromName(request.getCategory())).priceBuy(request.getPriceBuy()).priceSell(calculatePriceSell(request.getPriceBuy())).quantity(0) // Tạo catalog trước, chưa có hàng
+        accessoryRepo.save(Accessory.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .category(getAccessoryCategoryFromName(request.getCategory()))
+                .priceSell(request.getPriceBuy()) // Sử dụng priceBuy làm priceSell trực tiếp
+                .quantity(0) // Tạo catalog trước
                 .status(Status.OUT_OF_STOCK) // Chưa có hàng để bán
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build());
-        return ResponseBuilder.build(HttpStatus.OK, "Tạo catalog phụ kiện thành công. Vui lòng nhập hàng từ nhà cung cấp để bán.", null);
+        return ResponseBuilder.build(HttpStatus.OK, "Tạo catalog phụ kiện thành công", null);
     }
 
     @Override
     public ResponseEntity<ResponseObject> getAccessories() {
         return ResponseBuilder.build(HttpStatus.OK, "Lấy danh sách catalog phụ kiện thành công", buildListAccessories(accessoryRepo.findAll(Sort.by(Sort.Direction.DESC, "id"))));
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> receiveGoods(ReceiveGoodsRequest request) {
-        String error = validateReceiveGoods(request);
-        if (!error.isEmpty()) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
-        }
-
-        // Lấy thông tin nhà cung cấp
-        Optional<Supplier> supplierOpt = supplierRepo.findById(request.getSupplierId());
-        Supplier supplier = supplierOpt.get();
-
-        // Xử lý nhập hàng cho từng item
-        for (ReceiveGoodsRequest.GoodsItem item : request.getItems()) {
-            if ("SUCCULENT".equals(item.getItemType())) {
-                Optional<Succulent> succulentOpt = succulentRepo.findById(item.getSucculentId());
-                if (succulentOpt.isPresent()) {
-                    Succulent succulent = succulentOpt.get();
-                    // Cập nhật số lượng
-                    succulent.setQuantity(succulent.getQuantity() + item.getQuantity());
-                    // Cập nhật giá mua (có thể thay đổi theo lô hàng mới)
-                    succulent.setPriceBuy(item.getPriceBuy());
-                    succulent.setPriceSell(calculatePriceSell(item.getPriceBuy()));
-
-                    // Nếu có hàng và đang OUT_OF_STOCK thì chuyển AVAILABLE
-                    if (succulent.getQuantity() > 0 && succulent.getStatus() == Status.OUT_OF_STOCK) {
-                        succulent.setStatus(Status.AVAILABLE);
-                    }
-
-                    succulentRepo.save(succulent);
-
-                    // Tạo StockMovement record
-                    StockMovement stockMovement = StockMovement.builder().movementType(StockMovementType.PURCHASE_IN).itemType("SUCCULENT").succulent(succulent).quantityChange(item.getQuantity()).unitCost(item.getPriceBuy()).supplier(supplier).referenceCode(request.getReferenceCode()).note(request.getNote()).createdBy(Role.SELLER.name()).build();
-                    stockMovementRepo.save(stockMovement);
-                }
-            } else if ("ACCESSORY".equals(item.getItemType())) {
-                Optional<Accessory> accessoryOpt = accessoryRepo.findById(item.getAccessoryId());
-                if (accessoryOpt.isPresent()) {
-                    Accessory accessory = accessoryOpt.get();
-                    // Cập nhật số lượng
-                    accessory.setQuantity(accessory.getQuantity() + item.getQuantity());
-                    // Cập nhật giá mua
-                    accessory.setPriceBuy(item.getPriceBuy());
-                    accessory.setPriceSell(calculatePriceSell(item.getPriceBuy()));
-
-                    // Nếu có hàng và đang OUT_OF_STOCK thì chuyển AVAILABLE
-                    if (accessory.getQuantity() > 0 && accessory.getStatus() == Status.OUT_OF_STOCK) {
-                        accessory.setStatus(Status.AVAILABLE);
-                    }
-
-                    accessoryRepo.save(accessory);
-
-                    // Tạo StockMovement record
-                    StockMovement stockMovement = StockMovement.builder().movementType(StockMovementType.PURCHASE_IN).itemType("ACCESSORY").accessory(accessory).quantityChange(item.getQuantity()).unitCost(item.getPriceBuy()).supplier(supplier).referenceCode(request.getReferenceCode()).note(request.getNote()).createdBy(Role.SELLER.name()).build();
-                    stockMovementRepo.save(stockMovement);
-                }
-            }
-        }
-
-        return ResponseBuilder.build(HttpStatus.OK, "Nhập hàng từ nhà cung cấp thành công", null);
     }
 
     @Override
@@ -712,8 +652,7 @@ public class ProductServiceImpl implements ProductService {
     private void updateAccessoryInfo(Accessory accessory, UpdateAccessoryRequest request) {
         accessory.setName(request.getName());
         accessory.setDescription(request.getDescription());
-        accessory.setPriceBuy(request.getPriceBuy());
-        accessory.setPriceSell(calculatePriceSell(request.getPriceBuy()));
+        accessory.setPriceSell(request.getPriceBuy()); // Sử dụng priceBuy làm priceSell
         accessory.setQuantity(request.getQuantity());
         accessory.setCategory(getAccessoryCategoryFromName(request.getCategory()));
     }
@@ -739,7 +678,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         if (request.getPriceBuy() == null || request.getPriceBuy().compareTo(BigDecimal.ZERO) <= 0) {
-            return "Cần nhập giá tiền mặt hàng lớn hơn 0";
+            return "Cần nhập giá bán mặt hàng lớn hơn 0";
         }
 
         String rawCategory = request.getCategory() == null ? "" : request.getCategory().trim();
@@ -788,10 +727,9 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // Bỏ check quantity > 0 vì tạo catalog không cần quantity
-        // Quantity sẽ được cập nhật khi nhập hàng từ nhà cung cấp
 
         if (request.getPriceBuy() == null || request.getPriceBuy().compareTo(BigDecimal.ZERO) <= 0) {
-            return "Cần nhập giá tiền mặt hàng lớn hơn 0";
+            return "Cần nhập giá bán mặt hàng lớn hơn 0";
         }
 
         if (accessoryRepo.existsByNameIgnoreCase(request.getName())) {
@@ -811,11 +749,12 @@ public class ProductServiceImpl implements ProductService {
         response.put("id", accessory.getId());
         response.put("name", accessory.getName());
         response.put("description", accessory.getDescription());
-        response.put("priceBuy", accessory.getPriceBuy());
         response.put("priceSell", accessory.getPriceSell());
         response.put("quantity", accessory.getQuantity());
         response.put("category", accessory.getCategory().getDisplayName());
         response.put("status", accessory.getStatus());
+        response.put("createdAt", accessory.getCreatedAt());
+        response.put("updatedAt", accessory.getUpdatedAt());
         return response;
     }
 
@@ -839,83 +778,6 @@ public class ProductServiceImpl implements ProductService {
         return null;
     }
 
-    private String validateReceiveGoods(ReceiveGoodsRequest request) {
-        if (request.getSupplierId() <= 0) {
-            return "ID nhà cung cấp là bắt buộc";
-        }
-
-        // Kiểm tra nhà cung cấp có tồn tại không
-        if (supplierRepo.findById(request.getSupplierId()).isEmpty()) {
-            return "Không tìm thấy nhà cung cấp với ID: " + request.getSupplierId();
-        }
-
-        if (request.getItems() == null || request.getItems().isEmpty()) {
-            return "Danh sách hàng nhập không được để trống";
-        }
-
-        // Edge case: Kiểm tra giới hạn số lượng items
-        if (request.getItems().size() > 50) {
-            return "Không thể nhập quá 50 loại hàng trong một lần";
-        }
-
-        for (ReceiveGoodsRequest.GoodsItem item : request.getItems()) {
-            if (item.getItemType() == null || item.getItemType().trim().isEmpty()) {
-                return "Loại hàng (SUCCULENT/ACCESSORY) là bắt buộc";
-            }
-
-            if (!"SUCCULENT".equals(item.getItemType()) && !"ACCESSORY".equals(item.getItemType())) {
-                return "Loại hàng không hợp lệ. Chỉ chấp nhận SUCCULENT hoặc ACCESSORY";
-            }
-
-            if (item.getQuantity() <= 0) {
-                return "Số lượng nhập phải lớn hơn 0";
-            }
-
-            // Edge case: Kiểm tra giới hạn số lượng nhập
-            if (item.getQuantity() > 10000) {
-                return "Số lượng nhập không được vượt quá 10,000 đơn vị cho một loại hàng";
-            }
-
-            if (item.getPriceBuy() == null || item.getPriceBuy().compareTo(BigDecimal.ZERO) <= 0) {
-                return "Giá mua phải lớn hơn 0";
-            }
-
-            // Edge case: Kiểm tra giới hạn giá mua
-            if (item.getPriceBuy().compareTo(BigDecimal.valueOf(10000000)) > 0) {
-                return "Giá mua không được vượt quá 10,000,000 VNĐ cho một đơn vị";
-            }
-
-            if ("SUCCULENT".equals(item.getItemType())) {
-                if (item.getSucculentId() <= 0) {
-                    return "ID sen đá là bắt buộc cho loại SUCCULENT";
-                }
-                if (succulentRepo.findById(item.getSucculentId()).isEmpty()) {
-                    return "Không tìm thấy sen đá với ID: " + item.getSucculentId();
-                }
-
-                // Edge case: Kiểm tra trạng thái sen đá có thể nhập hàng không
-                Succulent succulent = succulentRepo.findById(item.getSucculentId()).get();
-                if (succulent.getStatus() == Status.UNAVAILABLE) {
-                    return "Không thể nhập hàng cho sen đá đang ở trạng thái 'Ngưng nhập hàng'";
-                }
-            } else {
-                if (item.getAccessoryId() <= 0) {
-                    return "ID phụ kiện là bắt buộc cho loại ACCESSORY";
-                }
-                if (accessoryRepo.findById(item.getAccessoryId()).isEmpty()) {
-                    return "Không tìm thấy phụ kiện với ID: " + item.getAccessoryId();
-                }
-
-                // Edge case: Kiểm tra trạng thái phụ kiện có thể nhập hàng không
-                Accessory accessory = accessoryRepo.findById(item.getAccessoryId()).get();
-                if (accessory.getStatus() == Status.UNAVAILABLE) {
-                    return "Không thể nhập hàng cho phụ kiện đang ở trạng thái 'Ngưng nhập hàng'";
-                }
-            }
-        }
-
-        return "";
-    }
 
     // =========================== Product ========================== \\
     @Override
@@ -926,7 +788,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // Tạo sản phẩm mới
-        Product product = Product.builder().name(request.getName().trim()).description(request.getDescription().trim()).size(request.getSize().trim()).price(request.getPrice()).quantityInStock(request.getQuantityInStock()).status(getStatusFromString(request.getStatus())).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+        Product product = Product.builder().name(request.getName().trim()).description(request.getDescription().trim()).size(request.getSize().trim()).price(request.getPrice()).status(getStatusFromString(request.getStatus())).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
         product = productRepo.save(product);
 
@@ -962,7 +824,6 @@ public class ProductServiceImpl implements ProductService {
         product.setDescription(request.getDescription().trim());
         product.setSize(request.getSize().trim());
         product.setPrice(request.getPrice());
-        product.setQuantityInStock(request.getQuantityInStock());
         product.setStatus(getStatusFromString(request.getStatus()));
         product.setUpdatedAt(LocalDateTime.now());
 
@@ -995,9 +856,6 @@ public class ProductServiceImpl implements ProductService {
         }
         if (request.getPrice() == null || request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
             return "Giá sản phẩm phải lớn hơn 0";
-        }
-        if (request.getQuantityInStock() == null || request.getQuantityInStock() < 0) {
-            return "Số lượng tồn kho phải lớn hơn hoặc bằng 0";
         }
         if (request.getStatus() == null || request.getStatus().trim().isEmpty()) {
             return "Trạng thái sản phẩm là bắt buộc";
@@ -1034,9 +892,6 @@ public class ProductServiceImpl implements ProductService {
         if (request.getPrice() == null || request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
             return "Giá sản phẩm phải lớn hơn 0";
         }
-        if (request.getQuantityInStock() == null || request.getQuantityInStock() < 0) {
-            return "Số lượng tồn kho phải lớn hơn hoặc bằng 0";
-        }
         if (request.getStatus() == null || request.getStatus().trim().isEmpty()) {
             return "Trạng thái sản phẩm là bắt buộc";
         }
@@ -1065,7 +920,6 @@ public class ProductServiceImpl implements ProductService {
         response.put("description", product.getDescription());
         response.put("size", product.getSize());
         response.put("price", product.getPrice());
-        response.put("quantityInStock", product.getQuantityInStock());
         response.put("status", product.getStatus().getValue());
         response.put("createdAt", product.getCreatedAt());
         response.put("updatedAt", product.getUpdatedAt());
@@ -1081,109 +935,7 @@ public class ProductServiceImpl implements ProductService {
         return response;
     }
 
-
-    // =========================== Custom Request ========================== \\
-    @Override
-    public ResponseEntity<ResponseObject> customRequestListByBuyer(HttpServletRequest request) {
-        return null;
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> createCustomRequest(CreateCustomRequest request) {
-        return null;
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> updateCustomRequest(UpdateCustomRequestRequest request) {
-        return null;
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> deleteCustomRequest(DeleteCustomRequestRequest request) {
-        return null;
-    }
-
-
     // =========================== Inventory Management ========================== \\
-    @Override
-    public ResponseEntity<ResponseObject> processSale(ProcessSaleRequest request, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-        if (request.getQuantity() <= 0) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Số lượng bán phải lớn hơn 0", null);
-        }
-
-        // Kiểm tra tồn kho hiện tại
-        Integer currentStock = 0;
-        String itemName = "";
-        BigDecimal unitCost = BigDecimal.ZERO;
-
-        if ("SUCCULENT".equals(request.getItemType())) {
-            Optional<Succulent> succulentOpt = succulentRepo.findById(request.getItemId());
-            if (succulentOpt.isEmpty()) {
-                return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy sen đá với ID: " + request.getItemId(), null);
-            }
-            Succulent succulent = succulentOpt.get();
-            currentStock = stockMovementRepo.getTotalQuantityChangeBySucculentId(request.getItemId());
-            itemName = succulent.getSpecies().getSpeciesName() + " - " + succulent.getSize().getDisplayName();
-            unitCost = succulent.getPriceSell();
-        } else if ("ACCESSORY".equals(request.getItemType())) {
-            Optional<Accessory> accessoryOpt = accessoryRepo.findById(request.getItemId());
-            if (accessoryOpt.isEmpty()) {
-                return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy phụ kiện với ID: " + request.getItemId(), null);
-            }
-            Accessory accessory = accessoryOpt.get();
-            currentStock = stockMovementRepo.getTotalQuantityChangeByAccessoryId(request.getItemId());
-            itemName = accessory.getName();
-            unitCost = accessory.getPriceSell();
-        } else {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Loại sản phẩm không hợp lệ", null);
-        }
-
-        if (currentStock < request.getQuantity()) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Không đủ tồn kho. Tồn kho hiện tại: " + currentStock + ", yêu cầu bán: " + request.getQuantity(), null);
-        }
-
-        // Tạo StockMovement cho việc bán hàng
-        StockMovement saleMovement = StockMovement.builder().movementType(StockMovementType.SALE_OUT).itemType(request.getItemType()).quantityChange(-request.getQuantity()).unitCost(unitCost).referenceCode(request.getOrderId()).note("Bán hàng cho khách").createdBy(account.getEmail()).createdAt(LocalDateTime.now()).build();
-
-        if ("SUCCULENT".equals(request.getItemType())) {
-            Optional<Succulent> succulentOpt = succulentRepo.findById(request.getItemId());
-            if (succulentOpt.isPresent()) {
-                saleMovement.setSucculent(succulentOpt.get());
-                // Cập nhật tồn kho
-                Succulent succulent = succulentOpt.get();
-                succulent.setQuantity(succulent.getQuantity() - request.getQuantity());
-                succulentRepo.save(succulent);
-            }
-        } else if ("ACCESSORY".equals(request.getItemType())) {
-            Optional<Accessory> accessoryOpt = accessoryRepo.findById(request.getItemId());
-            if (accessoryOpt.isPresent()) {
-                saleMovement.setAccessory(accessoryOpt.get());
-                // Cập nhật tồn kho
-                Accessory accessory = accessoryOpt.get();
-                accessory.setQuantity(accessory.getQuantity() - request.getQuantity());
-                accessoryRepo.save(accessory);
-            }
-        }
-
-        stockMovementRepo.save(saleMovement);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("itemId", request.getItemId());
-        data.put("itemType", request.getItemType());
-        data.put("itemName", itemName);
-        data.put("quantitySold", request.getQuantity());
-        data.put("unitCost", unitCost);
-        data.put("totalAmount", unitCost.multiply(BigDecimal.valueOf(request.getQuantity())));
-        data.put("remainingStock", currentStock - request.getQuantity());
-        data.put("orderId", request.getOrderId());
-
-        return ResponseBuilder.build(HttpStatus.OK, "Xử lý bán hàng thành công", data);
-    }
 
     // =========================== BUYER ========================== \\
     // =========================== WishList ========================== \\
@@ -1233,6 +985,7 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.OK, "Xóa toàn bộ sản phẩm khỏi wishlist thành công", null);
     }
 
+
     private Map<String, Object> buildItemFromWishList(WishlistItem item) {
         Map<String, Object> result = new HashMap<>();
         if (item.getProduct() != null) {
@@ -1240,7 +993,6 @@ public class ProductServiceImpl implements ProductService {
             result.put("name", item.getProduct().getName());
             result.put("description", item.getProduct().getDescription());
             result.put("price", item.getProduct().getPrice());
-            result.put("quantityInStock", item.getProduct().getQuantityInStock());
             result.put("status", item.getProduct().getStatus());
         }
         return result;
@@ -1256,4 +1008,24 @@ public class ProductServiceImpl implements ProductService {
         return result;
     }
 
+    // =========================== Custom Request ========================== \\
+    @Override
+    public ResponseEntity<ResponseObject> customRequestListByBuyer(HttpServletRequest request) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> createCustomRequest(CreateCustomRequest request) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> updateCustomRequest(UpdateCustomRequestRequest request) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> deleteCustomRequest(DeleteCustomRequestRequest request) {
+        return null;
+    }
 }
