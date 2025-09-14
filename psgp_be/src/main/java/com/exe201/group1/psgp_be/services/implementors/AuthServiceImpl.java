@@ -52,11 +52,11 @@ public class AuthServiceImpl implements AuthService {
         Account account = accountRepo.findByEmail(request.getEmail()).orElse(null);
         AccountRequest accountRequest = accountRequestRepo.findByEmail(request.getEmail()).orElse(null);
 
-        if(accountRequest != null){
+        if (accountRequest != null) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Email này đã được yêu cầu làm đối tác", null);
         }
 
-        if(request.getEmail() == null || request.getEmail().isEmpty()){
+        if (request.getEmail() == null || request.getEmail().isEmpty()) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Email là bắt buộc", null);
         }
 

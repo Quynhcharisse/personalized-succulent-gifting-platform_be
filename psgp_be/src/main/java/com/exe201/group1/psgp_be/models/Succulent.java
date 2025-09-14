@@ -55,9 +55,6 @@ public class Succulent {
     int quantity;
 
     @Column(precision = 10, scale = 2)
-    BigDecimal priceBuy;
-
-    @Column(precision = 10, scale = 2)
     BigDecimal priceSell;
 
     @OneToMany(mappedBy = "succulent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -69,9 +66,4 @@ public class Succulent {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     List<CustomProductRequestSucculent> customProductRequestSucculentList;
-
-    @OneToMany(mappedBy = "succulent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<StockMovement> stockMovementList;
 }
