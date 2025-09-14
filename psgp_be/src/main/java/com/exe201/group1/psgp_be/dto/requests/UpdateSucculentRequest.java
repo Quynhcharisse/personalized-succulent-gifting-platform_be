@@ -19,4 +19,5 @@ public class UpdateSucculentRequest {
     int quantity;
     BigDecimal priceSell;
     String status;
+    String imageUrl;
 }
