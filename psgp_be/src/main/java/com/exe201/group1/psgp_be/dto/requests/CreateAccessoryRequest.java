@@ -18,5 +18,5 @@ public class CreateAccessoryRequest {
     String name;
     String description;
     String category;
-    BigDecimal priceBuy;
+    BigDecimal priceSell;
 }
