@@ -39,7 +39,7 @@ public class StockMovement {
     @Column(name = "movement_type")
     StockMovementType movementType;
 
-    @Column(name = "item_type", length = 20) // SUCCULENT hoặc ACCESSORY
+    @Column(name = "item_type", length = 20)
     String itemType;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -61,7 +61,7 @@ public class StockMovement {
     Supplier supplier;
 
     @Column(name = "reference_code", length = 100)
-    String referenceCode; // Mã hóa đơn, mã đơn hàng...
+    String referenceCode;
 
     @Column(name = "note", length = 500)
     String note;

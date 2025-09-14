@@ -5,6 +5,7 @@ import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
+import com.exe201.group1.psgp_be.dto.requests.ProcessSaleRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ReceiveGoodsRequest;
@@ -56,4 +57,7 @@ public interface ProductService {
     ResponseEntity<ResponseObject> updateCustomRequest(UpdateCustomRequestRequest request);
 
     ResponseEntity<ResponseObject> deleteCustomRequest(DeleteCustomRequestRequest request);
+
+    // =========================== Inventory Management ========================== \\
+    ResponseEntity<ResponseObject> processSale(ProcessSaleRequest request, HttpServletRequest httpRequest);
 }
