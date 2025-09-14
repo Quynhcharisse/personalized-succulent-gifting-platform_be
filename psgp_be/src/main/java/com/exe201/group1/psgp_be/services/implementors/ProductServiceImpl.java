@@ -1,5 +1,6 @@
 package com.exe201.group1.psgp_be.services.implementors;
 
+import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
@@ -28,6 +29,7 @@ import com.exe201.group1.psgp_be.models.SucculentSpecies;
 import com.exe201.group1.psgp_be.models.Supplier;
 import com.exe201.group1.psgp_be.models.StockMovement;
 import com.exe201.group1.psgp_be.enums.StockMovementType;
+import com.exe201.group1.psgp_be.models.WishlistItem;
 import com.exe201.group1.psgp_be.repositories.AccessoryRepo;
 import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
@@ -35,16 +37,19 @@ import com.exe201.group1.psgp_be.repositories.SucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentSpeciesRepo;
 import com.exe201.group1.psgp_be.repositories.StockMovementRepo;
 import com.exe201.group1.psgp_be.repositories.SupplierRepo;
+import com.exe201.group1.psgp_be.repositories.WishListItemRepo;
 import com.exe201.group1.psgp_be.services.JWTService;
 import com.exe201.group1.psgp_be.services.ProductService;
 import com.exe201.group1.psgp_be.utils.CookieUtil;
 import com.exe201.group1.psgp_be.utils.EntityResponseBuilder;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -69,6 +74,8 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepo productRepo;
     private final JWTService jwtService;
     private final AccountRepo accountRepo;
+    private final WishListItemRepo wishListItemRepo;
+    private final ProductRepo productRepo;
 
     // =========================== Supplier ========================== \\
     @Override
@@ -1236,7 +1243,7 @@ public class ProductServiceImpl implements ProductService {
         response.put("status", product.getStatus().getValue());
         response.put("createdAt", product.getCreatedAt());
         response.put("updatedAt", product.getUpdatedAt());
-        
+
         // Thêm thông tin seller nếu có
         if (product.getSeller() != null) {
             Map<String, Object> sellerInfo = new HashMap<>();
@@ -1244,7 +1251,7 @@ public class ProductServiceImpl implements ProductService {
             sellerInfo.put("name", product.getSeller().getName());
             response.put("seller", sellerInfo);
         }
-        
+
         return response;
     }
 
@@ -1281,7 +1288,7 @@ public class ProductServiceImpl implements ProductService {
         List<Map<String, Object>> data = products.stream()
                 .map(this::buildProductDetail)
                 .toList();
-        
+
         return ResponseBuilder.build(HttpStatus.OK, "Lấy danh sách sản phẩm thành công", data);
     }
 
@@ -1336,6 +1343,7 @@ public class ProductServiceImpl implements ProductService {
         return null;
     }
 
+
     // =========================== Inventory Management ========================== \\
     @Override
     public ResponseEntity<ResponseObject> processSale(ProcessSaleRequest request, HttpServletRequest httpRequest) {
@@ -1376,8 +1384,8 @@ public class ProductServiceImpl implements ProductService {
         }
 
         if (currentStock < request.getQuantity()) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, 
-                "Không đủ tồn kho. Tồn kho hiện tại: " + currentStock + ", yêu cầu bán: " + request.getQuantity(), null);
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                    "Không đủ tồn kho. Tồn kho hiện tại: " + currentStock + ", yêu cầu bán: " + request.getQuantity(), null);
         }
 
         // Tạo StockMovement cho việc bán hàng
@@ -1426,5 +1434,105 @@ public class ProductServiceImpl implements ProductService {
 
         return ResponseBuilder.build(HttpStatus.OK, "Xử lý bán hàng thành công", data);
     }
-    
+
+    // =========================== BUYER ========================== \\
+
+    // =========================== Wish List ========================== \\
+
+    @Override
+    public ResponseEntity<ResponseObject> addItemToWishList(AddWishListItemRequest item) {
+        Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (productRepo.findById(item.getProductId()).isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ResponseObject.builder()
+                            .data(null)
+                            .message("Không tìm thấy sản phẩm với id: " + item.getProductId())
+                            .build()
+            );
+        }
+
+        Product product = productRepo.findById(item.getProductId()).get();
+        if(wishListItemRepo.findByProductIdAndWishlistId(item.getProductId(), account.getUser().getWishlist().getId()).isPresent()){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ResponseObject.builder()
+                    .message("Sản phẩm đã tồn tại trong wishlist")
+                    .data(null)
+                    .build());
+        }
+        wishListItemRepo.save(WishlistItem.builder().product(product).wishlist(account.getUser().getWishlist()).build());
+        return ResponseEntity.ok(ResponseObject.builder()
+                .message("Thêm sản phẩm vô wish list thành công")
+                        .data(null)
+                .build());
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getItemsFromWishList() {
+
+        Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        return ResponseEntity.ok(
+          ResponseObject.builder()
+                  .data(buildListItemsFromWishList(wishListItemRepo.findAllByWishlist(account.getUser().getWishlist())))
+                  .message("Hiển thị danh sách sản phẩm trong wish list thành công")
+                  .build()
+        );
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> removeItemFromWishList(Integer id) {
+
+        Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Optional<WishlistItem> item = wishListItemRepo.findByProductIdAndWishlistId(id, account.getUser().getWishlist().getId());
+        if(item.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+              ResponseObject.builder()
+                      .message("Sản phẩm không tồn tại trong wishlist")
+                      .build()
+            );
+        }
+        wishListItemRepo.delete(item.get());
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .message("Xóa sản phẩm khỏi wishlist thành công")
+                        .build()
+        );
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<ResponseObject> removeAllItemsFromWishList() {
+        Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        wishListItemRepo.removeAllByWishlist(account.getUser().getWishlist());
+        return ResponseEntity.ok(
+                ResponseObject.builder()
+                        .message("Xóa toàn bộ sản phẩm khỏi wishlist thành công")
+                        .build()
+        );
+    }
+
+    private Map<String, Object> buildItemFromWishList(WishlistItem item){
+        Map<String, Object> result = new HashMap<>();
+        if(item.getProduct() != null) {
+            result.put("productId", item.getProduct().getId());
+            result.put("name", item.getProduct().getName());
+            result.put("description", item.getProduct().getDescription());
+            result.put("price", item.getProduct().getPrice());
+            result.put("quantityInStock", item.getProduct().getQuantityInStock());
+            result.put("status", item.getProduct().getStatus());
+        }
+        return result;
+    }
+
+    private List<Map<String, Object>> buildListItemsFromWishList(List<WishlistItem> items){
+        List<Map<String, Object>> result = new ArrayList<>();
+        for(WishlistItem item : items) {
+            if(!buildItemFromWishList(item).isEmpty()) {
+                result.add(buildItemFromWishList(item));
+            }
+        }
+        return result;
+    }
+
 }

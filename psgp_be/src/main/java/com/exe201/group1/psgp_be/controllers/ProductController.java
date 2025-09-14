@@ -1,5 +1,6 @@
 package com.exe201.group1.psgp_be.controllers;
 
+import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -153,6 +155,31 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> getTotalSupplierCount(HttpServletRequest httpRequest) {
         return productService.getTotalSupplierCount(httpRequest);
+    }
+
+    //=================== wish list =====================\\
+    @PostMapping("/wishlist/item")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<ResponseObject> addItemToWishList(@RequestBody AddWishListItemRequest request) {
+        return productService.addItemToWishList(request);
+    }
+
+    @GetMapping("/wishlist/items")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<ResponseObject> getItemsFromWishList() {
+        return productService.getItemsFromWishList();
+    }
+
+    @DeleteMapping("/wishlist/item")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<ResponseObject> removeItemFromWishList(@RequestParam Integer productId) {
+        return productService.removeItemFromWishList(productId);
+    }
+
+    @DeleteMapping("/wishlist/items")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<ResponseObject> removeAllItemsFromWishList() {
+        return productService.removeAllItemsFromWishList();
     }
 
     //=================== Inventory Management =====================\\
