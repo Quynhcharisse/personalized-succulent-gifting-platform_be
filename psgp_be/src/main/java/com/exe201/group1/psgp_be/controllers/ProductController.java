@@ -6,10 +6,8 @@ import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
-import com.exe201.group1.psgp_be.dto.requests.ProcessSaleRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
-import com.exe201.group1.psgp_be.dto.requests.ReceiveGoodsRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
@@ -100,13 +98,6 @@ public class ProductController {
         return productService.updateAccessory(request);
     }
 
-    //================== Nhập hàng từ NCC ====================\\
-    @PostMapping("/receive-goods")
-    @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> receiveGoods(@RequestBody ReceiveGoodsRequest request) {
-        return productService.receiveGoods(request);
-    }
-
     //=================== Product =====================\\
     @PostMapping("/")
     @PreAuthorize("hasRole('SELLER')")
@@ -150,7 +141,7 @@ public class ProductController {
     public ResponseEntity<ResponseObject> deleteCustomRequest(@RequestBody DeleteCustomRequestRequest request) {
         return productService.deleteCustomRequest(request);
     }
-    
+
     @GetMapping("/stats/supplier")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseObject> getTotalSupplierCount(HttpServletRequest httpRequest) {
@@ -180,12 +171,5 @@ public class ProductController {
     @PreAuthorize("hasRole('BUYER')")
     public ResponseEntity<ResponseObject> removeAllItemsFromWishList() {
         return productService.removeAllItemsFromWishList();
-    }
-
-    //=================== Inventory Management =====================\\
-    @PostMapping("/sale/process")
-    @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> processSale(@RequestBody ProcessSaleRequest request, HttpServletRequest httpRequest) {
-        return productService.processSale(request, httpRequest);
     }
 }
