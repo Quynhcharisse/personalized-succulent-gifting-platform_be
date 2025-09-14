@@ -19,4 +19,5 @@ public class CreateAccessoryRequest {
     String description;
     String category;
     BigDecimal priceSell;
+    String imageUrl;
 }

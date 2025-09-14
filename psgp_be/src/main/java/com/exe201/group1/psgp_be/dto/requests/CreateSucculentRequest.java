@@ -19,6 +19,7 @@ import java.util.List;
 public class CreateSucculentRequest {
     String speciesName;
     String description;
+    String imageUrl;
     List<FengShui> fengShuiList;
     List<Zodiac> zodiacList;
     List<SizeDetailRequest> sizeDetailRequests;

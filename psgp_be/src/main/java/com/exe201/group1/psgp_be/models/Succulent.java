@@ -57,6 +57,8 @@ public class Succulent {
     @Column(precision = 10, scale = 2)
     BigDecimal priceSell;
 
+    String imageUrl;
+
     @OneToMany(mappedBy = "succulent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

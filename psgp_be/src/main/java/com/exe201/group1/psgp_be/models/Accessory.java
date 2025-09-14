@@ -65,6 +65,9 @@ public class Accessory {
     @Column(name = "updated_at")
     LocalDateTime updatedAt;
     
+    @Column(name = "image_url", length = 500)
+    String imageUrl;
+
     @OneToMany(mappedBy = "accessory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
