@@ -7,19 +7,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UpdateAccessoryRequest {
-    int id;
-    String name;
-    String description;
-    int quantity;
-    String category;
-    BigDecimal priceSell;
+public class UpdateProductImageRequest {
+    Integer id;
     String imageUrl;
+    String altText;
+    Boolean isPrimary;
+    Integer displayOrder;
 }

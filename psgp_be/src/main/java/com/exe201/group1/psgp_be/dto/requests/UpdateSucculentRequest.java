@@ -17,7 +17,8 @@ import java.math.BigDecimal;
 public class UpdateSucculentRequest {
     int id;
     int quantity;
+    String name;
+    String description;
     BigDecimal priceSell;
-    String status;
     String imageUrl;
 }

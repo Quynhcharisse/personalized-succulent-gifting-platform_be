@@ -10,7 +10,6 @@ public enum Status {
     //----------Succulent, Assessory, Product Status---------//
     AVAILABLE("Đang còn hàng"),
     OUT_OF_STOCK("Hết hàng"),
-    UNAVAILABLE("Ngưng nhập hàng"),
 
     //----------Supplier Status---------//
     ACTIVE("Đang hoạt động"),
