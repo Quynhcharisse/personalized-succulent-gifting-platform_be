@@ -525,6 +525,7 @@ public class ProductServiceImpl implements ProductService {
         var species = succulent.getSpecies();
         response.put("id", succulent.getId());
         response.put("speciesId", species.getId());
+        response.put("imageUrl", succulent.getImageUrl());
         response.put("speciesName", species.getSpeciesName());
         response.put("description", species.getDescription());
         response.put("quantity", succulent.getQuantity());
