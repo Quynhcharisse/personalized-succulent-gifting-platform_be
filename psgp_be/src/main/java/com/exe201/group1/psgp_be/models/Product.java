@@ -58,6 +58,7 @@ public class Product {
     @Column(precision = 10, scale = 2)
     BigDecimal price;
 
+    String imageUrl;
 
     @Column(name = "created_at")
     LocalDateTime createdAt;
@@ -93,4 +94,9 @@ public class Product {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     List<WishlistItem> wishlistItemList;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    List<ProductImage> productImages;
 } 
