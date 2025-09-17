@@ -1,5 +1,6 @@
 package com.exe201.group1.psgp_be.dto.requests;
 
+import com.exe201.group1.psgp_be.enums.Size;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,4 +25,5 @@ public class ProductCreateRequest {
     String status;
     List<Integer> succulentIds;
     List<Integer> accessoryIds;
+    List<CreateProductImageRequest> images;
 }

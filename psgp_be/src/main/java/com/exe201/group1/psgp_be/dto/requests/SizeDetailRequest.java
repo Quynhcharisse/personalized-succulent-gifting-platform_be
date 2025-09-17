@@ -17,4 +17,5 @@ import java.math.BigDecimal;
 public class SizeDetailRequest {
     String name;     
     BigDecimal priceSell;
+    int quantity;
 }
