@@ -6,7 +6,6 @@ import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
-import com.exe201.group1.psgp_be.dto.requests.DeleteProductRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
@@ -48,7 +47,7 @@ public interface ProductService {
 
     ResponseEntity<ResponseObject> updateProduct(ProductUpdateRequest request, HttpServletRequest httpRequest);
     
-    ResponseEntity<ResponseObject> deleteProduct(DeleteProductRequest request, HttpServletRequest httpRequest);
+    ResponseEntity<ResponseObject> deleteProduct(int id, HttpServletRequest httpRequest);
 
     ResponseEntity<ResponseObject> customRequestListByBuyer(HttpServletRequest request);
 
