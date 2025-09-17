@@ -57,6 +57,11 @@ public class Account implements UserDetails {
     @ToString.Exclude
     User user;
 
+    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    Wallet wallet;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return role.getAuthorities();
