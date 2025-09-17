@@ -7,7 +7,6 @@ import com.exe201.group1.psgp_be.dto.requests.CreateProductImageRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
-import com.exe201.group1.psgp_be.dto.requests.DeleteProductRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
 import com.exe201.group1.psgp_be.dto.requests.SizeDetailRequest;
@@ -1295,7 +1294,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ResponseEntity<ResponseObject> deleteProduct(DeleteProductRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<ResponseObject> deleteProduct(int id, HttpServletRequest httpRequest) {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
 
         if (account == null) {
@@ -1306,7 +1305,7 @@ public class ProductServiceImpl implements ProductService {
             return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Chỉ có Seller mới có quyền cập nhật trạng thái sản phẩm", null);
         }
 
-        Product product = productRepo.findById(request.getId()).orElse(null);
+        Product product = productRepo.findById(id).orElse(null);
         if (product == null) {
             return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm", null);
         }
