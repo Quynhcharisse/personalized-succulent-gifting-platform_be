@@ -6,6 +6,7 @@ import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
+import com.exe201.group1.psgp_be.dto.requests.DeleteProductRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
@@ -63,58 +64,64 @@ public class ProductController {
     //=================== succulent =====================\\
     @GetMapping("/succulents")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> viewSucculentList() {
-        return productService.viewSucculentList();
+    public ResponseEntity<ResponseObject> viewSucculentList(HttpServletRequest httpRequest) {
+        return productService.viewSucculentList(httpRequest);
     }
 
     @PostMapping("/succulent")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> createSucculent(@RequestBody CreateSucculentRequest request) {
-        return productService.createSucculent(request);
+    public ResponseEntity<ResponseObject> createSucculent(@RequestBody CreateSucculentRequest request, HttpServletRequest httpRequest) {
+        return productService.createSucculent(request, httpRequest);
     }
 
     @PutMapping("/succulent")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> updateSucculent(@RequestBody UpdateSucculentRequest request) {
-        return productService.updateSucculent(request);
+    public ResponseEntity<ResponseObject> updateSucculent(@RequestBody UpdateSucculentRequest request, HttpServletRequest httpRequest) {
+        return productService.updateSucculent(request, httpRequest);
     }
 
     //=================== Accessory =====================\\
     @GetMapping("/accessories")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> getAccessories() {
-        return productService.getAccessories();
+    public ResponseEntity<ResponseObject> getAccessories(HttpServletRequest httpRequest) {
+        return productService.getAccessories(httpRequest);
     }
 
     @PostMapping("/accessory")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> createAccessory(@RequestBody CreateAccessoryRequest request) {
-        return productService.createAccessory(request);
+    public ResponseEntity<ResponseObject> createAccessory(@RequestBody CreateAccessoryRequest request, HttpServletRequest httpRequest) {
+        return productService.createAccessory(request, httpRequest);
     }
 
     @PutMapping("/accessory")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> updateAccessory(@RequestBody UpdateAccessoryRequest request) {
-        return productService.updateAccessory(request);
+    public ResponseEntity<ResponseObject> updateAccessory(@RequestBody UpdateAccessoryRequest request, HttpServletRequest httpRequest) {
+        return productService.updateAccessory(request, httpRequest);
     }
 
     //=================== Product =====================\\
     @PostMapping("/")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> createProduct(@RequestBody ProductCreateRequest request) {
-        return productService.createProduct(request);
+    public ResponseEntity<ResponseObject> createProduct(@RequestBody ProductCreateRequest request, HttpServletRequest httpRequest) {
+        return productService.createProduct(request, httpRequest);
     }
 
     @GetMapping("/")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> viewProduct() {
-        return productService.viewProduct();
+    public ResponseEntity<ResponseObject> viewProduct(HttpServletRequest httpRequest) {
+        return productService.viewProduct(httpRequest);
     }
 
     @PutMapping("/")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> updateProduct(@RequestBody ProductUpdateRequest request) {
-        return productService.updateProduct(request);
+    public ResponseEntity<ResponseObject> updateProduct(@RequestBody ProductUpdateRequest request, HttpServletRequest httpRequest) {
+        return productService.updateProduct(request, httpRequest);
+    }
+
+    @PutMapping("/")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> deleteProduct(@RequestBody DeleteProductRequest request, HttpServletRequest httpRequest) {
+        return productService.deleteProduct(request, httpRequest);
     }
 
     //=================== custom request =====================\\
