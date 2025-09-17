@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface ProductSucculentRepo extends JpaRepository<ProductSucculent, Integer> {
     List<ProductSucculent> findByProductId(Integer productId);
+    void deleteByProductId(Integer productId);
 }

@@ -25,4 +25,5 @@ public class ProductUpdateRequest {
     String status;
     List<Integer> succulentIds;
     List<Integer> accessoryIds;
+    List<CreateProductImageRequest> images;
 }

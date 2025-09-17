@@ -1,6 +1,7 @@
 package com.exe201.group1.psgp_be.models;
 
 import com.exe201.group1.psgp_be.enums.Status;
+import com.exe201.group1.psgp_be.enums.Size;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,11 +53,14 @@ public class Product {
     String description;
 
  
-    @Column(length = 50)
-    String size;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    Size size; // Kích thước tổng thể của bộ sản phẩm (đối vs UI sẽ select size)
 
     @Column(precision = 10, scale = 2)
     BigDecimal price;
+
+    int quantity;
 
     String imageUrl;
 
@@ -99,4 +103,4 @@ public class Product {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     List<ProductImage> productImages;
-} 
+}
