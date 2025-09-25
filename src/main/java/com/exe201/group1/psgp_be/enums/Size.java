@@ -22,4 +22,13 @@ public enum Size {
     XXL("18–20cm");
 
     private final String displayName;
+
+    public static Size fromDisplayName(String displayName) {
+        for (Size size : Size.values()) {
+            if (displayName.equals(size.displayName)) {
+                return size;
+            }
+        }
+        return null;
+    }
 }

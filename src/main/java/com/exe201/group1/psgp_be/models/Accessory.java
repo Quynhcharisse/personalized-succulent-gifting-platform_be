@@ -22,7 +22,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -52,8 +51,10 @@ public class Accessory {
     @Column
     int quantity;
 
+    double weight;
+
     @Column(precision = 10, scale = 2)
-    BigDecimal priceSell;
+    long priceSell;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
@@ -64,7 +65,7 @@ public class Accessory {
 
     @Column(name = "updated_at")
     LocalDateTime updatedAt;
-    
+
     @Column(name = "image_url", length = 500)
     String imageUrl;
 
