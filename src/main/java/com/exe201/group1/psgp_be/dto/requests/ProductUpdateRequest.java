@@ -20,7 +20,7 @@ public class ProductUpdateRequest {
     String name;
     String description;
     String size;
-    BigDecimal price;
+    long price;
     Integer quantityInStock;
     String status;
     List<Integer> succulentIds;

@@ -31,10 +31,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    @Value("${jwt.expiration.access-token}")
+    @Value("${jwt.expiration.access}")
     private long accessExpiration;
 
-    @Value("${jwt.expiration.refresh-token}")
+    @Value("${jwt.expiration.refresh}")
     private long refreshExpiration;
 
     private final AccountRepo accountRepo;
