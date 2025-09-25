@@ -16,6 +16,6 @@ public class CreateProductImageRequest {
     Integer productId;
     String imageUrl;
     String altText;
-    Boolean isPrimary;
+    boolean primary;
     Integer displayOrder;
 }

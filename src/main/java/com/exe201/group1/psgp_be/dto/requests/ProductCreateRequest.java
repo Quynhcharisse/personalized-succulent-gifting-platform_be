@@ -1,6 +1,5 @@
 package com.exe201.group1.psgp_be.dto.requests;
 
-import com.exe201.group1.psgp_be.enums.Size;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @NoArgsConstructor
@@ -20,7 +18,7 @@ public class ProductCreateRequest {
     String name;
     String description;
     String size;
-    BigDecimal price;
+    long price;
     Integer quantityInStock;
     String status;
     List<Integer> succulentIds;

@@ -46,13 +46,13 @@ import com.exe201.group1.psgp_be.utils.CookieUtil;
 import com.exe201.group1.psgp_be.utils.EntityResponseBuilder;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -289,6 +289,7 @@ public class ProductServiceImpl implements ProductService {
 
     // =========================== Succulent ========================== \\
     @Override
+    @Transactional
     public ResponseEntity<ResponseObject> createSucculent(CreateSucculentRequest request, HttpServletRequest httpRequest) {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
 
@@ -304,12 +305,9 @@ public class ProductServiceImpl implements ProductService {
         if (!error.isEmpty()) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
         }
+        SucculentSpecies species = succulentSpeciesRepo.findBySpeciesNameIgnoreCase(request.getSpeciesName()).orElse(null);
 
-        Optional<SucculentSpecies> existingOpt = succulentSpeciesRepo.findBySpeciesNameIgnoreCase(request.getSpeciesName());
-        SucculentSpecies species;
-
-        if (existingOpt.isPresent()) {
-            species = existingOpt.get();
+        if (species != null) {
             species.setDescription(request.getDescription());
             species.setElements(request.getFengShuiList() == null ? new HashSet<>() : new HashSet<>(request.getFengShuiList()));
             species.setZodiacs(request.getZodiacList() == null ? new HashSet<>() : new HashSet<>(request.getZodiacList()));
@@ -324,7 +322,7 @@ public class ProductServiceImpl implements ProductService {
 
             Succulent variant = Succulent.builder()
                     .species(species)
-                    .size(getSizeFromName(size.getName()))
+                    .size(Size.fromDisplayName(size.getName()))
                     .priceSell(size.getPriceSell())
                     .quantity(size.getQuantity())
                     .status(status)
@@ -336,15 +334,6 @@ public class ProductServiceImpl implements ProductService {
         }
 
         return ResponseBuilder.build(HttpStatus.OK, "Tạo catalog loài sen đá thành công", null);
-    }
-
-    private Size getSizeFromName(String name) {
-        for (Size size : Size.values()) {
-            if (size.getDisplayName().equalsIgnoreCase(name)) {
-                return size;
-            }
-        }
-        return null;
     }
 
     private String validateCreateSucculent(CreateSucculentRequest request) {
@@ -383,7 +372,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         for (SizeDetailRequest size : request.getSizeDetailRequests()) {
-            if (getSizeFromName(size.getName()) == null) {
+            if (Size.fromDisplayName(size.getName()) == null) {
                 return "Kích thước không hợp lệ: " + size.getName() + " không tồn tại trong hệ thống";
             }
             if (size.getPriceSell() == null || size.getPriceSell().compareTo(BigDecimal.ZERO) <= 0) {
@@ -392,7 +381,7 @@ public class ProductServiceImpl implements ProductService {
             if (size.getQuantity() < 0) {
                 return "Số lượng " + request.getSpeciesName() + " cho kích thước " + size.getName() + " phải lớn hơn hoặc bằng 0";
             }
-            if (succulentRepo.existsBySpecies_SpeciesNameIgnoreCaseAndSize(request.getSpeciesName(), getSizeFromName(size.getName()))) {
+            if (succulentRepo.existsBySpecies_SpeciesNameIgnoreCaseAndSize(request.getSpeciesName(), Size.fromDisplayName(size.getName()))) {
                 return "Loài " + request.getSpeciesName() + " với kích thước " + size.getName() + " đã được tạo trong hệ thống";
             }
         }
@@ -550,6 +539,7 @@ public class ProductServiceImpl implements ProductService {
 
     // =========================== Accessory ========================== \\
     @Override
+    @Transactional
     public ResponseEntity<ResponseObject> createAccessory(CreateAccessoryRequest request, HttpServletRequest httpRequest) {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
 
@@ -561,71 +551,79 @@ public class ProductServiceImpl implements ProductService {
             return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Chỉ có Seller mới có quyền tạo linh kiện sen đá", null);
         }
 
-
         String error = validateCreateAccessory(request, accessoryRepo);
         if (!error.isEmpty()) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
         }
-        // Tự động xác định status dựa trên quantity
-        Status status = request.getQuantity() > 0 ? Status.AVAILABLE : Status.OUT_OF_STOCK;
 
-        accessoryRepo.save(Accessory.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .category(getAccessoryCategoryFromName(request.getCategory()))
-                .priceSell(request.getPriceSell())
-                .quantity(request.getQuantity())
-                .status(status)
-                .imageUrl(request.getImageUrl())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build());
+        for (CreateAccessoryRequest.Accessory accessory : request.getAccessories()) {
+            Status status = accessory.getQuantity() > 0 ? Status.AVAILABLE : Status.OUT_OF_STOCK;
+
+            accessoryRepo.save(Accessory.builder()
+                    .name(accessory.getName())
+                    .description(accessory.getDescription())
+                    .category(AccessoryCategory.getByDisplayName(accessory.getCategory()))
+                    .priceSell(accessory.getPriceSell())
+                    .quantity(accessory.getQuantity())
+                    .status(status)
+                    .imageUrl(accessory.getImageUrl())
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build());
+        }
         return ResponseBuilder.build(HttpStatus.OK, "Tạo catalog phụ kiện thành công", null);
     }
 
 
     private String validateCreateAccessory(CreateAccessoryRequest request, AccessoryRepo accessoryRepo) {
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
-            return "Tên mặt hàng là bắt buộc";
-        }
 
-        if (request.getName().length() > 100) {
-            return "Tên mặt hàng không được vượt quá 100 ký tự";
-        }
-        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
-            return "Mô tả là bắt buộc";
-        }
+        for (CreateAccessoryRequest.Accessory accessory : request.getAccessories()) {
+            if (accessory.getName() == null || accessory.getName().trim().isEmpty()) {
+                return "Tên mặt hàng là bắt buộc";
+            }
 
-        if (request.getDescription().length() > 300) {
-            return "Mô tả không được vượt quá 300 ký tự";
-        }
+            if (accessory.getName().length() > 100) {
+                return "Tên mặt hàng không được vượt quá 100 ký tự";
+            }
+            if (accessory.getDescription() == null || accessory.getDescription().trim().isEmpty()) {
+                return "Mô tả là bắt buộc";
+            }
 
-        if (request.getImageUrl() == null || request.getImageUrl().trim().isEmpty()) {
-            return "Image URL is required";
-        }
-        if (!request.getImageUrl().matches("^(http|https)://.*$")) {
-            return "Invalid Image URL format";
-        }
-        if (!request.getImageUrl().matches(".*\\.(jpg|jpeg|png|gif)$")) {
-            return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
-        }
+            if (accessory.getDescription().length() > 300) {
+                return "Mô tả không được vượt quá 300 ký tự";
+            }
 
-        if (request.getPriceSell() == null || request.getPriceSell().compareTo(BigDecimal.ZERO) <= 0) {
-            return "Cần nhập giá bán mặt hàng lớn hơn 0";
-        }
+            if (accessory.getImageUrl() == null || accessory.getImageUrl().trim().isEmpty()) {
+                return "Image URL is required";
+            }
+            if (!accessory.getImageUrl().matches("^(http|https)://.*$")) {
+                return "Invalid Image URL format";
+            }
+            if (!accessory.getImageUrl().matches(".*\\.(jpg|jpeg|png|gif)$")) {
+                return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
+            }
 
-        if (request.getQuantity() < 0) {
-            return "Số lượng mặt hàng phải lớn hơn hoặc bằng 0";
-        }
+            if (accessory.getPriceSell() <= 0) {
+                return "Cần nhập giá bán mặt hàng lớn hơn 0";
+            }
 
-        if (accessoryRepo.existsByNameIgnoreCase(request.getName())) {
-            return "Mặt hàng có tên '" + request.getName() + "' đã được tạo trong hệ thống.";
-        }
+            if (accessory.getQuantity() < 0) {
+                return "Số lượng mặt hàng phải lớn hơn hoặc bằng 0";
+            }
 
-        String rawCategory = request.getCategory() == null ? "" : request.getCategory().trim();
+            if (accessory.getWeight() < 0) {
+                return "Cân nặng mặt hàng phải lớn hơn hoặc bằng 0";
+            }
 
-        if (!AccessoryCategory.SOIL.getDisplayName().equalsIgnoreCase(rawCategory) && !AccessoryCategory.PLANT_POT.getDisplayName().equalsIgnoreCase(rawCategory) && !AccessoryCategory.DECOR_ACCESSORY.getDisplayName().equalsIgnoreCase(rawCategory)) {
-            return "Phân loại hàng không hợp lệ: '" + rawCategory + "'. Phân loại hàng hợp lệ: " + AccessoryCategory.SOIL.getDisplayName() + ", " + AccessoryCategory.PLANT_POT.getDisplayName() + ", " + AccessoryCategory.DECOR_ACCESSORY.getDisplayName() + ".";
+            if (accessoryRepo.existsByNameIgnoreCase(accessory.getName())) {
+                return "Mặt hàng có tên '" + accessory.getName() + "' đã được tạo trong hệ thống.";
+            }
+
+            String rawCategory = accessory.getCategory() == null ? "" : accessory.getCategory().trim();
+
+            if (!AccessoryCategory.SOIL.getDisplayName().equalsIgnoreCase(rawCategory) && !AccessoryCategory.PLANT_POT.getDisplayName().equalsIgnoreCase(rawCategory) && !AccessoryCategory.DECOR_ACCESSORY.getDisplayName().equalsIgnoreCase(rawCategory)) {
+                return "Phân loại hàng không hợp lệ: '" + rawCategory + "'. Phân loại hàng hợp lệ: " + AccessoryCategory.SOIL.getDisplayName() + ", " + AccessoryCategory.PLANT_POT.getDisplayName() + ", " + AccessoryCategory.DECOR_ACCESSORY.getDisplayName() + ".";
+            }
         }
         return "";
     }
@@ -673,15 +671,6 @@ public class ProductServiceImpl implements ProductService {
         return response;
     }
 
-    private AccessoryCategory getAccessoryCategoryFromName(String name) {
-        for (AccessoryCategory category : AccessoryCategory.values()) {
-            if (category.getDisplayName().equalsIgnoreCase(name)) {
-                return category;
-            }
-        }
-        return null;
-    }
-
     @Override
     public ResponseEntity<ResponseObject> updateAccessory(UpdateAccessoryRequest request, HttpServletRequest httpRequest) {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
@@ -725,8 +714,9 @@ public class ProductServiceImpl implements ProductService {
         accessory.setName(request.getName());
         accessory.setDescription(request.getDescription());
         accessory.setPriceSell(request.getPriceSell());
+        accessory.setWeight(request.getWeight());
         accessory.setQuantity(request.getQuantity());
-        accessory.setCategory(getAccessoryCategoryFromName(request.getCategory()));
+        accessory.setCategory(AccessoryCategory.getByDisplayName(request.getCategory()));
         accessory.setImageUrl(request.getImageUrl());
     }
 
@@ -760,7 +750,7 @@ public class ProductServiceImpl implements ProductService {
             return "Cần nhập số lượng hàng lớn hơn hoặc bằng 0";
         }
 
-        if (request.getPriceSell() == null || request.getPriceSell().compareTo(BigDecimal.ZERO) <= 0) {
+        if (request.getPriceSell() <= 0) {
             return "Cần nhập giá bán mặt hàng lớn hơn 0";
         }
 
@@ -782,6 +772,7 @@ public class ProductServiceImpl implements ProductService {
 
     // =========================== Product ========================== \\
     @Override
+    @Transactional
     public ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request, HttpServletRequest httpRequest) {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
 
@@ -801,62 +792,59 @@ public class ProductServiceImpl implements ProductService {
         // Tạo sản phẩm mới
         Product product = productRepo.save(
                 Product.builder()
+                        .seller(account.getUser())
                         .name(request.getName().trim())
                         .description(request.getDescription().trim())
-                        .size(getSizeFromName(request.getSize().trim()))
+                        .size(Size.fromDisplayName(request.getSize().trim()))
                         .price(request.getPrice())
-                        .status(getStatusFromString(request.getStatus()))
+                        .quantity(request.getQuantityInStock())
                         .createdAt(LocalDateTime.now())
                         .updatedAt(LocalDateTime.now())
+                        .status(Status.getByValue(request.getStatus()))
                         .build());
 
         if (request.getSucculentIds() != null && !request.getSucculentIds().isEmpty()) {
             for (Integer succulentId : request.getSucculentIds()) {
                 Optional<Succulent> succulentOpt = succulentRepo.findById(succulentId);
-                if (succulentOpt.isPresent()) {
-                    ProductSucculent productSucculent = ProductSucculent.builder()
-                            .product(product)
-                            .succulent(succulentOpt.get())
-                            .build();
-                    productSucculentRepo.save(productSucculent);
-                }
+                succulentOpt.ifPresent(succulent -> productSucculentRepo.save(
+                        ProductSucculent.builder()
+                                .product(product)
+                                .succulent(succulent)
+                                .build()));
             }
         }
 
-        // Tạo quan hệ Product-Accessory
         if (request.getAccessoryIds() != null && !request.getAccessoryIds().isEmpty()) {
             for (Integer accessoryId : request.getAccessoryIds()) {
                 Optional<Accessory> accessoryOpt = accessoryRepo.findById(accessoryId);
-                if (accessoryOpt.isPresent()) {
-                    ProductAccessory productAccessory = ProductAccessory.builder()
-                            .product(product)
-                            .accessory(accessoryOpt.get())
-                            .build();
-                    productAccessoryRepo.save(productAccessory);
-                }
+                accessoryOpt.ifPresent(accessory -> productAccessoryRepo.save(ProductAccessory.builder()
+                        .product(product)
+                        .accessory(accessory)
+                        .build()));
             }
         }
 
         // Tạo các hình ảnh cho sản phẩm
         if (request.getImages() != null && !request.getImages().isEmpty()) {
-            for (int i = 0; i < request.getImages().size(); i++) {
-                CreateProductImageRequest imageRequest = request.getImages().get(i);
+            for (CreateProductImageRequest requestImage : request.getImages()) {
+
+                LocalDateTime now = LocalDateTime.now();
 
                 ProductImage productImage = ProductImage.builder()
-                        .imageUrl(imageRequest.getImageUrl())
-                        .altText(imageRequest.getAltText())
-                        .isPrimary(imageRequest.getIsPrimary() != null ? imageRequest.getIsPrimary() : (i == 0)) // Hình đầu tiên là primary nếu không chỉ định
-                        .displayOrder(imageRequest.getDisplayOrder() != null ? imageRequest.getDisplayOrder() : i + 1)
+                        .imageUrl(requestImage.getImageUrl())
+                        .altText(requestImage.getAltText())
+                        .isPrimary(requestImage.isPrimary())
+                        .displayOrder(requestImage.getDisplayOrder() != null ? requestImage.getDisplayOrder() : request.getImages().indexOf(requestImage))
                         .product(product)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
+                        .createdAt(now)
+                        .updatedAt(now)
                         .build();
 
                 productImageRepo.save(productImage);
             }
         }
 
-        return ResponseBuilder.build(HttpStatus.OK, "Tạo sản phẩm thành công", buildProductDetail(product));
+        return ResponseBuilder.build(HttpStatus.CREATED, "Tạo sản phẩm thành công", buildProductDetail(product));
     }
 
     private String validateProductImageRequest(CreateProductImageRequest imageRequest, int imageIndex) {
@@ -897,10 +885,10 @@ public class ProductServiceImpl implements ProductService {
         if (request.getSize().length() > 50) {
             return "Kích thước sản phẩm không được vượt quá 50 ký tự";
         }
-        if (getSizeFromName(request.getSize().trim()) == null) {
+        if (Size.fromDisplayName(request.getSize().trim()) == null) {
             return "Kích thước sản phẩm không hợp lệ";
         }
-        if (request.getPrice() == null || request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+        if (request.getPrice() <= 0) {
             return "Giá sản phẩm phải lớn hơn 0";
         }
         if (request.getStatus() == null || request.getStatus().trim().isEmpty()) {
@@ -979,17 +967,6 @@ public class ProductServiceImpl implements ProductService {
         List<Map<String, Object>> data = products.stream().map(this::buildProductDetail).toList();
 
         return ResponseBuilder.build(HttpStatus.OK, "Lấy danh sách sản phẩm thành công", data);
-    }
-
-    private Status getStatusFromString(String statusString) {
-        if (statusString == null) return Status.OUT_OF_STOCK;
-        String trimmed = statusString.trim();
-        for (Status status : Status.values()) {
-            if (status.getValue().equalsIgnoreCase(trimmed)) {
-                return status;
-            }
-        }
-        return Status.OUT_OF_STOCK;
     }
 
     private Map<String, Object> buildProductDetail(Product product) {
@@ -1103,15 +1080,15 @@ public class ProductServiceImpl implements ProductService {
         }
 
         if (request.getSize() != null) {
-            product.setSize(getSizeFromName(request.getSize()));
+            product.setSize(Size.fromDisplayName(request.getSize()));
         }
 
-        if (request.getPrice() != null) {
+        if (request.getPrice() > 0) {
             product.setPrice(request.getPrice());
         }
 
         if (request.getStatus() != null) {
-            product.setStatus(getStatusFromString(request.getStatus()));
+            product.setStatus(Status.getByValue(request.getStatus()));
         }
 
         product.setUpdatedAt(LocalDateTime.now());
@@ -1169,7 +1146,7 @@ public class ProductServiceImpl implements ProductService {
                     ProductImage productImage = ProductImage.builder()
                             .imageUrl(imageRequest.getImageUrl())
                             .altText(imageRequest.getAltText())
-                            .isPrimary(imageRequest.getIsPrimary() != null ? imageRequest.getIsPrimary() : (i == 0))
+                            .isPrimary(imageRequest.isPrimary())
                             .displayOrder(imageRequest.getDisplayOrder() != null ? imageRequest.getDisplayOrder() : i + 1)
                             .product(product)
                             .createdAt(LocalDateTime.now())
@@ -1216,15 +1193,13 @@ public class ProductServiceImpl implements ProductService {
             if (request.getSize().length() > 50) {
                 return "Kích thước sản phẩm không được vượt quá 50 ký tự";
             }
-            if (getSizeFromName(request.getSize().trim()) == null) {
+            if (Size.fromDisplayName(request.getSize().trim()) == null) {
                 return "Kích thước sản phẩm không hợp lệ";
             }
         }
 
-        if (request.getPrice() != null) {
-            if (request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-                return "Giá sản phẩm phải lớn hơn 0";
-            }
+        if (request.getPrice() <= 0) {
+            return "Giá sản phẩm phải lớn hơn 0";
         }
 
         if (request.getStatus() != null) {
@@ -1310,7 +1285,7 @@ public class ProductServiceImpl implements ProductService {
             return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm", null);
         }
 
-        if(product.getQuantity() > 0){
+        if (product.getQuantity() > 0) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Chỉ có thể xóa sản phẩm khi số lượng bằng 0", null);
         } else {
             product.setStatus(Status.INACTIVE);
