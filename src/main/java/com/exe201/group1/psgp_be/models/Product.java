@@ -45,24 +45,21 @@ public class Product {
     @JoinColumn(name = "seller_id")
     User seller;
 
-  
+
     @Column(length = 200)
     String name;
 
     @Column(columnDefinition = "TEXT")
     String description;
 
- 
+
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
     Size size; // Kích thước tổng thể của bộ sản phẩm (đối vs UI sẽ select size)
 
     @Column(precision = 10, scale = 2)
-    BigDecimal price;
+    long price;
 
     int quantity;
-
-    String imageUrl;
 
     @Column(name = "created_at")
     LocalDateTime createdAt;
@@ -71,7 +68,6 @@ public class Product {
     LocalDateTime updatedAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
     Status status;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

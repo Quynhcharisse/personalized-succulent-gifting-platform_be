@@ -17,4 +17,13 @@ public enum Status {
 
     private final String value;
 
+    public static Status getByValue(String value) {
+        for (Status status : Status.values()) {
+            if (status.value.equals(value)) {
+                return status;
+            }
+        }
+        return OUT_OF_STOCK;
+    }
+
 }

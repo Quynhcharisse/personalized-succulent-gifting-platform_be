@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,10 +15,20 @@ import java.math.BigDecimal;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateAccessoryRequest {
-    String name;
-    String description;
-    String category;
-    BigDecimal priceSell;
-    int quantity;
-    String imageUrl;
+    List<Accessory> accessories;
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Data
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class Accessory {
+        String name;
+        String category;
+        String description;
+        int quantity;
+        double weight;
+        long priceSell;
+        String imageUrl;
+    }
 }

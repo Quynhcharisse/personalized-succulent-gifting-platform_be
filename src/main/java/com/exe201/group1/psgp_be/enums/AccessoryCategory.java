@@ -11,4 +11,13 @@ public enum AccessoryCategory {
     DECOR_ACCESSORY("Phụ kiện trang trí");
 
     private final String displayName;
+
+    public static AccessoryCategory getByDisplayName(String displayName) {
+        for (AccessoryCategory category : AccessoryCategory.values()) {
+            if (category.getDisplayName().equals(displayName)) {
+                return category;
+            }
+        }
+        return null;
     }
+}

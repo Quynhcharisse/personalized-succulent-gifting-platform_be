@@ -26,13 +26,13 @@ public class JWTServiceImpl implements JWTService {
 
     private final AccountRepo accountRepo;
 
-    @Value("${security-secret-key}")
+    @Value("${jwt.secret.key}")
     private String secretKey;
 
-    @Value("${jwt.expiration.access-token}")
+    @Value("${jwt.expiration.access}")
     private long accessExpiration;
 
-    @Value("${jwt.expiration.refresh-token}")
+    @Value("${jwt.expiration.refresh}")
     private long refreshExpiration;
 
     @Override
