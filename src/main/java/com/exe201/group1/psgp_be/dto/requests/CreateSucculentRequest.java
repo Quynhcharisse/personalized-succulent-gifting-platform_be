@@ -20,7 +20,20 @@ public class CreateSucculentRequest {
     String speciesName;
     String description;
     String imageUrl;
-    List<FengShui> fengShuiList;
-    List<Zodiac> zodiacList;
-    List<SizeDetailRequest> sizeDetailRequests;
+    List<FengShui> fengShuiList; // chinh sau
+    List<Zodiac> zodiacList; // chinh sau
+    List<Size> sizeList;
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Data
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class Size {
+        String sizeName;
+        long price;
+        double minDiameter;
+        double maxDiameter;
+        int quantity;
+    }
 }
