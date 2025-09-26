@@ -1,5 +1,7 @@
 package com.exe201.group1.psgp_be.dto.requests;
 
+import com.exe201.group1.psgp_be.enums.FengShui;
+import com.exe201.group1.psgp_be.enums.Zodiac;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,9 +19,22 @@ import java.math.BigDecimal;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateSucculentRequest {
     int id;
-    int quantity;
-    String name;
+    String speciesName;
     String description;
-    BigDecimal priceSell;
     String imageUrl;
+    List<FengShui> fengShuiList;
+    List<Zodiac> zodiacList;
+
+    List<Size> sizeList;
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Data
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class Size {
+        String sizeName;
+        long price;
+        int quantity;
+    }
 }
