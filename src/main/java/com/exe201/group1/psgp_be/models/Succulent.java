@@ -1,7 +1,7 @@
 package com.exe201.group1.psgp_be.models;
 
-import com.exe201.group1.psgp_be.enums.Size;
 import com.exe201.group1.psgp_be.enums.Status;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,8 +23,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.Type;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -45,20 +45,15 @@ public class Succulent {
     @JoinColumn(name = "species_id", nullable = false)
     SucculentSpecies species;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    Size size;
+    @Column(columnDefinition = "jsonb")
+    @Type(JsonBinaryType.class)
+    Object size;// lưu nhiều size, 1 size  sẽ có 1 đường kính riêng, 1 giá riêng, 1 số lượng riêng, 1 status riêng
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    Status status;
+    Status status; // status của tất cả size
 
-    int quantity;
-
-    @Column(precision = 10, scale = 2)
-    BigDecimal priceSell;
-
-    String imageUrl;
+    String imageUrl; // Sửa thành lưu json sau
 
     @Column(name = "created_at")
     LocalDateTime createdAt;

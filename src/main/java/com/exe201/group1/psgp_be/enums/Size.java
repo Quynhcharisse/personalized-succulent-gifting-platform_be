@@ -14,13 +14,9 @@ public enum Size {
     EXTRA_LARGE("16-18cm"),
 
     // chậu cây
-    XS("5–6cm"),
-    S("7–8cm"),
-    M("9–10cm"),
-    L("12–13cm"),
-    XL("15–16cm"),
-    XXL("18–20cm");
-
+    SMALL_POT("Chậu nhỏ (5-8cm)"),
+    MEDIUM_POT("Chậu vừa (9-13cm)"),
+    LARGE_POT("Chậu lớn (14-20cm)");
     private final String displayName;
 
     public static Size fromDisplayName(String displayName) {
