@@ -649,33 +649,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private ResponseEntity<ResponseObject> createPot(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
+        CreateAccessoryRequest.PotData potData = request.getPotData();
+
         if (accessoryData.get("pot") == null) {
             // create new
-            CreateAccessoryRequest.PotData potData = request.getPotData();
-
-            Map<String, Object> potDetailMap = new HashMap<>();
-            potDetailMap.put("material", potData.getMaterial());
-            potDetailMap.put("color", potData.getColor());
-            potDetailMap.put("description", potData.getDescription());
-            potDetailMap.put("image",
-                    potData.getImages().stream().map(CreateAccessoryRequest.Image::getImage).toList()
-            );
-
-            Map<String, Object> sizeDetailMap = new HashMap<>();// pot size detail level
-
-            for (CreateAccessoryRequest.Size size : potData.getSizes()) {
-                sizeDetailMap.put(size.getName(),
-                        Map.of(
-                                "potHeight", size.getPotHeight(),
-                                "potUpperCrossSectionArea", size.getPotUpperCrossSectionArea(),
-                                "maxSoilMassValue", size.getMaxSoilMassValue(),
-                                "availableQty", size.getAvailableQty(),
-                                "price", size.getPrice()
-                        )
-                );
-            }
-
-            potDetailMap.put("size", sizeDetailMap);
+            Map<String, Object> potDetailMap = createPotDetail(potData);
 
             accessoryData.put("pot", Map.of(potData.getName(), potDetailMap));
 
@@ -684,8 +662,45 @@ public class ProductServiceImpl implements ProductService {
             return ResponseBuilder.build(HttpStatus.OK, "Update pot successfully", null);
         }
 
+        Map<String, Object> pot = (Map<String, Object>) accessoryData.get("pot");
+        if(pot.get(potData.getName()) == null){
+            Map<String, Object> potDetailMap = createPotDetail(potData);
+            pot.put(potData.getName(), potDetailMap);
+
+            accessoryData.replace("pot", pot);
+            accessoryConfig.setValue(accessoryData);
+            appConfigRepo.save(accessoryConfig);
+            return ResponseBuilder.build(HttpStatus.OK, "Update pot successfully", null);
+        }
+
         return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Coming soon", null);
     }
+
+    private Map<String, Object> createPotDetail(CreateAccessoryRequest.PotData potData){
+        Map<String, Object> potDetailMap = new HashMap<>();
+        potDetailMap.put("material", potData.getMaterial());
+        potDetailMap.put("color", potData.getColor());
+        potDetailMap.put("description", potData.getDescription());
+        potDetailMap.put("image", potData.getImages().stream().map(CreateAccessoryRequest.Image::getImage).toList());
+
+        Map<String, Object> sizeDetailMap = new HashMap<>();// pot size detail level
+
+        for (CreateAccessoryRequest.Size size : potData.getSizes()) {
+            sizeDetailMap.put(size.getName(),
+                    Map.of(
+                            "potHeight", size.getPotHeight(),
+                            "potUpperCrossSectionArea", size.getPotUpperCrossSectionArea(),
+                            "maxSoilMassValue", size.getMaxSoilMassValue(),
+                            "availableQty", size.getAvailableQty(),
+                            "price", size.getPrice()
+                    )
+            );
+        }
+
+        potDetailMap.put("size", sizeDetailMap);
+        return potDetailMap;
+    }
+
 
     private ResponseEntity<ResponseObject> createSoil(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
         if (accessoryData.get("soil") == null) {
