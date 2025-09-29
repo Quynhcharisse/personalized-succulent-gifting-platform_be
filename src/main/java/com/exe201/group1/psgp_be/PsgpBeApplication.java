@@ -2,8 +2,10 @@ package com.exe201.group1.psgp_be;
 
 import com.exe201.group1.psgp_be.enums.Role;
 import com.exe201.group1.psgp_be.models.Account;
+import com.exe201.group1.psgp_be.models.AppConfig;
 import com.exe201.group1.psgp_be.models.User;
 import com.exe201.group1.psgp_be.repositories.AccountRepo;
+import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
 import com.exe201.group1.psgp_be.repositories.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -11,6 +13,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @SpringBootApplication
 @RequiredArgsConstructor
@@ -18,6 +21,7 @@ public class PsgpBeApplication implements CommandLineRunner {
 
     private final AccountRepo accountRepo;
     private final UserRepo userRepo;
+    private final AppConfigRepo appConfigRepo;
 
     public static void main(String[] args) {
         SpringApplication.run(PsgpBeApplication.class, args);
@@ -30,6 +34,9 @@ public class PsgpBeApplication implements CommandLineRunner {
 
         // Init SELLER account
         initSellerAccount();
+
+        //Init app config
+        initAppConfig();
     }
 
     private void initAdminAccount() {
@@ -98,6 +105,21 @@ public class PsgpBeApplication implements CommandLineRunner {
         accountRepo.save(sellerAccount);
 
         System.out.println("Created SELLER account: " + email);
+    }
+
+    private void initAppConfig(){
+        if (appConfigRepo.count() == 0){
+            appConfigRepo.saveAll(List.of(
+                    AppConfig.builder()
+                            .key("accessory")
+                            .value(null)
+                            .build(),
+                    AppConfig.builder()
+                            .key("business")
+                            .value(null)
+                            .build()
+            ));
+        }
     }
 
 }

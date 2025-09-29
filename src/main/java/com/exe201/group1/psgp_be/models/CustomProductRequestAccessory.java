@@ -1,5 +1,7 @@
 package com.exe201.group1.psgp_be.models;
 
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -14,6 +16,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.Type;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,7 +35,7 @@ public class CustomProductRequestAccessory {
     @JoinColumn(name = "custom_product_request_id")
     CustomProductRequest customProductRequest;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "accessory_id")
-    Accessory accessory;
+    @Column(name = "`accessory`", columnDefinition = "jsonb")
+    @Type(JsonBinaryType.class)
+    Object accessory;
 } 

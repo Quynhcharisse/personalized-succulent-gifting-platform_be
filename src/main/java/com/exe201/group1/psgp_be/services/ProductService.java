@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 
 public interface ProductService {
 
+    //--------------------------------------------SUPPLIER--------------------------------------------//
     ResponseEntity<ResponseObject> createSupplier(CreateSupplierRequest request, HttpServletRequest httpRequest);
 
     ResponseEntity<ResponseObject> getSupplierList(HttpServletRequest httpRequest);
@@ -29,18 +30,24 @@ public interface ProductService {
 
     ResponseEntity<ResponseObject> getTotalSupplierCount(HttpServletRequest httpRequest);
 
+
+    //--------------------------------------------SUCCULENT--------------------------------------------//
     ResponseEntity<ResponseObject> createSucculent(CreateSucculentRequest request, HttpServletRequest httpRequest);
 
     ResponseEntity<ResponseObject> viewSucculentList(HttpServletRequest httpRequest);
 
     ResponseEntity<ResponseObject> updateSucculent(UpdateSucculentRequest request, HttpServletRequest httpRequest);
 
+
+    //--------------------------------------------ACCESSORY--------------------------------------------//
     ResponseEntity<ResponseObject> createAccessory(CreateAccessoryRequest request, HttpServletRequest httpRequest);
 
     ResponseEntity<ResponseObject> getAccessories(HttpServletRequest httpRequest);
 
     ResponseEntity<ResponseObject> updateAccessory(UpdateAccessoryRequest request, HttpServletRequest httpRequest);
 
+
+    //--------------------------------------------PRODUCT--------------------------------------------//
     ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request, HttpServletRequest httpRequest);
 
     ResponseEntity<ResponseObject> viewProduct(HttpServletRequest httpRequest);
@@ -49,6 +56,8 @@ public interface ProductService {
     
     ResponseEntity<ResponseObject> deleteProduct(int id, HttpServletRequest httpRequest);
 
+
+    //--------------------------------------------CUSTOM REQUEST--------------------------------------------//
     ResponseEntity<ResponseObject> customRequestListByBuyer(HttpServletRequest request);
 
     ResponseEntity<ResponseObject> createCustomRequest(CreateCustomRequest request);
@@ -57,6 +66,8 @@ public interface ProductService {
 
     ResponseEntity<ResponseObject> deleteCustomRequest(DeleteCustomRequestRequest request);
 
+
+    //--------------------------------------------WISHLIST--------------------------------------------//
     ResponseEntity<ResponseObject> addItemToWishList(AddWishListItemRequest item);
 
     ResponseEntity<ResponseObject> getItemsFromWishList();

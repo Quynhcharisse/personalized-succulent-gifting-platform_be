@@ -2,6 +2,7 @@ package com.exe201.group1.psgp_be.models;
 
 import com.exe201.group1.psgp_be.enums.Status;
 import com.exe201.group1.psgp_be.enums.Size;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,6 +24,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.Type;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -45,21 +47,11 @@ public class Product {
     @JoinColumn(name = "seller_id")
     User seller;
 
-
     @Column(length = 200)
     String name;
 
     @Column(columnDefinition = "TEXT")
     String description;
-
-
-    @Enumerated(EnumType.STRING)
-    Size size; // Kích thước tổng thể của bộ sản phẩm (đối vs UI sẽ select size)
-
-    @Column(precision = 10, scale = 2)
-    long price;
-
-    int quantity;
 
     @Column(name = "created_at")
     LocalDateTime createdAt;
@@ -75,10 +67,9 @@ public class Product {
     @ToString.Exclude
     List<ProductSucculent> productSucculentList;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<ProductAccessory> productAccessoryList;
+    @Column(name = "`accessory`", columnDefinition = "jsonb")
+    @Type(JsonBinaryType.class)
+    Object productAccessoryList;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
