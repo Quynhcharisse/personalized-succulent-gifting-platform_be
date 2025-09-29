@@ -3,7 +3,6 @@ package com.exe201.group1.psgp_be.services.implementors;
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreateProductImageRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
@@ -15,26 +14,18 @@ import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierStatusRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
-import com.exe201.group1.psgp_be.enums.AccessoryCategory;
 import com.exe201.group1.psgp_be.enums.Role;
-import com.exe201.group1.psgp_be.enums.Size;
 import com.exe201.group1.psgp_be.enums.Status;
-import com.exe201.group1.psgp_be.models.Accessory;
 import com.exe201.group1.psgp_be.models.Account;
+import com.exe201.group1.psgp_be.models.AppConfig;
 import com.exe201.group1.psgp_be.models.Product;
-import com.exe201.group1.psgp_be.models.ProductAccessory;
-import com.exe201.group1.psgp_be.models.ProductImage;
-import com.exe201.group1.psgp_be.models.ProductSucculent;
 import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.models.SucculentSpecies;
 import com.exe201.group1.psgp_be.models.Supplier;
 import com.exe201.group1.psgp_be.models.WishlistItem;
-import com.exe201.group1.psgp_be.repositories.AccessoryRepo;
 import com.exe201.group1.psgp_be.repositories.AccountRepo;
-import com.exe201.group1.psgp_be.repositories.ProductAccessoryRepo;
-import com.exe201.group1.psgp_be.repositories.ProductImageRepo;
+import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
-import com.exe201.group1.psgp_be.repositories.ProductSucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentSpeciesRepo;
 import com.exe201.group1.psgp_be.repositories.SupplierRepo;
@@ -45,7 +36,9 @@ import com.exe201.group1.psgp_be.utils.CookieUtil;
 import com.exe201.group1.psgp_be.utils.EntityResponseBuilder;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -65,19 +58,18 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ProductServiceImpl implements ProductService {
 
-    private final SucculentRepo succulentRepo;
-    private final AccessoryRepo accessoryRepo;
-    private final SucculentSpeciesRepo succulentSpeciesRepo;
-    private final SupplierRepo supplierRepo;
-    private final ProductRepo productRepo;
-    private final JWTService jwtService;
-    private final AccountRepo accountRepo;
-    private final WishListItemRepo wishListItemRepo;
-    private final ProductImageRepo productImageRepo;
-    private final ProductSucculentRepo productSucculentRepo;
-    private final ProductAccessoryRepo productAccessoryRepo;
+    SucculentRepo succulentRepo;
+    SucculentSpeciesRepo succulentSpeciesRepo;
+    SupplierRepo supplierRepo;
+    ProductRepo productRepo;
+    JWTService jwtService;
+    AccountRepo accountRepo;
+    WishListItemRepo wishListItemRepo;
+    AppConfigRepo appConfigRepo;
+
 
     // =========================== Supplier ========================== \\
     @Override
@@ -622,687 +614,132 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // =========================== Accessory ========================== \\
+
     @Override
-    @Transactional
     public ResponseEntity<ResponseObject> createAccessory(CreateAccessoryRequest request, HttpServletRequest httpRequest) {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
         if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
+            return ResponseBuilder.build(HttpStatus.UNAUTHORIZED, "Account invalid", null);
         }
 
-        String error = validateCreateAccessory(request, accessoryRepo);
+        String error = validateCreateAccessory(request);
         if (!error.isEmpty()) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
         }
 
-        for (CreateAccessoryRequest.Accessory accessory : request.getAccessories()) {
-            Status status = accessory.getQuantity() > 0 ? Status.AVAILABLE : Status.OUT_OF_STOCK;
+        AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
+        Map<String, Object> accessory = new HashMap<>();
 
-            accessoryRepo.save(Accessory.builder().name(accessory.getName()).description(accessory.getDescription()).category(AccessoryCategory.getByDisplayName(accessory.getCategory())).priceSell(accessory.getPriceSell()).quantity(accessory.getQuantity()).status(status).imageUrl(accessory.getImageUrl()).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build());
+        if (accessoryConfig != null && accessoryConfig.getValue() != null) {
+            accessory = (Map<String, Object>) accessoryConfig.getValue();
         }
-        return ResponseBuilder.build(HttpStatus.OK, "Tạo catalog phụ kiện thành công", null);
+
+        return request.isCreatePot() ? createPot(request, accessory, accessoryConfig)
+                :
+                request.isCreateSoil() ? createSoil(request, accessory, accessoryConfig)
+                        :
+                        request.isCreateDecoration() ? createDecoration(request, accessory, accessoryConfig)
+                                :
+                                ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Invalid accessory creation method", null);
     }
 
-
-    private String validateCreateAccessory(CreateAccessoryRequest request, AccessoryRepo accessoryRepo) {
-
-        for (CreateAccessoryRequest.Accessory accessory : request.getAccessories()) {
-            if (accessory.getName() == null || accessory.getName().trim().isEmpty()) {
-                return "Tên mặt hàng là bắt buộc";
-            }
-
-            if (accessory.getName().length() > 100) {
-                return "Tên mặt hàng không được vượt quá 100 ký tự";
-            }
-            if (accessory.getDescription() == null || accessory.getDescription().trim().isEmpty()) {
-                return "Mô tả là bắt buộc";
-            }
-
-            if (accessory.getDescription().length() > 300) {
-                return "Mô tả không được vượt quá 300 ký tự";
-            }
-
-            if (accessory.getImageUrl() == null || accessory.getImageUrl().trim().isEmpty()) {
-                return "Image URL is required";
-            }
-            if (!accessory.getImageUrl().matches("^(http|https)://.*$")) {
-                return "Invalid Image URL format";
-            }
-            if (!accessory.getImageUrl().matches(".*\\.(jpg|jpeg|png|gif)$")) {
-                return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
-            }
-
-            if (accessory.getPriceSell() <= 0) {
-                return "Cần nhập giá bán mặt hàng lớn hơn 0";
-            }
-
-            if (accessory.getQuantity() < 0) {
-                return "Số lượng mặt hàng phải lớn hơn hoặc bằng 0";
-            }
-
-            if (accessory.getWeight() < 0) {
-                return "Cân nặng mặt hàng phải lớn hơn hoặc bằng 0";
-            }
-
-            if (accessoryRepo.existsByNameIgnoreCase(accessory.getName())) {
-                return "Mặt hàng có tên '" + accessory.getName() + "' đã được tạo trong hệ thống.";
-            }
-
-            String rawCategory = accessory.getCategory() == null ? "" : accessory.getCategory().trim();
-
-            if (!AccessoryCategory.SOIL.getDisplayName().equalsIgnoreCase(rawCategory) && !AccessoryCategory.PLANT_POT.getDisplayName().equalsIgnoreCase(rawCategory) && !AccessoryCategory.DECOR_ACCESSORY.getDisplayName().equalsIgnoreCase(rawCategory)) {
-                return "Phân loại hàng không hợp lệ: '" + rawCategory + "'. Phân loại hàng hợp lệ: " + AccessoryCategory.SOIL.getDisplayName() + ", " + AccessoryCategory.PLANT_POT.getDisplayName() + ", " + AccessoryCategory.DECOR_ACCESSORY.getDisplayName() + ".";
-            }
-        }
+    private String validateCreateAccessory(CreateAccessoryRequest request) {
+        // validate here
         return "";
     }
 
+    private ResponseEntity<ResponseObject> createPot(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
+        if (accessoryData.get("pot") == null) {
+            // create new
+            CreateAccessoryRequest.PotData potData = request.getPotData();
+
+            Map<String, Object> potDetailMap = new HashMap<>();
+            potDetailMap.put("material", potData.getMaterial());
+            potDetailMap.put("color", potData.getColor());
+            potDetailMap.put("description", potData.getDescription());
+            potDetailMap.put("image",
+                    potData.getImages().stream().map(CreateAccessoryRequest.Image::getImage).toList()
+            );
+
+            Map<String, Object> sizeDetailMap = new HashMap<>();// pot size detail level
+
+            for (CreateAccessoryRequest.Size size : potData.getSizes()) {
+                sizeDetailMap.put(size.getName(),
+                        Map.of(
+                                "potHeight", size.getPotHeight(),
+                                "potUpperCrossSectionArea", size.getPotUpperCrossSectionArea(),
+                                "maxSoilMassValue", size.getMaxSoilMassValue(),
+                                "availableQty", size.getAvailableQty(),
+                                "price", size.getPrice()
+                        )
+                );
+            }
+
+            potDetailMap.put("size", sizeDetailMap);
+
+            accessoryData.put("pot", Map.of(potData.getName(), potDetailMap));
+
+            accessoryConfig.setValue(accessoryData);
+            appConfigRepo.save(accessoryConfig);
+            return ResponseBuilder.build(HttpStatus.OK, "Update pot successfully", null);
+        }
+
+        return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Coming soon", null);
+    }
+
+    private ResponseEntity<ResponseObject> createSoil(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
+        if (accessoryData.get("soil") == null) {
+            // create new
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Coming soon", null);
+        }
+
+        return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Coming soon", null);
+    }
+
+    private ResponseEntity<ResponseObject> createDecoration(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
+        if (accessoryData.get("decoration") == null) {
+            // create new
+
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Coming soon", null);
+        }
+
+        return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Coming soon", null);
+    }
 
     @Override
     public ResponseEntity<ResponseObject> getAccessories(HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-        if (account.getRole() == null || account.getRole() != Role.SELLER) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Chỉ có Seller mới có xem tạo linh kiện sen đá", null);
-        }
-
-        return ResponseBuilder.build(HttpStatus.OK, "Lấy danh sách catalog phụ kiện thành công", buildListAccessories(accessoryRepo.findAll(Sort.by(Sort.Direction.DESC, "id"))));
-    }
-
-
-    private Map<String, Object> buildAccessoryDetail(Accessory accessory) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("id", accessory.getId());
-        response.put("name", accessory.getName());
-        response.put("description", accessory.getDescription());
-        response.put("priceSell", accessory.getPriceSell());
-        response.put("imageUrl", accessory.getImageUrl());
-        response.put("quantity", accessory.getQuantity());
-        response.put("category", accessory.getCategory().getDisplayName());
-        response.put("status", accessory.getStatus().getValue()); // Sửa để consistent với succulent
-        response.put("createdAt", accessory.getCreatedAt());
-        response.put("updatedAt", accessory.getUpdatedAt());
-        return response;
-    }
-
-    private List<Map<String, Object>> buildListAccessories(List<Accessory> accessories) {
-        List<Map<String, Object>> response = new ArrayList<>();
-        for (Accessory accessory : accessories) {
-            if (accessory == null) {
-                continue;
-            }
-            response.add(buildAccessoryDetail(accessory));
-        }
-        return response;
+        return null;
     }
 
     @Override
     public ResponseEntity<ResponseObject> updateAccessory(UpdateAccessoryRequest request, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-
-        String error = validateUpdateAccessory(request, accessoryRepo);
-        if (!error.isEmpty()) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
-        }
-
-        if (accessoryRepo.findById(request.getId()).isEmpty()) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy mặt hàng", null);
-        }
-
-        Accessory accessory = accessoryRepo.findById(request.getId()).get();
-
-        // Cập nhật thông tin accessory
-        updateAccessoryInfo(accessory, request);
-
-        // Tự động cập nhật status dựa trên quantity
-        if (request.getQuantity() > 0) {
-            accessory.setStatus(Status.AVAILABLE);
-        } else {
-            accessory.setStatus(Status.OUT_OF_STOCK);
-        }
-
-        accessory.setUpdatedAt(LocalDateTime.now());
-        accessoryRepo.save(accessory);
-        return ResponseBuilder.build(HttpStatus.OK, "Cập nhật mặt hàng thành công", null);
+        return null;
     }
 
-    private void updateAccessoryInfo(Accessory accessory, UpdateAccessoryRequest request) {
-        accessory.setName(request.getName());
-        accessory.setDescription(request.getDescription());
-        accessory.setPriceSell(request.getPriceSell());
-        accessory.setWeight(request.getWeight());
-        accessory.setQuantity(request.getQuantity());
-        accessory.setCategory(AccessoryCategory.getByDisplayName(request.getCategory()));
-        accessory.setImageUrl(request.getImageUrl());
-    }
-
-    private String validateUpdateAccessory(UpdateAccessoryRequest request, AccessoryRepo accessoryRepo) {
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
-            return "Tên mặt hàng là bắt buộc";
-        }
-
-        if (request.getName().length() > 100) {
-            return "Tên mặt hàng không được vượt quá 100 ký tự";
-        }
-        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
-            return "Mô tả là bắt buộc";
-        }
-
-        if (request.getDescription().length() > 300) {
-            return "Mô tả không được vượt quá 300 ký tự";
-        }
-
-        if (request.getImageUrl() == null || request.getImageUrl().trim().isEmpty()) {
-            return "Image URL is required";
-        }
-        if (!request.getImageUrl().matches("^(http|https)://.*$")) {
-            return "Invalid Image URL format";
-        }
-        if (!request.getImageUrl().matches(".*\\.(jpg|jpeg|png|gif)$")) {
-            return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
-        }
-
-        if (request.getQuantity() < 0) {
-            return "Cần nhập số lượng hàng lớn hơn hoặc bằng 0";
-        }
-
-        if (request.getPriceSell() <= 0) {
-            return "Cần nhập giá bán mặt hàng lớn hơn 0";
-        }
-
-        if (request.getCategory() == null || request.getCategory().trim().isEmpty()) {
-            return "Phân loại hàng là bắt buộc";
-        }
-        String rawCategory = request.getCategory().trim();
-
-        if (!AccessoryCategory.SOIL.getDisplayName().equalsIgnoreCase(rawCategory) && !AccessoryCategory.PLANT_POT.getDisplayName().equalsIgnoreCase(rawCategory) && !AccessoryCategory.DECOR_ACCESSORY.getDisplayName().equalsIgnoreCase(rawCategory)) {
-            return "Phân loại hàng không hợp lệ: '" + rawCategory + "'. Phân loại hàng hợp lệ: " + AccessoryCategory.SOIL.getDisplayName() + ", " + AccessoryCategory.PLANT_POT.getDisplayName() + ", " + AccessoryCategory.DECOR_ACCESSORY.getDisplayName() + ".";
-        }
-
-        if (accessoryRepo.existsByNameIgnoreCaseAndIdNot(request.getName(), request.getId())) {
-            return "Mặt hàng '" + request.getName() + "' đã được tạo trong hệ thống";
-        }
-
-        return "";
-    }
 
     // =========================== Product ========================== \\
+
     @Override
-    @Transactional
     public ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-        String error = validateCreateProduct(request);
-        if (!error.isEmpty()) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
-        }
-
-        // Tạo sản phẩm mới
-        Product product = productRepo.save(Product.builder().seller(account.getUser()).name(request.getName().trim()).description(request.getDescription().trim()).size(Size.fromDisplayName(request.getSize().trim())).price(request.getPrice()).quantity(request.getQuantityInStock()).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).status(Status.getByValue(request.getStatus())).build());
-
-        if (request.getSucculentIds() != null && !request.getSucculentIds().isEmpty()) {
-            for (Integer succulentId : request.getSucculentIds()) {
-                Optional<Succulent> succulentOpt = succulentRepo.findById(succulentId);
-                succulentOpt.ifPresent(succulent -> productSucculentRepo.save(ProductSucculent.builder().product(product).succulent(succulent).build()));
-            }
-        }
-
-        if (request.getAccessoryIds() != null && !request.getAccessoryIds().isEmpty()) {
-            for (Integer accessoryId : request.getAccessoryIds()) {
-                Optional<Accessory> accessoryOpt = accessoryRepo.findById(accessoryId);
-                accessoryOpt.ifPresent(accessory -> productAccessoryRepo.save(ProductAccessory.builder().product(product).accessory(accessory).build()));
-            }
-        }
-
-        // Tạo các hình ảnh cho sản phẩm
-        if (request.getImages() != null && !request.getImages().isEmpty()) {
-            for (CreateProductImageRequest requestImage : request.getImages()) {
-
-                LocalDateTime now = LocalDateTime.now();
-
-                ProductImage productImage = ProductImage.builder().imageUrl(requestImage.getImageUrl()).altText(requestImage.getAltText()).isPrimary(requestImage.isPrimary()).displayOrder(requestImage.getDisplayOrder() != null ? requestImage.getDisplayOrder() : request.getImages().indexOf(requestImage)).product(product).createdAt(now).updatedAt(now).build();
-
-                productImageRepo.save(productImage);
-            }
-        }
-
-        return ResponseBuilder.build(HttpStatus.CREATED, "Tạo sản phẩm thành công", buildProductDetail(product));
+        return null;
     }
-
-    private String validateProductImageRequest(CreateProductImageRequest imageRequest, int imageIndex) {
-        if (imageRequest.getImageUrl() == null || imageRequest.getImageUrl().trim().isEmpty()) {
-            return "URL hình ảnh thứ " + imageIndex + " là bắt buộc";
-        }
-        if (!imageRequest.getImageUrl().matches("^(http|https)://.*$")) {
-            return "URL hình ảnh thứ " + imageIndex + " không đúng định dạng";
-        }
-        if (!imageRequest.getImageUrl().matches(".*\\.(jpg|jpeg|png|gif|webp)$")) {
-            return "Hình ảnh thứ " + imageIndex + " phải có định dạng jpg, jpeg, png, gif hoặc webp";
-        }
-        if (imageRequest.getAltText() != null && imageRequest.getAltText().length() > 255) {
-            return "Mô tả hình ảnh thứ " + imageIndex + " không được vượt quá 255 ký tự";
-        }
-        return "";
-    }
-
-    private String validateCreateProduct(ProductCreateRequest request) {
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
-            return "Tên sản phẩm là bắt buộc";
-        }
-        if (request.getName().length() > 200) {
-            return "Tên sản phẩm không được vượt quá 200 ký tự";
-        }
-        if (productRepo.existsByNameIgnoreCase(request.getName())) {
-            return "Sản phẩm với tên '" + request.getName() + "' đã tồn tại";
-        }
-        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
-            return "Mô tả sản phẩm là bắt buộc";
-        }
-        if (request.getDescription().length() > 1000) {
-            return "Mô tả sản phẩm không được vượt quá 1000 ký tự";
-        }
-        if (request.getSize() == null || request.getSize().trim().isEmpty()) {
-            return "Kích thước sản phẩm là bắt buộc";
-        }
-        if (request.getSize().length() > 50) {
-            return "Kích thước sản phẩm không được vượt quá 50 ký tự";
-        }
-        if (Size.fromDisplayName(request.getSize().trim()) == null) {
-            return "Kích thước sản phẩm không hợp lệ";
-        }
-        if (request.getPrice() <= 0) {
-            return "Giá sản phẩm phải lớn hơn 0";
-        }
-        if (request.getStatus() == null || request.getStatus().trim().isEmpty()) {
-            return "Trạng thái sản phẩm là bắt buộc";
-        }
-        String rawStatus = request.getStatus().trim();
-        if (!Status.AVAILABLE.getValue().equalsIgnoreCase(rawStatus) && !Status.OUT_OF_STOCK.getValue().equalsIgnoreCase(rawStatus)) {
-            return "Trạng thái sản phẩm không hợp lệ: '" + rawStatus + "'. Trạng thái hợp lệ: " + Status.AVAILABLE.getValue() + ", " + Status.OUT_OF_STOCK.getValue() + ".";
-        }
-
-        // Validate succulents và accessories
-        if ((request.getSucculentIds() == null || request.getSucculentIds().isEmpty()) && (request.getAccessoryIds() == null || request.getAccessoryIds().isEmpty())) {
-            return "Sản phẩm phải chứa ít nhất một sen đá hoặc phụ kiện";
-        }
-
-        // Validate succulent IDs
-        if (request.getSucculentIds() != null && !request.getSucculentIds().isEmpty()) {
-            for (Integer succulentId : request.getSucculentIds()) {
-                if (!succulentRepo.existsById(succulentId)) {
-                    return "Không tìm thấy sen đá";
-                }
-                // Kiểm tra sen đá còn hàng
-                Optional<Succulent> succulentOpt = succulentRepo.findById(succulentId);
-                if (succulentOpt.isPresent() && succulentOpt.get().getStatus() == Status.OUT_OF_STOCK) {
-                    return "Sen đá" + " đã hết hàng, không thể tạo sản phẩm";
-                }
-            }
-        }
-
-        // Validate accessory IDs
-        if (request.getAccessoryIds() != null && !request.getAccessoryIds().isEmpty()) {
-            for (Integer accessoryId : request.getAccessoryIds()) {
-                if (!accessoryRepo.existsById(accessoryId)) {
-                    return "Không tìm thấy phụ kiện";
-                }
-                // Kiểm tra phụ kiện còn hàng
-                Optional<Accessory> accessoryOpt = accessoryRepo.findById(accessoryId);
-                if (accessoryOpt.isPresent() && accessoryOpt.get().getStatus() == Status.OUT_OF_STOCK) {
-                    return "Phụ kiện" + " đã hết hàng, không thể tạo sản phẩm";
-                }
-            }
-        }
-
-        // Validate images
-        if (request.getImages() != null && !request.getImages().isEmpty()) {
-            for (int i = 0; i < request.getImages().size(); i++) {
-                CreateProductImageRequest imageRequest = request.getImages().get(i);
-                String imageError = validateProductImageRequest(imageRequest, i + 1);
-                if (!imageError.isEmpty()) {
-                    return imageError;
-                }
-            }
-        }
-
-        return "";
-    }
-
 
     @Override
     public ResponseEntity<ResponseObject> viewProduct(HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-        if (account.getRole() == null || account.getRole() != Role.SELLER) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Chỉ có Seller mới có quyền xem sản phẩm", null);
-        }
-
-        List<Product> products = productRepo.findAll(Sort.by(Sort.Direction.DESC, "id")).stream().filter(p -> p.getStatus() != Status.INACTIVE).toList();
-
-        List<Map<String, Object>> data = products.stream().map(this::buildProductDetail).toList();
-
-        return ResponseBuilder.build(HttpStatus.OK, "Lấy danh sách sản phẩm thành công", data);
+        return null;
     }
-
-    private Map<String, Object> buildProductDetail(Product product) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("id", product.getId());
-        response.put("name", product.getName());
-        response.put("description", product.getDescription());
-        response.put("size", product.getSize());
-        response.put("price", product.getPrice());
-        response.put("status", product.getStatus().getValue());
-        response.put("createdAt", product.getCreatedAt());
-        response.put("updatedAt", product.getUpdatedAt());
-
-        // Thêm thông tin seller nếu có
-        if (product.getSeller() != null) {
-            Map<String, Object> sellerInfo = new HashMap<>();
-            sellerInfo.put("id", product.getSeller().getId());
-            sellerInfo.put("name", product.getSeller().getName());
-            response.put("seller", sellerInfo);
-        }
-
-        // Thêm thông tin sen đá trong sản phẩm
-        List<ProductSucculent> productSucculents = productSucculentRepo.findByProductId(product.getId());
-        List<Map<String, Object>> succulentList = new ArrayList<>();
-        for (ProductSucculent ps : productSucculents) {
-            Succulent succulent = ps.getSucculent();
-            Map<String, Object> succulentInfo = new HashMap<>();
-            succulentInfo.put("id", succulent.getId());
-            succulentInfo.put("speciesName", succulent.getSpecies().getSpeciesName());
-//            succulentInfo.put("size", succulent.getSize().getDisplayName());
-//            succulentInfo.put("priceSell", succulent.getPriceSell());
-//            succulentInfo.put("quantity", succulent.getQuantity());
-            succulentInfo.put("status", succulent.getStatus().getValue());
-            succulentInfo.put("imageUrl", succulent.getImageUrl());
-            succulentList.add(succulentInfo);
-        }
-        response.put("succulents", succulentList);
-
-        // Thêm thông tin phụ kiện trong sản phẩm
-        List<ProductAccessory> productAccessories = productAccessoryRepo.findByProductId(product.getId());
-        List<Map<String, Object>> accessoryList = new ArrayList<>();
-        for (ProductAccessory pa : productAccessories) {
-            Accessory accessory = pa.getAccessory();
-            Map<String, Object> accessoryInfo = new HashMap<>();
-            accessoryInfo.put("id", accessory.getId());
-            accessoryInfo.put("name", accessory.getName());
-            accessoryInfo.put("category", accessory.getCategory().getDisplayName());
-            accessoryInfo.put("priceSell", accessory.getPriceSell());
-            accessoryInfo.put("quantity", accessory.getQuantity());
-            accessoryInfo.put("status", accessory.getStatus().getValue());
-            accessoryInfo.put("imageUrl", accessory.getImageUrl());
-            accessoryList.add(accessoryInfo);
-        }
-        response.put("accessories", accessoryList);
-
-        // Thêm thông tin hình ảnh
-        List<ProductImage> images = productImageRepo.findByProductIdOrderByDisplayOrderAsc(product.getId());
-        List<Map<String, Object>> imageList = new ArrayList<>();
-        for (ProductImage image : images) {
-            Map<String, Object> imageInfo = new HashMap<>();
-            imageInfo.put("id", image.getId());
-            imageInfo.put("imageUrl", image.getImageUrl());
-            imageInfo.put("altText", image.getAltText());
-            imageInfo.put("isPrimary", image.getIsPrimary());
-            imageInfo.put("displayOrder", image.getDisplayOrder());
-            imageList.add(imageInfo);
-        }
-        response.put("images", imageList);
-
-        return response;
-    }
-
 
     @Override
-    @Transactional
     public ResponseEntity<ResponseObject> updateProduct(ProductUpdateRequest request, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-        if (request.getId() == null) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "ID sản phẩm là bắt buộc", null);
-        }
-
-        Optional<Product> productOpt = productRepo.findById(request.getId());
-        if (productOpt.isEmpty()) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm", null);
-        }
-
-        // Chỉ validate những field được gửi lên
-        String error = validateUpdateProduct(request);
-        if (!error.isEmpty()) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
-        }
-
-        Product product = productOpt.get();
-
-        // 1. Update basic info - chỉ update các field không null
-        if (request.getName() != null) {
-            product.setName(request.getName().trim());
-        }
-
-        if (request.getDescription() != null) {
-            product.setDescription(request.getDescription().trim());
-        }
-
-        if (request.getSize() != null) {
-            product.setSize(Size.fromDisplayName(request.getSize()));
-        }
-
-        if (request.getPrice() > 0) {
-            product.setPrice(request.getPrice());
-        }
-
-        if (request.getStatus() != null) {
-            product.setStatus(Status.getByValue(request.getStatus()));
-        }
-
-        product.setUpdatedAt(LocalDateTime.now());
-
-        // 2. Update succulents (chỉ khi client gửi succulentIds)
-        if (request.getSucculentIds() != null) {
-            // Xóa quan hệ cũ
-            productSucculentRepo.deleteByProductId(product.getId());
-
-            // Tạo quan hệ mới với sen đá (nếu có)
-            if (!request.getSucculentIds().isEmpty()) {
-                for (Integer succulentId : request.getSucculentIds()) {
-                    Optional<Succulent> succulentOpt = succulentRepo.findById(succulentId);
-                    if (succulentOpt.isPresent()) {
-                        ProductSucculent productSucculent = ProductSucculent.builder().product(product).succulent(succulentOpt.get()).build();
-                        productSucculentRepo.save(productSucculent);
-                    }
-                }
-            }
-        }
-
-        // 3. Update accessories (chỉ khi client gửi accessoryIds)
-        if (request.getAccessoryIds() != null) {
-            // Xóa quan hệ cũ
-            productAccessoryRepo.deleteByProductId(product.getId());
-
-            // Tạo quan hệ mới với phụ kiện (nếu có)
-            if (!request.getAccessoryIds().isEmpty()) {
-                for (Integer accessoryId : request.getAccessoryIds()) {
-                    Optional<Accessory> accessoryOpt = accessoryRepo.findById(accessoryId);
-                    if (accessoryOpt.isPresent()) {
-                        ProductAccessory productAccessory = ProductAccessory.builder().product(product).accessory(accessoryOpt.get()).build();
-                        productAccessoryRepo.save(productAccessory);
-                    }
-                }
-            }
-        }
-
-        // 4. Update images (chỉ khi client gửi images)
-        if (request.getImages() != null) {
-            // Xóa hình ảnh cũ
-            productImageRepo.deleteByProductId(product.getId());
-
-            // Tạo hình ảnh mới (nếu có)
-            if (!request.getImages().isEmpty()) {
-                for (int i = 0; i < request.getImages().size(); i++) {
-                    CreateProductImageRequest imageRequest = request.getImages().get(i);
-
-                    ProductImage productImage = ProductImage.builder().imageUrl(imageRequest.getImageUrl()).altText(imageRequest.getAltText()).isPrimary(imageRequest.isPrimary()).displayOrder(imageRequest.getDisplayOrder() != null ? imageRequest.getDisplayOrder() : i + 1).product(product).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
-
-                    productImageRepo.save(productImage);
-                }
-            }
-        }
-
-        productRepo.save(product);
-
-        return ResponseBuilder.build(HttpStatus.OK, "Cập nhật sản phẩm thành công", buildProductDetail(product));
-    }
-
-    private String validateUpdateProduct(ProductUpdateRequest request) {
-        // Chỉ validate các field được gửi lên
-        if (request.getName() != null) {
-            if (request.getName().trim().isEmpty()) {
-                return "Tên sản phẩm không được để trống";
-            }
-            if (request.getName().length() > 200) {
-                return "Tên sản phẩm không được vượt quá 200 ký tự";
-            }
-            if (productRepo.existsByNameIgnoreCaseAndIdNot(request.getName(), request.getId())) {
-                return "Sản phẩm với tên '" + request.getName() + "' đã tồn tại";
-            }
-        }
-
-        if (request.getDescription() != null) {
-            if (request.getDescription().trim().isEmpty()) {
-                return "Mô tả sản phẩm không được để trống";
-            }
-            if (request.getDescription().length() > 1000) {
-                return "Mô tả sản phẩm không được vượt quá 1000 ký tự";
-            }
-        }
-
-        if (request.getSize() != null) {
-            if (request.getSize().trim().isEmpty()) {
-                return "Kích thước sản phẩm không được để trống";
-            }
-            if (request.getSize().length() > 50) {
-                return "Kích thước sản phẩm không được vượt quá 50 ký tự";
-            }
-            if (Size.fromDisplayName(request.getSize().trim()) == null) {
-                return "Kích thước sản phẩm không hợp lệ";
-            }
-        }
-
-        if (request.getPrice() <= 0) {
-            return "Giá sản phẩm phải lớn hơn 0";
-        }
-
-        if (request.getStatus() != null) {
-            if (request.getStatus().trim().isEmpty()) {
-                return "Trạng thái sản phẩm không được để trống";
-            }
-            String rawStatus = request.getStatus().trim();
-            if (!Status.AVAILABLE.getValue().equalsIgnoreCase(rawStatus) && !Status.OUT_OF_STOCK.getValue().equalsIgnoreCase(rawStatus) && !Status.INACTIVE.getValue().equalsIgnoreCase(rawStatus)) {
-                return "Trạng thái sản phẩm không hợp lệ: '" + rawStatus + "'. Trạng thái hợp lệ: " + Status.AVAILABLE.getValue() + ", " + Status.OUT_OF_STOCK.getValue() + ", " + Status.INACTIVE.getValue() + ".";
-            }
-        }
-
-        // Validate components nếu có
-        if (request.getSucculentIds() != null || request.getAccessoryIds() != null) {
-            // Validate ít nhất phải có một component
-            if ((request.getSucculentIds() == null || request.getSucculentIds().isEmpty()) && (request.getAccessoryIds() == null || request.getAccessoryIds().isEmpty())) {
-                return "Sản phẩm phải chứa ít nhất một sen đá hoặc phụ kiện";
-            }
-
-            // Validate succulent IDs
-            if (request.getSucculentIds() != null && !request.getSucculentIds().isEmpty()) {
-                for (Integer succulentId : request.getSucculentIds()) {
-                    if (!succulentRepo.existsById(succulentId)) {
-                        return "Không tìm thấy sen đá";
-                    }
-                    // Kiểm tra sen đá còn hàng
-                    Optional<Succulent> succulentOpt = succulentRepo.findById(succulentId);
-                    if (succulentOpt.isPresent() && succulentOpt.get().getStatus() == Status.OUT_OF_STOCK) {
-                        return "Sen đá" + " đã hết hàng, không thể cập nhật sản phẩm";
-                    }
-                }
-            }
-
-            // Validate accessory IDs
-            if (request.getAccessoryIds() != null && !request.getAccessoryIds().isEmpty()) {
-                for (Integer accessoryId : request.getAccessoryIds()) {
-                    if (!accessoryRepo.existsById(accessoryId)) {
-                        return "Không tìm thấy phụ kiện";
-                    }
-                    // Kiểm tra phụ kiện còn hàng
-                    Optional<Accessory> accessoryOpt = accessoryRepo.findById(accessoryId);
-                    if (accessoryOpt.isPresent() && accessoryOpt.get().getStatus() == Status.OUT_OF_STOCK) {
-                        return "Phụ kiện" + " đã hết hàng, không thể cập nhật sản phẩm";
-                    }
-                }
-            }
-        }
-
-        // Validate images nếu có
-        if (request.getImages() != null && !request.getImages().isEmpty()) {
-            for (int i = 0; i < request.getImages().size(); i++) {
-                CreateProductImageRequest imageRequest = request.getImages().get(i);
-                String imageError = validateProductImageRequest(imageRequest, i + 1);
-                if (!imageError.isEmpty()) {
-                    return imageError;
-                }
-            }
-        }
-
-        return "";
+        return null;
     }
 
     @Override
-    @Transactional
     public ResponseEntity<ResponseObject> deleteProduct(int id, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-        Product product = productRepo.findById(id).orElse(null);
-        if (product == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm", null);
-        }
-
-        if (product.getQuantity() > 0) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Chỉ có thể xóa sản phẩm khi số lượng bằng 0", null);
-        } else {
-            product.setStatus(Status.INACTIVE);
-        }
-
-        product.setUpdatedAt(LocalDateTime.now());
-        productRepo.save(product);
-
-        return ResponseBuilder.build(HttpStatus.OK, "Cập nhật thành công", null);
+        return null;
     }
 
+    // =========================== Wishlist ========================== \\
     // =========================== BUYER ========================== \\
     // =========================== WishList ========================== \\
     @Override
@@ -1357,7 +794,6 @@ public class ProductServiceImpl implements ProductService {
             result.put("productId", item.getProduct().getId());
             result.put("name", item.getProduct().getName());
             result.put("description", item.getProduct().getDescription());
-            result.put("price", item.getProduct().getPrice());
             result.put("status", item.getProduct().getStatus());
         }
         return result;
