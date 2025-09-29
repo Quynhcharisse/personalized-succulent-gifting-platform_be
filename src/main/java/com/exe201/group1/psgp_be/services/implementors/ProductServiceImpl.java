@@ -659,7 +659,7 @@ public class ProductServiceImpl implements ProductService {
 
             accessoryConfig.setValue(accessoryData);
             appConfigRepo.save(accessoryConfig);
-            return ResponseBuilder.build(HttpStatus.OK, "Update pot successfully", null);
+            return ResponseBuilder.build(HttpStatus.OK, "Create pot successfully", null);
         }
 
         Map<String, Object> pot = (Map<String, Object>) accessoryData.get("pot");
@@ -702,12 +702,46 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private ResponseEntity<ResponseObject> createSoil(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
+        CreateAccessoryRequest.SoilData soilData = request.getSoilData();
+
         if (accessoryData.get("soil") == null) {
             // create new
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Coming soon", null);
+            Map<String, Object> soilDetailMap = createSoilDetail(soilData);
+
+            accessoryData.put("soil", Map.of(soilData.getName(), soilDetailMap));
+
+            accessoryConfig.setValue(accessoryData);
+            appConfigRepo.save(accessoryConfig);
+            return ResponseBuilder.build(HttpStatus.OK, "Create soil successfully", null);
         }
 
-        return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Coming soon", null);
+        Map<String, Object> soil = (Map<String, Object>) accessoryData.get("soil");
+        Map<String, Object> soilDetailMap = createSoilDetail(soilData);
+        if(soil.get(soilData.getName()) == null){
+            soil.put(soilData.getName(), soilDetailMap);
+        }else {
+            soil.replace(soilData.getName(), soilDetailMap);
+        }
+
+        accessoryData.replace("soil", soil);
+        accessoryConfig.setValue(accessoryData);
+        appConfigRepo.save(accessoryConfig);
+        return ResponseBuilder.build(HttpStatus.OK, "Update soil successfully", null);
+    }
+
+    private Map<String, Object> createSoilDetail(CreateAccessoryRequest.SoilData soilData){
+        Map<String, Object> soilDetailMap = new HashMap<>();
+        soilDetailMap.put("description", soilData.getDescription());
+        soilDetailMap.put("availableMassValue", soilData.getAvailableMassValue());
+        soilDetailMap.put("image", soilData.getImages().stream().map(CreateAccessoryRequest.Image::getImage).toList());
+
+        Map<String, Object> basePriceDetailMap = new HashMap<>();// base price detail level
+        basePriceDetailMap.put("massValue", soilData.getBasePricing().getMassValue());
+        basePriceDetailMap.put("massUnit", soilData.getBasePricing().getMassUnit());
+        basePriceDetailMap.put("price", soilData.getBasePricing().getPrice());
+
+        soilDetailMap.put("basePricing", basePriceDetailMap);
+        return soilDetailMap;
     }
 
     private ResponseEntity<ResponseObject> createDecoration(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
