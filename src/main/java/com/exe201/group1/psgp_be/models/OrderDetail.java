@@ -1,5 +1,6 @@
 package com.exe201.group1.psgp_be.models;
 
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -15,8 +16,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-
-import java.math.BigDecimal;
+import org.hibernate.annotations.Type;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,9 +39,12 @@ public class OrderDetail {
     @JoinColumn(name = "order_id")
     Order order;
 
-    @Column
-    Integer quantity;
+    int quantity;
 
     @Column(precision = 10, scale = 2)
-    BigDecimal price;
+    long price;
+
+    @Column(columnDefinition = "jsonb", name = "`product_info`")
+    @Type(JsonBinaryType.class)
+    Object productInfo;
 } 
