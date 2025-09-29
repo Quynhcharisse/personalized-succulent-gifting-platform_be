@@ -40,12 +40,9 @@ public interface ProductService {
 
 
     //--------------------------------------------ACCESSORY--------------------------------------------//
-    ResponseEntity<ResponseObject> createAccessory(CreateAccessoryRequest request, HttpServletRequest httpRequest);
+    ResponseEntity<ResponseObject> createAccessory(CreateAccessoryRequest request);
 
-    ResponseEntity<ResponseObject> getAccessories(HttpServletRequest httpRequest);
-
-    ResponseEntity<ResponseObject> updateAccessory(UpdateAccessoryRequest request, HttpServletRequest httpRequest);
-
+    ResponseEntity<ResponseObject> getAccessories(String type);
 
     //--------------------------------------------PRODUCT--------------------------------------------//
     ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request, HttpServletRequest httpRequest);

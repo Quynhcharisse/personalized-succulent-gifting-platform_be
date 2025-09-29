@@ -616,11 +616,7 @@ public class ProductServiceImpl implements ProductService {
     // =========================== Accessory ========================== \\
 
     @Override
-    public ResponseEntity<ResponseObject> createAccessory(CreateAccessoryRequest request, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.UNAUTHORIZED, "Account invalid", null);
-        }
+    public ResponseEntity<ResponseObject> createAccessory(CreateAccessoryRequest request) {
 
         String error = validateCreateAccessory(request);
         if (!error.isEmpty()) {
@@ -664,9 +660,9 @@ public class ProductServiceImpl implements ProductService {
 
         Map<String, Object> pot = (Map<String, Object>) accessoryData.get("pot");
         Map<String, Object> potDetailMap = createPotDetail(potData);
-        if(pot.get(potData.getName()) == null){
+        if (pot.get(potData.getName()) == null) {
             pot.put(potData.getName(), potDetailMap);
-        }else {
+        } else {
             pot.replace(potData.getName(), potDetailMap);
         }
 
@@ -676,7 +672,7 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.OK, "Update pot successfully", null);
     }
 
-    private Map<String, Object> createPotDetail(CreateAccessoryRequest.PotData potData){
+    private Map<String, Object> createPotDetail(CreateAccessoryRequest.PotData potData) {
         Map<String, Object> potDetailMap = new HashMap<>();
         potDetailMap.put("material", potData.getMaterial());
         potDetailMap.put("color", potData.getColor());
@@ -717,9 +713,9 @@ public class ProductServiceImpl implements ProductService {
 
         Map<String, Object> soil = (Map<String, Object>) accessoryData.get("soil");
         Map<String, Object> soilDetailMap = createSoilDetail(soilData);
-        if(soil.get(soilData.getName()) == null){
+        if (soil.get(soilData.getName()) == null) {
             soil.put(soilData.getName(), soilDetailMap);
-        }else {
+        } else {
             soil.replace(soilData.getName(), soilDetailMap);
         }
 
@@ -729,7 +725,7 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.OK, "Update soil successfully", null);
     }
 
-    private Map<String, Object> createSoilDetail(CreateAccessoryRequest.SoilData soilData){
+    private Map<String, Object> createSoilDetail(CreateAccessoryRequest.SoilData soilData) {
         Map<String, Object> soilDetailMap = new HashMap<>();
         soilDetailMap.put("description", soilData.getDescription());
         soilDetailMap.put("availableMassValue", soilData.getAvailableMassValue());
@@ -760,9 +756,9 @@ public class ProductServiceImpl implements ProductService {
 
         Map<String, Object> decoration = (Map<String, Object>) accessoryData.get("decoration");
         Map<String, Object> decorDetailMap = createDecorDetail(decorationData);
-        if(decoration.get(decorationData.getName()) == null){
+        if (decoration.get(decorationData.getName()) == null) {
             decoration.put(decorationData.getName(), decorDetailMap);
-        }else {
+        } else {
             decoration.replace(decorationData.getName(), decorDetailMap);
         }
 
@@ -772,7 +768,7 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.OK, "Update decoration successfully", null);
     }
 
-    private Map<String, Object> createDecorDetail(CreateAccessoryRequest.DecorationData decorationData){
+    private Map<String, Object> createDecorDetail(CreateAccessoryRequest.DecorationData decorationData) {
         Map<String, Object> decorDetailMap = new HashMap<>();
         decorDetailMap.put("description", decorationData.getDescription());
         decorDetailMap.put("price", decorationData.getPrice());
@@ -781,16 +777,116 @@ public class ProductServiceImpl implements ProductService {
         return decorDetailMap;
     }
 
-    @Override
-    public ResponseEntity<ResponseObject> getAccessories(HttpServletRequest httpRequest) {
-        return null;
-    }
 
     @Override
-    public ResponseEntity<ResponseObject> updateAccessory(UpdateAccessoryRequest request, HttpServletRequest httpRequest) {
-        return null;
+    public ResponseEntity<ResponseObject> getAccessories(String type) {
+        Map<String, Object> response = new HashMap<>();
+        AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
+        assert accessoryConfig != null;
+        Object valueJson = accessoryConfig.getValue();
+
+        if (valueJson != null) {
+            switch (type) {
+                case "pot":
+                    response.put("pots", buildPotResponse((Map<String, Object>) valueJson));
+                    break;
+                case "soil":
+                    response.put("soils", buildSoilResponse((Map<String, Object>) valueJson));
+                    break;
+                case "decoration":
+                    response.put("decorations", buildDecorationResponse((Map<String, Object>) valueJson));
+                    break;
+                default:
+                    response.put("pots", buildPotResponse((Map<String, Object>) valueJson));
+                    response.put("soils", buildSoilResponse((Map<String, Object>) valueJson));
+                    response.put("decorations", buildDecorationResponse((Map<String, Object>) valueJson));
+                    break;
+            }
+        }
+
+        return ResponseBuilder.build(HttpStatus.OK, "", response);
     }
 
+    private List<Map<String, Object>> buildPotResponse(Map<String, Object> value) {
+        List<Map<String, Object>> potResponse = new ArrayList<>();
+
+        Object potJson = value.get("pot");
+        if (potJson != null && !((Map<String, Object>) potJson).keySet().isEmpty()) {
+            potResponse = ((Map<String, Object>) potJson).keySet().stream().map(
+                    key -> {
+                        Map<String, Object> potDetail = (Map<String, Object>) ((Map<String, Object>) potJson).get(key);
+
+                        return Map.of(
+                                "name", key.toLowerCase(),
+                                "material", potDetail.get("material"),
+                                "color", potDetail.get("color"),
+                                "description", potDetail.get("description"),
+                                "image", ((List<String>) potDetail.get("image")).stream().map(img -> Map.of("image", img)).toList(),
+                                "size", ((Map<String, Object>) potDetail.get("size")).keySet().stream().map(
+                                        sizeKey -> {
+                                            Map<String, Object> sizeDetail = (Map<String, Object>) ((Map<String, Object>) potDetail.get("size")).get(sizeKey);
+                                            return Map.of(
+                                                    "name", sizeKey.toLowerCase(),
+                                                    "potHeight", (Double) sizeDetail.get("potHeight"),
+                                                    "potUpperCrossSectionArea", (Double) sizeDetail.get("potUpperCrossSectionArea"),
+                                                    "maxSoilMassValue", (Double) sizeDetail.get("maxSoilMassValue"),
+                                                    "availableQty", (Integer) sizeDetail.get("availableQty"),
+                                                    "price", ((Integer) sizeDetail.get("price")).longValue()
+                                            );
+                                        }
+                                ).toList()
+                        );
+                    }
+            ).toList();
+        }
+        return potResponse;
+    }
+
+    private List<Map<String, Object>> buildSoilResponse(Map<String, Object> value) {
+        List<Map<String, Object>> soilResponse = new ArrayList<>();
+
+        Object soilJson = value.get("soil");
+        if (soilJson != null && !((Map<String, Object>) soilJson).keySet().isEmpty()) {
+            soilResponse = ((Map<String, Object>) soilJson).keySet().stream().map(
+                    key -> {
+                        Map<String, Object> soilDetail = (Map<String, Object>) ((Map<String, Object>) soilJson).get(key);
+
+                        return Map.of(
+                                "name", key.toLowerCase(),
+                                "description", soilDetail.get("description"),
+                                "availableMassValue", soilDetail.get("availableMassValue"),
+                                "basePricing", ((Map<String, Object>) soilDetail.get("basePricing")),
+                                "image", ((List<String>) soilDetail.get("image")).stream().map(img -> Map.of("image", img)).toList()
+                        );
+                    }
+            ).toList();
+        }
+
+        return soilResponse;
+    }
+
+    private List<Map<String, Object>> buildDecorationResponse(Map<String, Object> value) {
+        List<Map<String, Object>> decorationResponse = new ArrayList<>();
+
+        Object decorationJson = value.get("decoration");
+        if (decorationJson != null && !((Map<String, Object>) decorationJson).keySet().isEmpty()) {
+            decorationResponse = ((Map<String, Object>) decorationJson).keySet().stream().map(
+                    key -> {
+                        Map<String, Object> decorationDetail = (Map<String, Object>) ((Map<String, Object>) decorationJson).get(key);
+
+                        return Map.of(
+                                "name", key.toLowerCase(),
+                                "description", decorationDetail.get("description"),
+                                "price", decorationDetail.get("price"),
+                                "availableQty", decorationDetail.get("availableQty"),
+                                "image", ((List<String>) decorationDetail.get("image")).stream().map(img -> Map.of("image", img)).toList()
+                        );
+                    }
+            ).toList();
+        }
+
+        return decorationResponse;
+    }
 
     // =========================== Product ========================== \\
 

@@ -83,20 +83,14 @@ public class ProductController {
     //=================== Accessory =====================\\
     @GetMapping("/accessories")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> getAccessories(HttpServletRequest httpRequest) {
-        return productService.getAccessories(httpRequest);
+    public ResponseEntity<ResponseObject> getAccessories(@RequestParam(name = "t", defaultValue = "all") String type) {
+        return productService.getAccessories(type);
     }
 
     @PostMapping("/accessory")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> createAccessory(@RequestBody CreateAccessoryRequest request, HttpServletRequest httpRequest) {
-        return productService.createAccessory(request, httpRequest);
-    }
-
-    @PutMapping("/accessory")
-    @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> updateAccessory(@RequestBody UpdateAccessoryRequest request, HttpServletRequest httpRequest) {
-        return productService.updateAccessory(request, httpRequest);
+    public ResponseEntity<ResponseObject> createAccessory(@RequestBody CreateAccessoryRequest request) {
+        return productService.createAccessory(request);
     }
 
     //=================== Product =====================\\
