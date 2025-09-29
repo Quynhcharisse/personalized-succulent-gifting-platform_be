@@ -663,17 +663,17 @@ public class ProductServiceImpl implements ProductService {
         }
 
         Map<String, Object> pot = (Map<String, Object>) accessoryData.get("pot");
+        Map<String, Object> potDetailMap = createPotDetail(potData);
         if(pot.get(potData.getName()) == null){
-            Map<String, Object> potDetailMap = createPotDetail(potData);
             pot.put(potData.getName(), potDetailMap);
-
-            accessoryData.replace("pot", pot);
-            accessoryConfig.setValue(accessoryData);
-            appConfigRepo.save(accessoryConfig);
-            return ResponseBuilder.build(HttpStatus.OK, "Update pot successfully", null);
+        }else {
+            pot.replace(potData.getName(), potDetailMap);
         }
 
-        return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Coming soon", null);
+        accessoryData.replace("pot", pot);
+        accessoryConfig.setValue(accessoryData);
+        appConfigRepo.save(accessoryConfig);
+        return ResponseBuilder.build(HttpStatus.OK, "Update pot successfully", null);
     }
 
     private Map<String, Object> createPotDetail(CreateAccessoryRequest.PotData potData){
@@ -700,7 +700,6 @@ public class ProductServiceImpl implements ProductService {
         potDetailMap.put("size", sizeDetailMap);
         return potDetailMap;
     }
-
 
     private ResponseEntity<ResponseObject> createSoil(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
         if (accessoryData.get("soil") == null) {
