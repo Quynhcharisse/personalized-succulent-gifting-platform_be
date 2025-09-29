@@ -745,13 +745,40 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private ResponseEntity<ResponseObject> createDecoration(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
+        CreateAccessoryRequest.DecorationData decorationData = request.getDecorationData();
+
         if (accessoryData.get("decoration") == null) {
             // create new
+            Map<String, Object> decorDetailMap = createDecorDetail(decorationData);
 
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Coming soon", null);
+            accessoryData.put("decoration", Map.of(decorationData.getName(), decorDetailMap));
+
+            accessoryConfig.setValue(accessoryData);
+            appConfigRepo.save(accessoryConfig);
+            return ResponseBuilder.build(HttpStatus.OK, "Create decoration successfully", null);
         }
 
-        return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Coming soon", null);
+        Map<String, Object> decoration = (Map<String, Object>) accessoryData.get("decoration");
+        Map<String, Object> decorDetailMap = createDecorDetail(decorationData);
+        if(decoration.get(decorationData.getName()) == null){
+            decoration.put(decorationData.getName(), decorDetailMap);
+        }else {
+            decoration.replace(decorationData.getName(), decorDetailMap);
+        }
+
+        accessoryData.replace("decoration", decoration);
+        accessoryConfig.setValue(accessoryData);
+        appConfigRepo.save(accessoryConfig);
+        return ResponseBuilder.build(HttpStatus.OK, "Update decoration successfully", null);
+    }
+
+    private Map<String, Object> createDecorDetail(CreateAccessoryRequest.DecorationData decorationData){
+        Map<String, Object> decorDetailMap = new HashMap<>();
+        decorDetailMap.put("description", decorationData.getDescription());
+        decorDetailMap.put("price", decorationData.getPrice());
+        decorDetailMap.put("availableQty", decorationData.getAvailableQty());
+        decorDetailMap.put("image", decorationData.getImages().stream().map(CreateAccessoryRequest.Image::getImage).toList());
+        return decorDetailMap;
     }
 
     @Override
