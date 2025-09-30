@@ -32,8 +32,8 @@ public class CreateSucculentRequest {
     public static class Size {
         String sizeName;
         long price;
-        double minDiameter;
-        double maxDiameter;
+        double minArea;
+        double maxArea;
         int quantity;
     }
 }

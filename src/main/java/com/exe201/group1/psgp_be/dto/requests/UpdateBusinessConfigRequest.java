@@ -7,20 +7,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
-
-@NoArgsConstructor
-@AllArgsConstructor
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UpdateAccessoryRequest {
-    int id;
-    String name;
-    String description;
-    int quantity;
-    String category;
-    long priceSell;
-    String imageUrl;
-    double weight;
+public class UpdateBusinessConfigRequest {
+    double sellRate;
 }

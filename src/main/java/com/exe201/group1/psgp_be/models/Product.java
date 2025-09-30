@@ -43,14 +43,9 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seller_id")
-    User seller;
-
     @Column(length = 200)
     String name;
 
-    @Column(columnDefinition = "TEXT")
     String description;
 
     @Column(name = "created_at")
