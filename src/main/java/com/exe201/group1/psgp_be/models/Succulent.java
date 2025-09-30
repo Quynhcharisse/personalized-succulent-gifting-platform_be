@@ -49,10 +49,6 @@ public class Succulent {
     @Type(JsonBinaryType.class)
     Object size;// lưu nhiều size, 1 size  sẽ có 1 đường kính riêng, 1 giá riêng, 1 số lượng riêng, 1 status riêng
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    Status status; // status của tất cả size
-
     String imageUrl; // Sửa thành lưu json sau
 
     @Column(name = "created_at")

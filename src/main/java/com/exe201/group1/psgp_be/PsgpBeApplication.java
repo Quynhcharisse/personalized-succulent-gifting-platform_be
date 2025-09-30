@@ -14,6 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @SpringBootApplication
 @RequiredArgsConstructor
@@ -116,7 +117,7 @@ public class PsgpBeApplication implements CommandLineRunner {
                             .build(),
                     AppConfig.builder()
                             .key("business")
-                            .value(null)
+                            .value(Map.of("sellRate", 1))
                             .build()
             ));
         }

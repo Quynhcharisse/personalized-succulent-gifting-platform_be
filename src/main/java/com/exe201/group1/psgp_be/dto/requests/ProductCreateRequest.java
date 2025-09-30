@@ -17,10 +17,6 @@ import java.util.List;
 public class ProductCreateRequest {
     String name;
     String description;
-    String size;
-    long price;
-    Integer quantityInStock;
-    String status;
     List<Integer> succulentIds;
     List<Integer> accessoryIds;
     List<CreateProductImageRequest> images;

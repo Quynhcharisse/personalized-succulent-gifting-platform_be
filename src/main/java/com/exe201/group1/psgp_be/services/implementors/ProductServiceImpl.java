@@ -8,7 +8,6 @@ import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
-import com.exe201.group1.psgp_be.dto.requests.UpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
@@ -288,7 +287,6 @@ public class ProductServiceImpl implements ProductService {
                 Succulent.builder()
                         .species(species)
                         .size(null)
-                        .status(null)
                         .imageUrl(request.getImageUrl())
                         .createdAt(LocalDateTime.now())
                         .updatedAt(LocalDateTime.now())
@@ -304,26 +302,20 @@ public class ProductServiceImpl implements ProductService {
 //                }
 //        }
 
-        Status mainStatus = Status.OUT_OF_STOCK;
 
         Map<String, Object> sizeRangeMap = new HashMap<>();
 
         for (CreateSucculentRequest.Size size : request.getSizeList()) {
-            if (size.getQuantity() > 0) {
-                mainStatus = Status.AVAILABLE;
-            }
             Map<String, Object> sizeMap = new HashMap<>();
-            sizeMap.put("min", size.getMinDiameter());
-            sizeMap.put("max", size.getMaxDiameter());
+            sizeMap.put("minArea", size.getMinArea());
+            sizeMap.put("maxArea", size.getMaxArea());
             sizeMap.put("price", size.getPrice());
             sizeMap.put("quantity", size.getQuantity());
-            sizeMap.put("status", size.getQuantity() > 0 ? Status.AVAILABLE.name() : Status.OUT_OF_STOCK.name());
 
             sizeRangeMap.put(size.getSizeName().toLowerCase(), sizeMap);
         }
 
         succulent.setSize(sizeRangeMap);
-        succulent.setStatus(mainStatus);
         succulentRepo.save(succulent);
 
         return ResponseBuilder.build(HttpStatus.OK, "Tạo catalog loài sen đá thành công", null);
@@ -402,11 +394,11 @@ public class ProductServiceImpl implements ProductService {
                 return "Kích thước '" + size.getSizeName() + "' đã bị trùng lặp. Vui lòng sử dụng tên khác.";
             }
 
-            if (size.getMaxDiameter() < size.getMinDiameter()) {
+            if (size.getMaxArea() < size.getMinArea()) {
                 return "Đường kính tối đa phải lớn hơn hoặc bằng đường kính tối thiểu";
             }
 
-            if (size.getMaxDiameter() <= 0 || size.getMinDiameter() <= 0) {
+            if (size.getMaxArea() <= 0 || size.getMinArea() <= 0) {
                 return "Cần nhập đường kính lớn hơn 0";
             }
 
@@ -438,15 +430,22 @@ public class ProductServiceImpl implements ProductService {
         Map<String, Object> size = (Map<String, Object>) succulent.getSize();
         Map<String, Object> sizeResponse = new HashMap<>();
 
+        Status mainStatus = Status.OUT_OF_STOCK;
+
         for (String key : size.keySet()) {
             Map<String, Object> sizeDetail = new HashMap<>();
 
             Map<String, Object> value = (Map<String, Object>) size.get(key);
-            sizeDetail.put("minDiameter", value.get("min"));
-            sizeDetail.put("maxDiameter", value.get("max"));
+
+            Integer quantity = (Integer) value.get("quantity");
+
+            if(quantity > 0) mainStatus = Status.AVAILABLE;
+
+            sizeDetail.put("minArea", value.get("minArea"));
+            sizeDetail.put("maxArea", value.get("maxArea"));
             sizeDetail.put("price", value.get("price"));
-            sizeDetail.put("quantity", value.get("quantity"));
-            sizeDetail.put("status", Status.valueOf(value.get("status").toString()).getValue());
+            sizeDetail.put("quantity", quantity);
+            sizeDetail.put("status", quantity > 0 ? Status.AVAILABLE : Status.OUT_OF_STOCK);
 
             sizeResponse.put(key, sizeDetail);
         }
@@ -459,7 +458,7 @@ public class ProductServiceImpl implements ProductService {
         response.put("speciesName", species.getSpeciesName());
         response.put("description", species.getDescription());
         response.put("size", sizeResponse);
-        response.put("status", succulent.getStatus().getValue());
+        response.put("status", mainStatus);
         response.put("createdAt", succulent.getCreatedAt());
         response.put("updatedAt", succulent.getUpdatedAt());
         response.put("fengShuiElements", species.getElements());
@@ -509,7 +508,6 @@ public class ProductServiceImpl implements ProductService {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Không có size để cập nhật", null);
         }
         Map<String, Object> sizeRangeMap = (Map<String, Object>) succulent.getSize();
-        Status mainStatus = Status.OUT_OF_STOCK;
 //        {
 //                "small": {
 //                     "min": 0.1,
@@ -529,18 +527,12 @@ public class ProductServiceImpl implements ProductService {
 
             Map<String, Object> sizeDetail = (Map<String, Object>) sizeDetailObject;
 
-
-            if (size.getQuantity() > 0) {
-                mainStatus = Status.AVAILABLE;
-            }
-
             sizeDetail.replace("price", size.getPrice());
             sizeDetail.replace("quantity", size.getQuantity());
             sizeDetail.replace("status", size.getQuantity() > 0 ? Status.AVAILABLE.name() : Status.OUT_OF_STOCK.name());
         }
 
         succulent.setSize(sizeRangeMap);
-        succulent.setStatus(mainStatus);
         succulentRepo.save(succulent);
 
         return ResponseBuilder.build(HttpStatus.OK, "Cập nhật mặt hàng thành công", null);
@@ -910,9 +902,8 @@ public class ProductServiceImpl implements ProductService {
         return null;
     }
 
-    // =========================== Wishlist ========================== \\
-    // =========================== BUYER ========================== \\
     // =========================== WishList ========================== \\
+
     @Override
     public ResponseEntity<ResponseObject> addItemToWishList(AddWishListItemRequest item) {
         Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
