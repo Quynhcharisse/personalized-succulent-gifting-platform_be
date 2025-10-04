@@ -52,8 +52,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -339,9 +341,6 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private String validateUpdateSucculent(UpdateSucculentRequest request, Succulent current) {
-        if (request.getSpeciesName() == null || request.getSpeciesName().trim().isEmpty()) {
-            return "Tên loài là bắt buộc";
-        }
         if (request.getSpeciesName().length() > 100) {
             return "Tên loài không được vượt quá 100 ký tự";
         }
@@ -363,23 +362,46 @@ public class ProductServiceImpl implements ProductService {
             return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
         }
 
-        if (!validSize(request.getSizeList()).isEmpty()) {
-            return validSize(request.getSizeList());
+        // Gọi validSize đúng 1 lần
+        String sizeErr = validSize(request.getSizeList());
+        if (!sizeErr.isEmpty()) return sizeErr;
+
+        // Kiểm tra size có tồn tại trong catalog hiện tại
+        if (current.getSize() == null) {
+            return "Không có size để cập nhật";
         }
 
-        // Validate lists if provided
+        @SuppressWarnings("unchecked")
+        Map<String, Object> cur = (Map<String, Object>) current.getSize();
+
+        Set<String> currentKeys = cur.keySet().stream()
+                .filter(Objects::nonNull)
+                .map(k -> k.trim().toLowerCase())
+                .collect(Collectors.toSet());
+
+        Set<String> seen = new HashSet<>();
+        for (UpdateSucculentRequest.Size s : request.getSizeList()) {
+            if (s.getSizeName() == null || s.getSizeName().trim().isEmpty()) {
+                return "Tên kích thước là bắt buộc";
+            }
+            String key = s.getSizeName().trim().toLowerCase();
+            if (!seen.add(key)) {
+                return "Kích thước '" + s.getSizeName() + "' bị trùng lặp trong yêu cầu cập nhật";
+            }
+            if (!currentKeys.contains(key)) {
+                return "Kích thước '" + s.getSizeName() + "' không tồn tại trong hệ thống";
+            }
+        }
+
+        // Validate enum lists nếu có
         if (request.getFengShuiList() != null) {
             for (var e : request.getFengShuiList()) {
-                if (e == null) {
-                    return "Danh sách phong thủy chứa giá trị không hợp lệ";
-                }
+                if (e == null) return "Danh sách phong thủy chứa giá trị không hợp lệ";
             }
         }
         if (request.getZodiacList() != null) {
             for (var z : request.getZodiacList()) {
-                if (z == null) {
-                    return "Danh sách cung hoàng đạo chứa giá trị không hợp lệ";
-                }
+                if (z == null) return "Danh sách cung hoàng đạo chứa giá trị không hợp lệ";
             }
         }
         return "";
