@@ -18,25 +18,12 @@ import org.springframework.http.ResponseEntity;
 
 public interface ProductService {
 
-    //--------------------------------------------SUPPLIER--------------------------------------------//
-    ResponseEntity<ResponseObject> createSupplier(CreateSupplierRequest request, HttpServletRequest httpRequest);
-
-    ResponseEntity<ResponseObject> getSupplierList(HttpServletRequest httpRequest);
-
-    ResponseEntity<ResponseObject> updateSupplier(UpdateSupplierRequest request, HttpServletRequest httpRequest);
-
-    ResponseEntity<ResponseObject> updateSupplierStatus(UpdateSupplierStatusRequest request, HttpServletRequest httpRequest);
-
-    ResponseEntity<ResponseObject> getTotalSupplierCount(HttpServletRequest httpRequest);
-
-
     //--------------------------------------------SUCCULENT--------------------------------------------//
     ResponseEntity<ResponseObject> createSucculent(CreateSucculentRequest request, HttpServletRequest httpRequest);
 
     ResponseEntity<ResponseObject> viewSucculentList(HttpServletRequest httpRequest);
 
     ResponseEntity<ResponseObject> updateSucculent(UpdateSucculentRequest request, HttpServletRequest httpRequest);
-
 
     //--------------------------------------------ACCESSORY--------------------------------------------//
     ResponseEntity<ResponseObject> createAccessory(CreateAccessoryRequest request);
@@ -51,17 +38,6 @@ public interface ProductService {
     ResponseEntity<ResponseObject> updateProduct(ProductUpdateRequest request, HttpServletRequest httpRequest);
     
     ResponseEntity<ResponseObject> deleteProduct(int id, HttpServletRequest httpRequest);
-
-
-    //--------------------------------------------CUSTOM REQUEST--------------------------------------------//
-    ResponseEntity<ResponseObject> customRequestListByBuyer(HttpServletRequest request);
-
-    ResponseEntity<ResponseObject> createCustomRequest(CreateCustomRequest request);
-
-    ResponseEntity<ResponseObject> updateCustomRequest(UpdateCustomRequestRequest request);
-
-    ResponseEntity<ResponseObject> deleteCustomRequest(DeleteCustomRequestRequest request);
-
 
     //--------------------------------------------WISHLIST--------------------------------------------//
     ResponseEntity<ResponseObject> addItemToWishList(AddWishListItemRequest item);

@@ -51,11 +51,13 @@ public class SucculentSpecies {
     @CollectionTable(name = "species_fengshui", joinColumns = @JoinColumn(name = "species_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "element", length = 10)
+    @Builder.Default
     Set<FengShui> elements = new HashSet<>();
 
     @ElementCollection(targetClass = Zodiac.class)
     @CollectionTable(name = "species_zodiac", joinColumns = @JoinColumn(name = "species_id"))
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(name = "zodiac", length = 15)
     Set<Zodiac> zodiacs = new HashSet<>();
 
