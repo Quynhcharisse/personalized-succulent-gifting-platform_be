@@ -1,13 +1,19 @@
 package com.exe201.group1.psgp_be.services.implementors;
 
+import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProcessAccountRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateProfileRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierStatusRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.enums.FengShui;
 import com.exe201.group1.psgp_be.enums.Role;
+import com.exe201.group1.psgp_be.enums.Status;
 import com.exe201.group1.psgp_be.enums.Zodiac;
 import com.exe201.group1.psgp_be.models.Account;
+import com.exe201.group1.psgp_be.models.Supplier;
 import com.exe201.group1.psgp_be.repositories.AccountRepo;
+import com.exe201.group1.psgp_be.repositories.SupplierRepo;
 import com.exe201.group1.psgp_be.services.AccountService;
 import com.exe201.group1.psgp_be.services.JWTService;
 import com.exe201.group1.psgp_be.utils.CookieUtil;
@@ -16,12 +22,15 @@ import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -30,10 +39,12 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AccountServiceImpl implements AccountService {
 
-    private final JWTService jwtService;
-    private final AccountRepo accountRepo;
+    JWTService jwtService;
+    AccountRepo accountRepo;
+    SupplierRepo supplierRepo;
 
     @Override
     public ResponseEntity<ResponseObject> logout(HttpServletRequest request, HttpServletResponse response) {
@@ -140,13 +151,9 @@ public class AccountServiceImpl implements AccountService {
         if (request.getAddress() == null || request.getAddress().isEmpty()) {
             return "Địa chỉ là bắt buộc";
         }
-
+ 
         if (request.getAddress().length() > 255) {
             return "Địa chỉ phải <= 255 ký tự";
-        }
-
-        if (request.getAvatarUrl() == null || request.getAvatarUrl().isEmpty()) {
-            return "URL ảnh đại diện là bắt buộc";
         }
 
         String lower = request.getAvatarUrl().toLowerCase();
@@ -234,5 +241,193 @@ public class AccountServiceImpl implements AccountService {
             return ResponseBuilder.build(HttpStatus.OK, "Tài khoản đã được kích hoạt", null);
         }
         return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Hành động không hợp lệ", null);
+    }
+
+
+    // =========================== Supplier ========================== \\
+    @Override
+    public ResponseEntity<ResponseObject> createSupplier(CreateSupplierRequest request, HttpServletRequest httpRequest) {
+        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
+
+        if (account == null) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
+        }
+
+        String error = validateCreateSupplier(request);
+        if (!error.isEmpty()) {
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
+        }
+
+        supplierRepo.save(Supplier.builder().name(request.getName().trim()).contactPerson(request.getContactPerson() == null ? null : request.getContactPerson().trim()).phone(request.getPhone() == null ? null : request.getPhone().trim()).email(request.getEmail() == null ? null : request.getEmail().trim()).address(request.getAddress() == null ? null : request.getAddress().trim()).description(request.getDescription() == null ? null : request.getDescription().trim()).status(Status.ACTIVE).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build());
+
+        return ResponseBuilder.build(HttpStatus.OK, "Tạo nhà cung cấp thành công", null);
+    }
+
+    private String validateCreateSupplier(CreateSupplierRequest request) {
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            return "Tên nhà cung cấp là bắt buộc";
+        }
+        if (request.getName().length() > 100) {
+            return "Tên nhà cung cấp không được vượt quá 100 ký tự";
+        }
+        if (supplierRepo.existsByNameIgnoreCase(request.getName())) {
+            return "Nhà cung cấp với tên '" + request.getName() + "' đã tồn tại";
+        }
+
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            String phone = request.getPhone().trim();
+            if (phone.length() > 10) {
+                return "Số điện thoại không được vượt quá 10 ký tự";
+            }
+            if (!phone.matches("^(0[3|5|7|8|9])\\d{8}$")) {
+                return "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09";
+            }
+        }
+
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            String email = request.getEmail().trim();
+            if (email.length() > 100) {
+                return "Email không được vượt quá 100 ký tự";
+            }
+
+            if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                return "Email không đúng định dạng";
+            }
+        }
+        if (request.getAddress() != null && request.getAddress().length() > 500) {
+            return "Địa chỉ không được vượt quá 500 ký tự";
+        }
+
+        if (request.getDescription() != null && request.getDescription().length() > 500) {
+            return "Mô tả không được vượt quá 500 ký tự";
+        }
+
+        return "";
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> updateSupplier(UpdateSupplierRequest request, HttpServletRequest httpRequest) {
+        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
+
+        if (account == null) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
+        }
+
+        String error = validateUpdateSupplier(request);
+        if (!error.isEmpty()) {
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
+        }
+
+        Supplier supplier = supplierRepo.findById(request.getId()).orElse(null);
+        if (supplier == null) {
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp: " + request.getId(), null);
+        }
+
+        supplier.setName(request.getName().trim());
+        supplier.setContactPerson(request.getContactPerson() == null ? null : request.getContactPerson().trim());
+        supplier.setPhone(request.getPhone() == null ? null : request.getPhone().trim());
+        supplier.setEmail(request.getEmail() == null ? null : request.getEmail().trim());
+        supplier.setAddress(request.getAddress() == null ? null : request.getAddress().trim());
+        supplier.setDescription(request.getDescription() == null ? null : request.getDescription().trim());
+        supplier.setUpdatedAt(LocalDateTime.now());
+        supplierRepo.save(supplier);
+
+        return ResponseBuilder.build(HttpStatus.OK, "Cập nhật nhà cung cấp thành công", null);
+    }
+
+    private String validateUpdateSupplier(UpdateSupplierRequest request) {
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            return "Tên nhà cung cấp là bắt buộc";
+        }
+
+        if (request.getName().length() > 100) {
+            return "Tên nhà cung cấp không được vượt quá 100 ký tự";
+        }
+
+        if (supplierRepo.existsByNameIgnoreCaseAndIdNot(request.getName(), request.getId())) {
+            return "Nhà cung cấp với tên '" + request.getName() + "' đã tồn tại";
+        }
+
+        // Validate phone (optional but must be valid when provided)
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            String phone = request.getPhone().trim();
+            if (phone.length() > 10) {
+                return "Số điện thoại không được vượt quá 10 ký tự";
+            }
+            if (!phone.matches("^(0[3|5|7|8|9])\\d{8}$")) {
+                return "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09";
+            }
+        }
+
+        // Validate email (optional but must be valid when provided)
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            String email = request.getEmail().trim();
+            if (email.length() > 100) {
+                return "Email không được vượt quá 100 ký tự";
+            }
+            if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                return "Email không đúng định dạng";
+            }
+        }
+
+        if (request.getAddress() != null && request.getAddress().length() > 500) {
+            return "Địa chỉ không được vượt quá 500 ký tự";
+        }
+
+        if (request.getDescription() != null && request.getDescription().length() > 500) {
+            return "Mô tả không được vượt quá 500 ký tự";
+        }
+
+        return "";
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> updateSupplierStatus(UpdateSupplierStatusRequest request, HttpServletRequest httpRequest) {
+        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
+
+        if (account == null) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
+        }
+
+        Supplier supplier = supplierRepo.findById(request.getId()).orElse(null);
+        if (supplier == null) {
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp: " + request.getId(), null);
+        }
+
+        supplier.setStatus(supplier.getStatus() == Status.ACTIVE ? Status.INACTIVE : Status.ACTIVE);
+        supplier.setUpdatedAt(LocalDateTime.now());
+        supplierRepo.save(supplier);
+
+        return ResponseBuilder.build(HttpStatus.OK, "Cập nhật thành công", null);
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getSupplierList(HttpServletRequest httpRequest) {
+        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
+
+        if (account == null) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
+        }
+
+        List<Supplier> suppliers = supplierRepo.findAll().stream().sorted(Comparator.comparing(Supplier::getId).reversed()).toList();
+
+        List<Map<String, Object>> data = suppliers.stream().map(EntityResponseBuilder::buildSupplierResponse).toList();
+        return ResponseBuilder.build(HttpStatus.OK, "Lấy danh sách nhà cung cấp thành công", data);
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> getTotalSupplierCount(HttpServletRequest httpRequest) {
+        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
+
+        if (account == null) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
+        }
+
+        long totalSupplierCount = supplierRepo.count();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("totalSupplierCount", totalSupplierCount);
+
+        return ResponseBuilder.build(HttpStatus.OK, "Lấy tổng số nhà cung cấp thành công", data);
     }
 }

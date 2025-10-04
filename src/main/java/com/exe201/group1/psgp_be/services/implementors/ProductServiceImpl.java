@@ -62,200 +62,11 @@ public class ProductServiceImpl implements ProductService {
 
     SucculentRepo succulentRepo;
     SucculentSpeciesRepo succulentSpeciesRepo;
-    SupplierRepo supplierRepo;
     ProductRepo productRepo;
     JWTService jwtService;
     AccountRepo accountRepo;
     WishListItemRepo wishListItemRepo;
     AppConfigRepo appConfigRepo;
-
-
-    // =========================== Supplier ========================== \\
-    @Override
-    public ResponseEntity<ResponseObject> createSupplier(CreateSupplierRequest request, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-        String error = validateCreateSupplier(request);
-        if (!error.isEmpty()) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
-        }
-
-        supplierRepo.save(Supplier.builder().name(request.getName().trim()).contactPerson(request.getContactPerson() == null ? null : request.getContactPerson().trim()).phone(request.getPhone() == null ? null : request.getPhone().trim()).email(request.getEmail() == null ? null : request.getEmail().trim()).address(request.getAddress() == null ? null : request.getAddress().trim()).description(request.getDescription() == null ? null : request.getDescription().trim()).status(Status.ACTIVE).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build());
-
-        return ResponseBuilder.build(HttpStatus.OK, "Tạo nhà cung cấp thành công", null);
-    }
-
-    private String validateCreateSupplier(CreateSupplierRequest request) {
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
-            return "Tên nhà cung cấp là bắt buộc";
-        }
-        if (request.getName().length() > 100) {
-            return "Tên nhà cung cấp không được vượt quá 100 ký tự";
-        }
-        if (supplierRepo.existsByNameIgnoreCase(request.getName())) {
-            return "Nhà cung cấp với tên '" + request.getName() + "' đã tồn tại";
-        }
-
-        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
-            String phone = request.getPhone().trim();
-            if (phone.length() > 10) {
-                return "Số điện thoại không được vượt quá 10 ký tự";
-            }
-            if (!phone.matches("^(0[3|5|7|8|9])\\d{8}$")) {
-                return "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09";
-            }
-        }
-
-        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
-            String email = request.getEmail().trim();
-            if (email.length() > 100) {
-                return "Email không được vượt quá 100 ký tự";
-            }
-
-            if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
-                return "Email không đúng định dạng";
-            }
-        }
-        if (request.getAddress() != null && request.getAddress().length() > 500) {
-            return "Địa chỉ không được vượt quá 500 ký tự";
-        }
-
-        if (request.getDescription() != null && request.getDescription().length() > 500) {
-            return "Mô tả không được vượt quá 500 ký tự";
-        }
-
-        return "";
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> updateSupplier(UpdateSupplierRequest request, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-        String error = validateUpdateSupplier(request);
-        if (!error.isEmpty()) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
-        }
-
-        Supplier supplier = supplierRepo.findById(request.getId()).orElse(null);
-        if (supplier == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp: " + request.getId(), null);
-        }
-
-        supplier.setName(request.getName().trim());
-        supplier.setContactPerson(request.getContactPerson() == null ? null : request.getContactPerson().trim());
-        supplier.setPhone(request.getPhone() == null ? null : request.getPhone().trim());
-        supplier.setEmail(request.getEmail() == null ? null : request.getEmail().trim());
-        supplier.setAddress(request.getAddress() == null ? null : request.getAddress().trim());
-        supplier.setDescription(request.getDescription() == null ? null : request.getDescription().trim());
-        supplier.setUpdatedAt(LocalDateTime.now());
-        supplierRepo.save(supplier);
-
-        return ResponseBuilder.build(HttpStatus.OK, "Cập nhật nhà cung cấp thành công", null);
-    }
-
-    private String validateUpdateSupplier(UpdateSupplierRequest request) {
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
-            return "Tên nhà cung cấp là bắt buộc";
-        }
-
-        if (request.getName().length() > 100) {
-            return "Tên nhà cung cấp không được vượt quá 100 ký tự";
-        }
-
-        if (supplierRepo.existsByNameIgnoreCaseAndIdNot(request.getName(), request.getId())) {
-            return "Nhà cung cấp với tên '" + request.getName() + "' đã tồn tại";
-        }
-
-        // Validate phone (optional but must be valid when provided)
-        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
-            String phone = request.getPhone().trim();
-            if (phone.length() > 10) {
-                return "Số điện thoại không được vượt quá 10 ký tự";
-            }
-            if (!phone.matches("^(0[3|5|7|8|9])\\d{8}$")) {
-                return "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09";
-            }
-        }
-
-        // Validate email (optional but must be valid when provided)
-        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
-            String email = request.getEmail().trim();
-            if (email.length() > 100) {
-                return "Email không được vượt quá 100 ký tự";
-            }
-            if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
-                return "Email không đúng định dạng";
-            }
-        }
-
-        if (request.getAddress() != null && request.getAddress().length() > 500) {
-            return "Địa chỉ không được vượt quá 500 ký tự";
-        }
-
-        if (request.getDescription() != null && request.getDescription().length() > 500) {
-            return "Mô tả không được vượt quá 500 ký tự";
-        }
-
-        return "";
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> updateSupplierStatus(UpdateSupplierStatusRequest request, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-        Supplier supplier = supplierRepo.findById(request.getId()).orElse(null);
-        if (supplier == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp: " + request.getId(), null);
-        }
-
-        supplier.setStatus(supplier.getStatus() == Status.ACTIVE ? Status.INACTIVE : Status.ACTIVE);
-        supplier.setUpdatedAt(LocalDateTime.now());
-        supplierRepo.save(supplier);
-
-        return ResponseBuilder.build(HttpStatus.OK, "Cập nhật thành công", null);
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> getSupplierList(HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-        List<Supplier> suppliers = supplierRepo.findAll().stream().sorted(Comparator.comparing(Supplier::getId).reversed()).toList();
-
-        List<Map<String, Object>> data = suppliers.stream().map(EntityResponseBuilder::buildSupplierResponse).toList();
-        return ResponseBuilder.build(HttpStatus.OK, "Lấy danh sách nhà cung cấp thành công", data);
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> getTotalSupplierCount(HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-        long totalSupplierCount = supplierRepo.count();
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("totalSupplierCount", totalSupplierCount);
-
-        return ResponseBuilder.build(HttpStatus.OK, "Lấy tổng số nhà cung cấp thành công", data);
-    }
 
     // =========================== Succulent ========================== \\
     @Override
@@ -291,7 +102,6 @@ public class ProductServiceImpl implements ProductService {
                         .createdAt(LocalDateTime.now())
                         .updatedAt(LocalDateTime.now())
                         .build());
-
 //        {
 //                "small": {
 //                     "min": 0.1,
@@ -301,7 +111,6 @@ public class ProductServiceImpl implements ProductService {
 //                     "status": "AVAILABLE"
 //                }
 //        }
-
 
         Map<String, Object> sizeRangeMap = new HashMap<>();
 
@@ -417,10 +226,6 @@ public class ProductServiceImpl implements ProductService {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
         if (account == null) {
             return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
-
-        if (account.getRole() == null || account.getRole() != Role.SELLER) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Chỉ có Admin mới có quyền xem sen đá", null);
         }
 
         return ResponseBuilder.build(HttpStatus.OK, "Lấy danh sách catalog sen đá thành công", buildListSucculent(succulentRepo.findAll(Sort.by(Sort.Direction.DESC, "id"))));
@@ -903,7 +708,6 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // =========================== WishList ========================== \\
-
     @Override
     public ResponseEntity<ResponseObject> addItemToWishList(AddWishListItemRequest item) {
         Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -969,26 +773,5 @@ public class ProductServiceImpl implements ProductService {
             }
         }
         return result;
-    }
-
-    // =========================== Custom Request ========================== \\
-    @Override
-    public ResponseEntity<ResponseObject> customRequestListByBuyer(HttpServletRequest request) {
-        return null;
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> createCustomRequest(CreateCustomRequest request) {
-        return null;
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> updateCustomRequest(UpdateCustomRequestRequest request) {
-        return null;
-    }
-
-    @Override
-    public ResponseEntity<ResponseObject> deleteCustomRequest(DeleteCustomRequestRequest request) {
-        return null;
     }
 }

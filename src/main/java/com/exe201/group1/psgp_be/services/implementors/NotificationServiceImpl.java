@@ -13,7 +13,9 @@ import com.exe201.group1.psgp_be.utils.EntityResponseBuilder;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -23,10 +25,11 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class NotificationServiceImpl implements NotificationService {
-    private final NotificationRepo notificationRepo;
-    private final AccountRepo accountRepo;
-    private final JWTService jwtService;
+    NotificationRepo notificationRepo;
+    AccountRepo accountRepo;
+    JWTService jwtService;
 
     @Override
     public ResponseEntity<ResponseObject> createNotification(CreateNotificationRequest request) {
