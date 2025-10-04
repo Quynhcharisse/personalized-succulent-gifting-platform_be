@@ -132,29 +132,30 @@ public class ProductServiceImpl implements ProductService {
 
     private String validateCreateSucculent(CreateSucculentRequest request) {
 
+        // speciesName
         if (request.getSpeciesName() == null || request.getSpeciesName().trim().isEmpty()) {
             return "Tên loài là bắt buộc";
-        }
-
-        if (request.getSpeciesName().length() > 100) {
+        } else if (request.getSpeciesName().length() > 100) {
             return "Tên loài không được vượt quá 100 ký tự";
         }
+
+        // description
         if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
             return "Mô tả là bắt buộc";
-        }
-
-        if (request.getDescription().length() > 300) {
+        } else if (request.getDescription().length() > 300) {
             return "Mô tả không được vượt quá 300 ký tự";
         }
 
+        // imageUrl
         if (request.getImageUrl() == null || request.getImageUrl().trim().isEmpty()) {
             return "Image URL is required";
-        }
-        if (!request.getImageUrl().matches("^(http|https)://.*$")) {
-            return "Invalid Image URL format";
-        }
-        if (!request.getImageUrl().matches(".*\\.(jpg|jpeg|png|gif)$")) {
-            return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
+        } else {
+            if (!request.getImageUrl().matches("^(?i)(http|https)://.*$")) {
+                return "Invalid Image URL format";
+            }
+            if (!request.getImageUrl().matches("(?i).*(\\.jpg|\\.jpeg|\\.png|\\.gif)$")) {
+                return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
+            }
         }
 
         if (!validateSizeList(request.getSizeList()).isEmpty()) {
@@ -187,7 +188,6 @@ public class ProductServiceImpl implements ProductService {
             return "Hệ thống chỉ có tối đa 5 kích thước";
         }
 
-        // Sử dụng Set để kiểm tra tên kích thước trùng lặp
         Set<String> uniqueSizeNames = new HashSet<>();
 
         for (CreateSucculentRequest.Size size : sizeList) {
@@ -195,22 +195,17 @@ public class ProductServiceImpl implements ProductService {
                 return "Tên kích thước là bắt buộc";
             }
 
-            // Chuyển tên kích thước sang chữ thường để kiểm tra không phân biệt chữ hoa/thường
             String normalizedSizeName = size.getSizeName().trim().toLowerCase();
-
-            // Kiểm tra xem tên kích thước đã tồn tại trong Set chưa
             if (!uniqueSizeNames.add(normalizedSizeName)) {
                 return "Kích thước '" + size.getSizeName() + "' đã bị trùng lặp. Vui lòng sử dụng tên khác.";
             }
 
             if (size.getMaxArea() < size.getMinArea()) {
-                return "Đường kính tối đa phải lớn hơn hoặc bằng đường kính tối thiểu";
+                return "Diện tích tối đa phải lớn hơn hoặc bằng diện tích tối thiểu";
             }
-
             if (size.getMaxArea() <= 0 || size.getMinArea() <= 0) {
-                return "Cần nhập đường kính lớn hơn 0";
+                return "Cần nhập diện tích lớn hơn 0";
             }
-
             if (size.getPrice() <= 0) {
                 return "Cần nhập giá bán lớn hơn 0";
             }
@@ -356,13 +351,15 @@ public class ProductServiceImpl implements ProductService {
         if (request.getDescription().length() > 300) {
             return "Mô tả không được vượt quá 300 ký tự";
         }
+
         if (request.getImageUrl() == null || request.getImageUrl().trim().isEmpty()) {
             return "Image URL is required";
         }
-        if (!request.getImageUrl().matches("^(http|https)://.*$")) {
+        // Regex không phân biệt hoa/thường
+        if (!request.getImageUrl().matches("^(?i)(http|https)://.*$")) {
             return "Invalid Image URL format";
         }
-        if (!request.getImageUrl().matches(".*\\.(jpg|jpeg|png|gif)$")) {
+        if (!request.getImageUrl().matches("(?i).*(\\.(jpg|jpeg|png|gif))$")) {
             return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
         }
 
@@ -402,7 +399,7 @@ public class ProductServiceImpl implements ProductService {
             if (size.getPrice() <= 0) {
                 return "Cần nhập giá bán lớn hơn 0";
             }
-            // Cho phép quantity bằng 0 khi cập nhật
+            // Cho phép 0 khi cập nhật
             if (size.getQuantity() < 0) {
                 return "Số lượng cây không được là số âm";
             }
