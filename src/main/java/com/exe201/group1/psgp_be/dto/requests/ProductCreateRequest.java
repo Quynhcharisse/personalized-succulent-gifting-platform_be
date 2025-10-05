@@ -17,7 +17,71 @@ import java.util.List;
 public class ProductCreateRequest {
     String name;
     String description;
-    List<Integer> succulentIds;
-    List<Integer> accessoryIds;
+    List<Size> sizes;
     List<CreateProductImageRequest> images;
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Data
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class Size {
+        String name;
+        List<Succulent> succulents;
+        Pot pot;
+        Soil soil;
+        Decoration decoration;
+    }
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Data
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class Succulent {
+        int id;
+        String name;
+        String size;
+        int quantity;
+    }
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Data
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class Pot {
+        String name;
+        String size;
+    }
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Data
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class Soil {
+        String name;
+        double massAmount;
+    }
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Data
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class Decoration {
+        boolean included;
+        List<DecorationDetail> details;
+    }
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Data
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class DecorationDetail {
+        String name;
+        int quantity;
+    }
 }

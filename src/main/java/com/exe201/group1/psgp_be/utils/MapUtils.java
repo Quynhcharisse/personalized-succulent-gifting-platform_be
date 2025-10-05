@@ -19,4 +19,8 @@ public class MapUtils {
 
         return result;
     }
+
+    public static Map<String, Object> checkIfObjectIsMap(Object object) {
+        return object instanceof Map ? (Map<String, Object>) object : null;
+    }
 }

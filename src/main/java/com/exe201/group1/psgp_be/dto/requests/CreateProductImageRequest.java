@@ -13,7 +13,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateProductImageRequest {
-    Integer productId;
     String imageUrl;
     String altText;
     boolean primary;

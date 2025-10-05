@@ -62,9 +62,9 @@ public class Product {
     @ToString.Exclude
     List<ProductSucculent> productSucculentList;
 
-    @Column(name = "`accessory`", columnDefinition = "jsonb")
+    @Column(name = "`size`", columnDefinition = "jsonb")
     @Type(JsonBinaryType.class)
-    Object productAccessoryList;
+    Object size;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
