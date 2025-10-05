@@ -1,7 +1,6 @@
 package com.exe201.group1.psgp_be.models;
 
 import com.exe201.group1.psgp_be.enums.Status;
-import com.exe201.group1.psgp_be.enums.Size;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -12,8 +11,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -26,7 +23,6 @@ import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.Type;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -62,9 +58,9 @@ public class Product {
     @ToString.Exclude
     List<ProductSucculent> productSucculentList;
 
-    @Column(name = "`accessory`", columnDefinition = "jsonb")
+    @Column(name = "`size`", columnDefinition = "jsonb")
     @Type(JsonBinaryType.class)
-    Object productAccessoryList;
+    Object size;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude

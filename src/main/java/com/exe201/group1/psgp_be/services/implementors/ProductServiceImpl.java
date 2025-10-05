@@ -13,11 +13,15 @@ import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierStatusRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
+import com.exe201.group1.psgp_be.enums.FengShui;
 import com.exe201.group1.psgp_be.enums.Role;
 import com.exe201.group1.psgp_be.enums.Status;
+import com.exe201.group1.psgp_be.enums.Zodiac;
 import com.exe201.group1.psgp_be.models.Account;
 import com.exe201.group1.psgp_be.models.AppConfig;
 import com.exe201.group1.psgp_be.models.Product;
+import com.exe201.group1.psgp_be.models.ProductImage;
+import com.exe201.group1.psgp_be.models.ProductSucculent;
 import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.models.SucculentSpecies;
 import com.exe201.group1.psgp_be.models.Supplier;
@@ -25,6 +29,7 @@ import com.exe201.group1.psgp_be.models.WishlistItem;
 import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
+import com.exe201.group1.psgp_be.repositories.ProductSucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentSpeciesRepo;
 import com.exe201.group1.psgp_be.repositories.SupplierRepo;
@@ -33,6 +38,7 @@ import com.exe201.group1.psgp_be.services.JWTService;
 import com.exe201.group1.psgp_be.services.ProductService;
 import com.exe201.group1.psgp_be.utils.CookieUtil;
 import com.exe201.group1.psgp_be.utils.EntityResponseBuilder;
+import com.exe201.group1.psgp_be.utils.MapUtils;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
@@ -44,16 +50,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -67,6 +77,7 @@ public class ProductServiceImpl implements ProductService {
     AccountRepo accountRepo;
     WishListItemRepo wishListItemRepo;
     AppConfigRepo appConfigRepo;
+    ProductSucculentRepo productSucculentRepo;
 
     // =========================== Succulent ========================== \\
     @Override
@@ -86,10 +97,51 @@ public class ProductServiceImpl implements ProductService {
 
         if (species != null) {
             species.setDescription(request.getDescription());
-            species.setElements(request.getFengShuiList() == null ? new HashSet<>() : new HashSet<>(request.getFengShuiList()));
-            species.setZodiacs(request.getZodiacList() == null ? new HashSet<>() : new HashSet<>(request.getZodiacList()));
+            species.setElements(
+                    request.getFengShuiList() == null ?
+                            new HashSet<>()
+                            :
+                            new HashSet<>(
+                                    request.getFengShuiList().stream()
+                                            .map(fs -> FengShui.valueOf(fs.toUpperCase()))
+                                            .toList()
+                            )
+            );
+            species.setZodiacs(
+                    request.getZodiacList() == null ?
+                            new HashSet<>()
+                            :
+                            new HashSet<>(
+                                    request.getZodiacList().stream()
+                                            .map(z -> Zodiac.valueOf(z.toUpperCase()))
+                                            .toList()
+                            )
+            );
         } else {
-            species = SucculentSpecies.builder().speciesName(request.getSpeciesName()).description(request.getDescription()).elements(request.getFengShuiList() == null ? new HashSet<>() : new HashSet<>(request.getFengShuiList())).zodiacs(request.getZodiacList() == null ? new HashSet<>() : new HashSet<>(request.getZodiacList())).build();
+            species = SucculentSpecies.builder()
+                    .speciesName(request.getSpeciesName())
+                    .description(request.getDescription())
+                    .elements(
+                            request.getFengShuiList() == null ?
+                                    new HashSet<>()
+                                    :
+                                    new HashSet<>(
+                                            request.getFengShuiList().stream()
+                                                    .map(fs -> FengShui.valueOf(fs.toUpperCase()))
+                                                    .toList()
+                                    )
+                    )
+                    .zodiacs(
+                            request.getZodiacList() == null ?
+                                    new HashSet<>()
+                                    :
+                                    new HashSet<>(
+                                            request.getZodiacList().stream()
+                                                    .map(z -> Zodiac.valueOf(z.toUpperCase()))
+                                                    .toList()
+                                    )
+                    )
+                    .build();
         }
 
         species = succulentSpeciesRepo.save(species);
@@ -239,13 +291,13 @@ public class ProductServiceImpl implements ProductService {
 
             Integer quantity = (Integer) value.get("quantity");
 
-            if(quantity > 0) mainStatus = Status.AVAILABLE;
+            if (quantity > 0) mainStatus = Status.AVAILABLE;
 
             sizeDetail.put("minArea", value.get("minArea"));
             sizeDetail.put("maxArea", value.get("maxArea"));
             sizeDetail.put("price", value.get("price"));
             sizeDetail.put("quantity", quantity);
-            sizeDetail.put("status", quantity > 0 ? Status.AVAILABLE : Status.OUT_OF_STOCK);
+            sizeDetail.put("status", quantity > 0 ? Status.AVAILABLE.getValue() : Status.OUT_OF_STOCK.getValue());
 
             sizeResponse.put(key, sizeDetail);
         }
@@ -258,7 +310,7 @@ public class ProductServiceImpl implements ProductService {
         response.put("speciesName", species.getSpeciesName());
         response.put("description", species.getDescription());
         response.put("size", sizeResponse);
-        response.put("status", mainStatus);
+        response.put("status", mainStatus.getValue());
         response.put("createdAt", succulent.getCreatedAt());
         response.put("updatedAt", succulent.getUpdatedAt());
         response.put("fengShuiElements", species.getElements());
@@ -339,9 +391,6 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private String validateUpdateSucculent(UpdateSucculentRequest request, Succulent current) {
-        if (request.getSpeciesName() == null || request.getSpeciesName().trim().isEmpty()) {
-            return "Tên loài là bắt buộc";
-        }
         if (request.getSpeciesName().length() > 100) {
             return "Tên loài không được vượt quá 100 ký tự";
         }
@@ -363,23 +412,46 @@ public class ProductServiceImpl implements ProductService {
             return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
         }
 
-        if (!validSize(request.getSizeList()).isEmpty()) {
-            return validSize(request.getSizeList());
+        // Gọi validSize đúng 1 lần
+        String sizeErr = validSize(request.getSizeList());
+        if (!sizeErr.isEmpty()) return sizeErr;
+
+        // Kiểm tra size có tồn tại trong catalog hiện tại
+        if (current.getSize() == null) {
+            return "Không có size để cập nhật";
         }
 
-        // Validate lists if provided
+        @SuppressWarnings("unchecked")
+        Map<String, Object> cur = (Map<String, Object>) current.getSize();
+
+        Set<String> currentKeys = cur.keySet().stream()
+                .filter(Objects::nonNull)
+                .map(k -> k.trim().toLowerCase())
+                .collect(Collectors.toSet());
+
+        Set<String> seen = new HashSet<>();
+        for (UpdateSucculentRequest.Size s : request.getSizeList()) {
+            if (s.getSizeName() == null || s.getSizeName().trim().isEmpty()) {
+                return "Tên kích thước là bắt buộc";
+            }
+            String key = s.getSizeName().trim().toLowerCase();
+            if (!seen.add(key)) {
+                return "Kích thước '" + s.getSizeName() + "' bị trùng lặp trong yêu cầu cập nhật";
+            }
+            if (!currentKeys.contains(key)) {
+                return "Kích thước '" + s.getSizeName() + "' không tồn tại trong hệ thống";
+            }
+        }
+
+        // Validate enum lists nếu có
         if (request.getFengShuiList() != null) {
             for (var e : request.getFengShuiList()) {
-                if (e == null) {
-                    return "Danh sách phong thủy chứa giá trị không hợp lệ";
-                }
+                if (e == null) return "Danh sách phong thủy chứa giá trị không hợp lệ";
             }
         }
         if (request.getZodiacList() != null) {
             for (var z : request.getZodiacList()) {
-                if (z == null) {
-                    return "Danh sách cung hoàng đạo chứa giá trị không hợp lệ";
-                }
+                if (z == null) return "Danh sách cung hoàng đạo chứa giá trị không hợp lệ";
             }
         }
         return "";
@@ -434,36 +506,47 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private String validateCreateAccessory(CreateAccessoryRequest request) {
-        // validate here
+        //TODO: validate here
         return "";
     }
 
     private ResponseEntity<ResponseObject> createPot(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
+        boolean create = request.isCreateAction();
+        boolean update = !create;
         CreateAccessoryRequest.PotData potData = request.getPotData();
 
         if (accessoryData.get("pot") == null) {
-            // create new
-            Map<String, Object> potDetailMap = createPotDetail(potData);
+            if (create) {
+                Map<String, Object> potDetailMap = createPotDetail(potData);
 
-            accessoryData.put("pot", Map.of(potData.getName(), potDetailMap));
+                accessoryData.put("pot", Map.of(potData.getName(), potDetailMap));
 
-            accessoryConfig.setValue(accessoryData);
-            appConfigRepo.save(accessoryConfig);
-            return ResponseBuilder.build(HttpStatus.OK, "Create pot successfully", null);
+                accessoryConfig.setValue(accessoryData);
+                appConfigRepo.save(accessoryConfig);
+                return ResponseBuilder.build(HttpStatus.OK, "Tạo chậu cây thành công", null);
+            }
+
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Chậu cây không tồn tại", null);
         }
 
         Map<String, Object> pot = (Map<String, Object>) accessoryData.get("pot");
         Map<String, Object> potDetailMap = createPotDetail(potData);
         if (pot.get(potData.getName()) == null) {
+            if (update) {
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Chậu cây không tồn tại", null);
+            }
             pot.put(potData.getName(), potDetailMap);
         } else {
+            if (create) {
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Chậu cây đã tồn tại", null);
+            }
             pot.replace(potData.getName(), potDetailMap);
         }
 
         accessoryData.replace("pot", pot);
         accessoryConfig.setValue(accessoryData);
         appConfigRepo.save(accessoryConfig);
-        return ResponseBuilder.build(HttpStatus.OK, "Update pot successfully", null);
+        return ResponseBuilder.build(HttpStatus.OK, (create ? "Tạo " : "Cập nhật ") + "chậu cây thành công", null);
     }
 
     private Map<String, Object> createPotDetail(CreateAccessoryRequest.PotData potData) {
@@ -492,31 +575,42 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private ResponseEntity<ResponseObject> createSoil(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
+        boolean create = request.isCreateAction();
+        boolean update = !create;
         CreateAccessoryRequest.SoilData soilData = request.getSoilData();
 
         if (accessoryData.get("soil") == null) {
-            // create new
-            Map<String, Object> soilDetailMap = createSoilDetail(soilData);
+            if (create) {
+                Map<String, Object> soilDetailMap = createSoilDetail(soilData);
 
-            accessoryData.put("soil", Map.of(soilData.getName(), soilDetailMap));
+                accessoryData.put("soil", Map.of(soilData.getName(), soilDetailMap));
 
-            accessoryConfig.setValue(accessoryData);
-            appConfigRepo.save(accessoryConfig);
-            return ResponseBuilder.build(HttpStatus.OK, "Create soil successfully", null);
+                accessoryConfig.setValue(accessoryData);
+                appConfigRepo.save(accessoryConfig);
+                return ResponseBuilder.build(HttpStatus.OK, "Tạo đất thành công", null);
+            }
+
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Đất không tồn tại", null);
         }
 
         Map<String, Object> soil = (Map<String, Object>) accessoryData.get("soil");
         Map<String, Object> soilDetailMap = createSoilDetail(soilData);
         if (soil.get(soilData.getName()) == null) {
+            if (update) {
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Đất không tồn tại", null);
+            }
             soil.put(soilData.getName(), soilDetailMap);
         } else {
+            if (create) {
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Đất đã tồn tại", null);
+            }
             soil.replace(soilData.getName(), soilDetailMap);
         }
 
         accessoryData.replace("soil", soil);
         accessoryConfig.setValue(accessoryData);
         appConfigRepo.save(accessoryConfig);
-        return ResponseBuilder.build(HttpStatus.OK, "Update soil successfully", null);
+        return ResponseBuilder.build(HttpStatus.OK, (create ? "Tạo " : "Cập nhật ") + "đất thành công", null);
     }
 
     private Map<String, Object> createSoilDetail(CreateAccessoryRequest.SoilData soilData) {
@@ -535,31 +629,42 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private ResponseEntity<ResponseObject> createDecoration(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
+        boolean create = request.isCreateAction();
+        boolean update = !create;
         CreateAccessoryRequest.DecorationData decorationData = request.getDecorationData();
 
         if (accessoryData.get("decoration") == null) {
-            // create new
-            Map<String, Object> decorDetailMap = createDecorDetail(decorationData);
+            if (create) {
+                Map<String, Object> decorDetailMap = createDecorDetail(decorationData);
 
-            accessoryData.put("decoration", Map.of(decorationData.getName(), decorDetailMap));
+                accessoryData.put("decoration", Map.of(decorationData.getName(), decorDetailMap));
 
-            accessoryConfig.setValue(accessoryData);
-            appConfigRepo.save(accessoryConfig);
-            return ResponseBuilder.build(HttpStatus.OK, "Create decoration successfully", null);
+                accessoryConfig.setValue(accessoryData);
+                appConfigRepo.save(accessoryConfig);
+                return ResponseBuilder.build(HttpStatus.OK, "Tạo đồ trang trí thành công", null);
+            }
+
+            return ResponseBuilder.build(HttpStatus.OK, "Đồ trang trí không tồn tại", null);
         }
 
         Map<String, Object> decoration = (Map<String, Object>) accessoryData.get("decoration");
         Map<String, Object> decorDetailMap = createDecorDetail(decorationData);
         if (decoration.get(decorationData.getName()) == null) {
+            if (update) {
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Đồ trang trí không tồn tại", null);
+            }
             decoration.put(decorationData.getName(), decorDetailMap);
         } else {
+            if (create) {
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Đồ trang trí đã tồn tại", null);
+            }
             decoration.replace(decorationData.getName(), decorDetailMap);
         }
 
         accessoryData.replace("decoration", decoration);
         accessoryConfig.setValue(accessoryData);
         appConfigRepo.save(accessoryConfig);
-        return ResponseBuilder.build(HttpStatus.OK, "Update decoration successfully", null);
+        return ResponseBuilder.build(HttpStatus.OK, (create ? "Tạo " : "Cập nhật ") + "đồ trang trí thành công", null);
     }
 
     private Map<String, Object> createDecorDetail(CreateAccessoryRequest.DecorationData decorationData) {
@@ -615,7 +720,7 @@ public class ProductServiceImpl implements ProductService {
                                 "material", potDetail.get("material"),
                                 "color", potDetail.get("color"),
                                 "description", potDetail.get("description"),
-                                "image", ((List<String>) potDetail.get("image")).stream().map(img -> Map.of("image", img)).toList(),
+                                "image", ((List<String>) potDetail.get("image")).stream().map(img -> Map.of("url", img)).toList(),
                                 "size", ((Map<String, Object>) potDetail.get("size")).keySet().stream().map(
                                         sizeKey -> {
                                             Map<String, Object> sizeDetail = (Map<String, Object>) ((Map<String, Object>) potDetail.get("size")).get(sizeKey);
@@ -673,7 +778,7 @@ public class ProductServiceImpl implements ProductService {
                                 "description", decorationDetail.get("description"),
                                 "price", decorationDetail.get("price"),
                                 "availableQty", decorationDetail.get("availableQty"),
-                                "image", ((List<String>) decorationDetail.get("image")).stream().map(img -> Map.of("image", img)).toList()
+                                "image", ((List<String>) decorationDetail.get("image")).stream().map(img -> Map.of("url", img)).toList()
                         );
                     }
             ).toList();
@@ -685,13 +790,401 @@ public class ProductServiceImpl implements ProductService {
     // =========================== Product ========================== \\
 
     @Override
-    public ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request, HttpServletRequest httpRequest) {
-        return null;
+    @Transactional
+    public ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request) {
+        String error = validateCreateProduct(request);
+        if (!error.isEmpty()) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
+
+        Map<String, Map<String, Object>> sizes = new HashMap<>();
+
+        Set<Integer> succulentIDs = new LinkedHashSet<>();
+
+        for (ProductCreateRequest.Size size : request.getSizes()) {
+            Map<String, Object> data = new HashMap<>(buildSizeMap(size));
+
+            Set<Integer> idUsedList = (Set<Integer>) ((Map<String, Object>) data.get("succulents")).get("ids");
+
+            succulentIDs.addAll(idUsedList);
+
+            Map<String, Object> succulentData = (Map<String, Object>) data.get("succulents");
+
+            succulentData.remove("ids");
+
+            List<Map<String, Object>> succulentDataMap = (List<Map<String, Object>>) ((Map<String, Object>) data.get("succulents")).get("list");
+
+            succulentData.remove("list");
+
+            data.replace("succulents", succulentDataMap);
+
+            sizes.put(size.getName(), data);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        Product product = productRepo.save(
+                Product.builder()
+                        .name(request.getName())
+                        .description(request.getDescription())
+                        .createdAt(now)
+                        .updatedAt(now)
+                        .status(null)
+                        .size(sizes)
+                        .build()
+        );
+        product.setStatus(checkProductStatus(product) ? Status.AVAILABLE : Status.OUT_OF_STOCK);
+        product = productRepo.save(product);
+
+        for (Integer id : succulentIDs) {
+            Succulent succulent = succulentRepo.findById(id).orElse(null);
+            if (succulent == null) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();// make transaction rollback
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sen đá với id " + id + " không tồn tại", null);
+            }
+
+            productSucculentRepo.save(
+                    ProductSucculent.builder()
+                            .product(product)
+                            .succulent(succulent)
+                            .build()
+            );
+
+        }
+
+        return ResponseBuilder.build(HttpStatus.CREATED, "Tạo sản phẩm thành công", null);
+    }
+
+    private String validateCreateProduct(ProductCreateRequest request) {
+        //TODO: Validate here
+        return "";
+    }
+
+    private Map<String, Object> buildSizeMap(ProductCreateRequest.Size size) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("succulents", buildSucculentsMap(size.getSucculents()));
+        result.put("pot", buildPotMap(size.getPot()));
+        result.put("soil", buildSoilMap(size.getSoil()));
+        result.put("decoration", buildDecorationsMap(size.getDecoration()));
+
+        return result;
+    }
+
+    private Map<String, Object> buildSucculentsMap(List<ProductCreateRequest.Succulent> succulents) {
+        Set<Integer> idUsedList = new LinkedHashSet<>();
+        List<Map<String, Object>> succulentList = new ArrayList<>();
+
+        Map<String, Object> result = new HashMap<>();
+
+        for (ProductCreateRequest.Succulent succulent : succulents) {
+            boolean added = idUsedList.add(succulent.getId());
+
+            if (added) {
+                Map<String, Object> succulentData = new HashMap<>();
+                succulentData.put("id", succulent.getId());
+                succulentData.put("name", succulent.getName());
+                succulentData.put("size", succulent.getSize());
+                succulentData.put("quantity", succulent.getQuantity());
+
+                succulentList.add(succulentData);
+            }
+
+        }
+        result.put("ids", idUsedList);
+        result.put("list", succulentList);
+
+        return result;
+    }
+
+    private Map<String, Object> buildPotMap(ProductCreateRequest.Pot pot) {
+        return Map.of(
+                "name", pot.getName(),
+                "size", pot.getSize()
+        );
+    }
+
+    private Map<String, Object> buildSoilMap(ProductCreateRequest.Soil soil) {
+        return Map.of(
+                "name", soil.getName(),
+                "massAmount", soil.getMassAmount()
+        );
+    }
+
+    private Map<String, Object> buildDecorationsMap(ProductCreateRequest.Decoration decoration) {
+        return Map.of(
+                "included", decoration.isIncluded(),
+                "detail", Objects.requireNonNullElse(buildDecorationDetailMap(decoration.getDetails(), decoration.isIncluded()), "")
+        );
+    }
+
+    private Map<String, Object> buildDecorationDetailMap(List<ProductCreateRequest.DecorationDetail> details, boolean included) {
+        Map<String, Object> resultMap = new HashMap<>();
+
+        for (ProductCreateRequest.DecorationDetail detail : details) {
+            resultMap.put(detail.getName(), detail.getQuantity());
+        }
+
+        return included ? resultMap : null;
+    }
+
+    private boolean checkProductStatus(Product product) {
+        boolean succulentAvailable = true;
+        boolean potAvailable = true;
+        boolean soilAvailable = true;
+        boolean decorationAvailable = true;
+
+        AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
+        assert accessoryConfig != null;
+        Object valueJson = accessoryConfig.getValue();
+
+        List<Map<String, Object>> potConfig = buildPotResponse((Map<String, Object>) valueJson);
+        List<Map<String, Object>> soilConfig = buildSoilResponse((Map<String, Object>) valueJson);
+        List<Map<String, Object>> decorationConfig = buildDecorationResponse((Map<String, Object>) valueJson);
+
+        Map<String, Object> productSizeData = (Map<String, Object>) product.getSize();
+
+        for (String key : productSizeData.keySet()) {
+            Map<String, Object> potData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("pot");
+            if (!checkPotAvailable(potData.get("name").toString(), potData.get("size").toString(), potConfig)) {
+                potAvailable = false;
+            }
+
+            Map<String, Object> soilData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("soil");
+            if (!checkSoilAvailable(soilData.get("name").toString(), (double) soilData.get("massAmount"), soilConfig)) {
+                soilAvailable = false;
+            }
+
+            Map<String, Object> decorationData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("decoration");
+            if (!checkDecorationAvailable((boolean) decorationData.get("included"), (Map<String, Object>) decorationData.get("detail"), decorationConfig)) {
+                decorationAvailable = false;
+            }
+
+            List<Map<String, Object>> succulentData = (List<Map<String, Object>>) ((Map<Object, Object>) productSizeData.get(key)).get("succulents");
+            for (Map<String, Object> succulent : succulentData) {
+                if (!checkSucculentAvailable((int) succulent.get("id"), succulent.get("size").toString(), (int) succulent.get("quantity"))) {
+                    succulentAvailable = false;
+                }
+            }
+        }
+
+        return succulentAvailable && potAvailable && soilAvailable && decorationAvailable;
+    }
+
+    private boolean checkPotAvailable(String name, String size, List<Map<String, Object>> potConfig) {
+        Map<String, Object> potData = potConfig.stream().filter(p -> p.get("name").toString().equalsIgnoreCase(name)).findFirst().orElse(null);
+
+        if (potData == null) return false;
+
+        Map<String, Object> sizeData = ((List<Map<String, Object>>) potData.get("size")).stream().filter(s -> s.get("name").toString().equalsIgnoreCase(size)).findFirst().orElse(null);
+        if (sizeData == null) return false;
+
+        int availableQty = (int) sizeData.get("availableQty");
+
+        return availableQty >= 1;
+    }
+
+    private boolean checkSoilAvailable(String name, double massAmount, List<Map<String, Object>> soilConfig) {
+        Map<String, Object> soilData = soilConfig.stream().filter(s -> s.get("name").toString().equalsIgnoreCase(name)).findFirst().orElse(null);
+
+        if (soilData == null) return false;
+
+        double availableMassValue = ((Integer) soilData.get("availableMassValue")).doubleValue();
+
+        return availableMassValue >= massAmount;
+    }
+
+    private boolean checkDecorationAvailable(boolean included, Map<String, Object> detail, List<Map<String, Object>> decorationConfig) {
+        if (!included) return true;
+
+        for (String key : detail.keySet()) {
+            Map<String, Object> decorationData = decorationConfig.stream().filter(d -> d.get("name").toString().equalsIgnoreCase(key)).findFirst().orElse(null);
+            if (decorationData == null) return false;
+
+            int availableQty = (int) decorationData.get("availableQty");
+            if ((int) detail.get(key) > availableQty) return false;
+        }
+
+        return true;
+    }
+
+    private boolean checkSucculentAvailable(int id, String size, int qty) {
+        List<Map<String, Object>> succulents = succulentRepo.findAll().stream().map(this::buildSucculentDetail).toList();
+
+        Map<String, Object> succulentData = succulents.stream().filter(s -> ((int) s.get("id")) == id).findFirst().orElse(null);
+        if (succulentData == null) return false;
+
+        Map<String, Object> succulentSizeData = (Map<String, Object>) ((Map<String, Object>) succulentData.get("size")).get(size);
+        if (succulentSizeData == null) return false;
+
+        int availableQty = (int) succulentSizeData.get("quantity");
+
+        return availableQty >= qty;
     }
 
     @Override
-    public ResponseEntity<ResponseObject> viewProduct(HttpServletRequest httpRequest) {
-        return null;
+    public ResponseEntity<ResponseObject> viewProduct() {
+        List<Map<String, Object>> data = productRepo.findAll().stream().map(
+                product -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", product.getId());
+                    map.put("name", product.getName());
+                    map.put("description", product.getDescription());
+                    map.put("createAt", product.getCreatedAt());
+                    map.put("updateAt", product.getUpdatedAt());
+                    map.put("status", product.getStatus().getValue().toLowerCase());
+                    map.put("images", buildProductImageResponse(product.getProductImages()));
+                    map.put("sizes", buildProductSizeResponse((Map<String, Object>) product.getSize()));
+                    return map;
+                }
+        ).toList();
+        return ResponseBuilder.build(HttpStatus.OK, "", data);
+    }
+
+    private List<Map<String, Object>> buildProductImageResponse(List<ProductImage> images) {
+        return images.stream().map(
+                image -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", image.getId());
+                    map.put("primary", image.getIsPrimary());
+                    map.put("displayOrder", image.getDisplayOrder());
+                    map.put("createAt", image.getCreatedAt());
+                    map.put("updateAt", image.getUpdatedAt());
+                    map.put("url", image.getImageUrl());
+                    map.put("altText", image.getAltText());
+                    return map;
+                }
+        ).toList();
+    }
+
+    private List<Map<String, Object>> buildProductSizeResponse(Map<String, Object> size) {
+        return size.keySet().stream().map(
+                key -> {
+                    Map<String, Object> sizeData = (Map<String, Object>) size.get(key);
+
+                    List<Map<String, Object>> succulentData = (List<Map<String, Object>>) sizeData.get("succulents");
+                    Map<String, Object> potData = (Map<String, Object>) sizeData.get("pot");
+                    Map<String, Object> soilData = (Map<String, Object>) sizeData.get("soil");
+                    Map<String, Object> decorationData = (Map<String, Object>) sizeData.get("decoration");
+
+                    AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
+                    assert accessoryConfig != null;
+
+                    Map<String, Object> accessoryConfigData = (Map<String, Object>) accessoryConfig.getValue();
+
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("name", key);
+                    map.put("succulents", buildProductSucculentListResponse(succulentData));
+                    map.put("pot", buildProductPotResponse(accessoryConfigData, potData));
+                    map.put("soil", buildProductSoilResponse(accessoryConfigData, soilData));
+                    map.put("decorations", buildProductDecorationListResponse(accessoryConfigData, decorationData)
+                    );
+                    return map;
+                }
+        ).toList();
+    }
+
+    private List<Map<String, Object>> buildProductSucculentListResponse(List<Map<String, Object>> rawSucculents) {
+        return rawSucculents.stream().map(
+                succulent -> {
+                    int id = (int) succulent.get("id");
+                    Succulent s = succulentRepo.findById(id).orElse(null);
+                    if (s == null) return null;
+                    return buildProductSucculentResponse(s, (int) succulent.get("quantity"), succulent.get("size").toString());
+                }
+        ).toList();
+    }
+
+    private Map<String, Object> buildProductSucculentResponse(Succulent succulent, int quantity, String size) {
+        return Map.of(
+                "id", succulent.getId(),
+                "name", succulent.getSpecies().getSpeciesName(),
+                "description", succulent.getSpecies().getDescription(),
+                "createAt", succulent.getCreatedAt(),
+                "updateAt", succulent.getUpdatedAt(),
+                "image", succulent.getImageUrl(),
+                "size", buildProductSucculentSizeResponse(succulent.getSize(), size),
+                "quantity", quantity
+        );
+    }
+
+    private Map<String, Object> buildProductSucculentSizeResponse(Object succulentSize, String size) {
+        Map<String, Object> sizeData = ((Map<String, Object>) ((Map<String, Object>) succulentSize).get(size.toLowerCase().trim()));
+        return Map.of(
+                "name", size.toLowerCase().trim(),
+                "area", Map.of(
+                        "min", (Integer) sizeData.get("minArea"),
+                        "max", (Integer) sizeData.get("maxArea")
+                ),
+                "price", ((Integer) sizeData.get("price")).longValue()
+        );
+    }
+
+    private Map<String, Object> buildProductPotResponse(Map<String, Object> accessoryConfigData, Map<String, Object> potData) {
+        return buildPotResponse(accessoryConfigData).stream()
+                .filter(pot -> pot.get("name").toString().equalsIgnoreCase(potData.get("name").toString()))
+                .findFirst()
+                .map(pot -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("name", pot.get("name"));
+                    map.put("material", pot.get("material"));
+                    map.put("color", pot.get("color"));
+                    map.put("description", pot.get("description"));
+                    map.put("image", ((List<Map<String, Object>>) pot.get("image")).stream().map(img -> img.get("url").toString()).toList());
+                    map.put("size", ((List<Map<String, Object>>) pot.get("size")).stream()
+                            .filter(p -> p.get("name").toString().equalsIgnoreCase(potData.get("size").toString()))
+                            .map(
+                                p -> {
+                                    Map<String, Object> sizeDetail = new HashMap<>();
+                                    sizeDetail.put("name", p.get("name"));
+                                    sizeDetail.put("height", p.get("potHeight"));
+                                    sizeDetail.put("upperCrossSectionArea", p.get("potUpperCrossSectionArea"));
+                                    sizeDetail.put("maxMassValue", p.get("maxSoilMassValue"));
+                                    sizeDetail.put("price", p.get("price"));
+                                    return sizeDetail;
+                                }
+                            ).toList()
+                    );
+                    return map;
+                })
+                .orElse(null);
+    }
+
+    private Map<String, Object> buildProductSoilResponse(Map<String, Object> accessoryConfigData, Map<String, Object> soilData) {
+        Map<String, Object> rawData = buildSoilResponse(accessoryConfigData).stream()
+                .filter(soil -> soil.get("name").toString().equalsIgnoreCase(soilData.get("name").toString()))
+                .findFirst()
+                .orElse(null);
+
+        if (rawData == null) return null;
+
+        rawData.remove("availableMassValue");
+
+        rawData.put("massAmount", soilData.get("massAmount"));
+
+        return rawData;
+    }
+
+    private List<Map<String, Object>> buildProductDecorationListResponse(Map<String, Object> accessoryConfigData, Map<String, Object> decorationData) {
+        if ((boolean) decorationData.get("included")) {
+            Map<String, Object> decorationDataMap = MapUtils.checkIfObjectIsMap(decorationData.get("detail"));
+
+            if (decorationDataMap == null) return null;
+
+            return buildDecorationResponse(accessoryConfigData).stream()
+                    .filter(decor -> decorationDataMap.get(decor.get("name").toString()) instanceof Integer)
+                    .map(decor -> {
+                        int quantity = (int) decorationDataMap.get(decor.get("name").toString());
+
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("name", decor.get("name"));
+                        map.put("description", decor.get("description"));
+                        map.put("quantity", quantity);
+                        map.put("unitPrice", decor.get("price"));
+                        map.put("totalPrice", ((Integer) decor.get("price")).longValue() * quantity);
+                        map.put("image", ((List<Map<String, Object>>) decor.get("image")).stream().map(img -> img.get("url").toString()).toList());
+                        return map;
+                    })
+                    .toList();
+        }
+        return new ArrayList<>();
     }
 
     @Override

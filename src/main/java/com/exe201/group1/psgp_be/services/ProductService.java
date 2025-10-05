@@ -31,9 +31,9 @@ public interface ProductService {
     ResponseEntity<ResponseObject> getAccessories(String type);
 
     //--------------------------------------------PRODUCT--------------------------------------------//
-    ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request, HttpServletRequest httpRequest);
+    ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request);
 
-    ResponseEntity<ResponseObject> viewProduct(HttpServletRequest httpRequest);
+    ResponseEntity<ResponseObject> viewProduct();
 
     ResponseEntity<ResponseObject> updateProduct(ProductUpdateRequest request, HttpServletRequest httpRequest);
     
