@@ -481,7 +481,7 @@ public class ProductServiceImpl implements ProductService {
                                 ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Invalid accessory creation method", null);
     }
 
-    private String validateCreateAccessory(CreateAccessoryRequest request) {
+    private String validateCreateAccessory(CreateOrUpdateAccessoryRequest request) {
         if (request == null) {
             return "Request cannot be null";
         }
@@ -496,7 +496,7 @@ public class ProductServiceImpl implements ProductService {
         }
         // Validate Pot
         if (request.isCreatePot()) {
-            CreateAccessoryRequest.PotData potData = request.getPotData();
+            CreateOrUpdateAccessoryRequest.PotData potData = request.getPotData();
             if (potData == null) {
                 return "Pot data cannot be null";
             }
@@ -516,7 +516,7 @@ public class ProductServiceImpl implements ProductService {
                 return "Pot must have at least one size configuration";
             }
             // Validate each size
-            for (CreateAccessoryRequest.Size size : potData.getSizes()) {
+            for (CreateOrUpdateAccessoryRequest.Size size : potData.getSizes()) {
                 if (StringUtils.isBlank(size.getName())) {
                     return "Size name cannot be empty";
                 }
@@ -540,7 +540,7 @@ public class ProductServiceImpl implements ProductService {
 
         // Validate Soil
         if (request.isCreateSoil()) {
-            CreateAccessoryRequest.SoilData soilData = request.getSoilData();
+            CreateOrUpdateAccessoryRequest.SoilData soilData = request.getSoilData();
             if (soilData == null) {
                 return "Soil data cannot be null";
             }
@@ -557,7 +557,7 @@ public class ProductServiceImpl implements ProductService {
                 return "Soil must have at least one image";
             }
             // Validate base pricing
-            CreateAccessoryRequest.BasePricing basePricing = soilData.getBasePricing();
+            CreateOrUpdateAccessoryRequest.BasePricing basePricing = soilData.getBasePricing();
             if (basePricing == null) {
                 return "Base pricing cannot be null";
             }
@@ -574,7 +574,7 @@ public class ProductServiceImpl implements ProductService {
 
         // Validate Decoration
         if (request.isCreateDecoration()) {
-            CreateAccessoryRequest.DecorationData decorationData = request.getDecorationData();
+            CreateOrUpdateAccessoryRequest.DecorationData decorationData = request.getDecorationData();
             if (decorationData == null) {
                 return "Decoration data cannot be null";
             }
