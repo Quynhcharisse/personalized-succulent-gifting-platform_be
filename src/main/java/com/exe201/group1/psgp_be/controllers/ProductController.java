@@ -1,17 +1,10 @@
 package com.exe201.group1.psgp_be.controllers;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreateAccessoryRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
-import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
-import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
-import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
-import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
-import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
-import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierStatusRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.ProductService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,20 +33,20 @@ public class ProductController {
     //=================== succulent =====================\\
     @GetMapping("/succulents")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> viewSucculentList(HttpServletRequest httpRequest) {
-        return productService.viewSucculentList(httpRequest);
+    public ResponseEntity<ResponseObject> viewSucculentList() {
+        return productService.viewSucculentList();
     }
 
     @PostMapping("/succulent")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> createSucculent(@RequestBody CreateSucculentRequest request, HttpServletRequest httpRequest) {
-        return productService.createSucculent(request, httpRequest);
+    public ResponseEntity<ResponseObject> createSucculent(@RequestBody CreateSucculentRequest request) {
+        return productService.createSucculent(request);
     }
 
     @PutMapping("/succulent")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> updateSucculent(@RequestBody UpdateSucculentRequest request, HttpServletRequest httpRequest) {
-        return productService.updateSucculent(request, httpRequest);
+    public ResponseEntity<ResponseObject> updateSucculent(@RequestBody UpdateSucculentRequest request) {
+        return productService.updateSucculent(request);
     }
 
     //=================== Accessory =====================\\
@@ -65,15 +58,15 @@ public class ProductController {
 
     @PostMapping("/accessory")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> createAccessory(@RequestBody CreateAccessoryRequest request) {
-        return productService.createAccessory(request);
+    public ResponseEntity<ResponseObject> createAccessory(@RequestBody CreateOrUpdateAccessoryRequest request) {
+        return productService.createOrUpdateAccessory(request);
     }
 
     //=================== Product =====================\\
     @PostMapping("/")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> createProduct(@RequestBody ProductCreateRequest request) {
-        return productService.createProduct(request);
+    public ResponseEntity<ResponseObject> createProduct(@RequestBody CreateOrUpdateProductRequest request) {
+        return productService.createOrUpdateProduct(request);
     }
 
     @GetMapping("/")
@@ -82,16 +75,10 @@ public class ProductController {
         return productService.viewProduct();
     }
 
-    @PutMapping("/")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> updateProduct(@RequestBody ProductUpdateRequest request, HttpServletRequest httpRequest) {
-        return productService.updateProduct(request, httpRequest);
-    }
-
-    @DeleteMapping("/soft/delete{id}")
-    @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> deleteProduct(@PathVariable int id, HttpServletRequest httpRequest) {
-        return productService.deleteProduct(id, httpRequest);
+    public ResponseEntity<ResponseObject> deactivateProduct(@PathVariable int id) {
+        return productService.deactivateProduct(id);
     }
 
     //=================== wish list =====================\\
