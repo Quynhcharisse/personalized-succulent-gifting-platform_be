@@ -16,6 +16,8 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateAccessoryRequest {
 
+    boolean createAction;
+
     boolean createPot;
     PotData potData;// if createPot is false then send null here
 

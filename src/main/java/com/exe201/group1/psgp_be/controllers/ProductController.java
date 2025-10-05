@@ -72,14 +72,14 @@ public class ProductController {
     //=================== Product =====================\\
     @PostMapping("/")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> createProduct(@RequestBody ProductCreateRequest request, HttpServletRequest httpRequest) {
-        return productService.createProduct(request, httpRequest);
+    public ResponseEntity<ResponseObject> createProduct(@RequestBody ProductCreateRequest request) {
+        return productService.createProduct(request);
     }
 
     @GetMapping("/")
     @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> viewProduct(HttpServletRequest httpRequest) {
-        return productService.viewProduct(httpRequest);
+    public ResponseEntity<ResponseObject> viewProduct() {
+        return productService.viewProduct();
     }
 
     @PutMapping("/")

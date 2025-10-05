@@ -20,8 +20,8 @@ public class CreateSucculentRequest {
     String speciesName;
     String description;
     String imageUrl;
-    List<FengShui> fengShuiList; // chinh sau
-    List<Zodiac> zodiacList; // chinh sau
+    List<String> fengShuiList;
+    List<String> zodiacList;
     List<Size> sizeList;
 
     @NoArgsConstructor
