@@ -14,7 +14,10 @@ import java.util.List;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ProductCreateRequest {
+public class CreateOrUpdateProductRequest {
+    boolean createAction; //true -> create, false -> update
+    Integer productId;// null
+
     String name;
     String description;
     List<Size> sizes;

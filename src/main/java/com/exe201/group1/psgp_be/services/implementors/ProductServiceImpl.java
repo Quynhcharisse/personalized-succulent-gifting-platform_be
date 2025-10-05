@@ -1,20 +1,12 @@
 package com.exe201.group1.psgp_be.services.implementors;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreateAccessoryRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
-import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
-import com.exe201.group1.psgp_be.dto.requests.ProductCreateRequest;
-import com.exe201.group1.psgp_be.dto.requests.ProductUpdateRequest;
-import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
-import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
-import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierStatusRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.enums.FengShui;
-import com.exe201.group1.psgp_be.enums.Role;
 import com.exe201.group1.psgp_be.enums.Status;
 import com.exe201.group1.psgp_be.enums.Zodiac;
 import com.exe201.group1.psgp_be.models.Account;
@@ -24,7 +16,6 @@ import com.exe201.group1.psgp_be.models.ProductImage;
 import com.exe201.group1.psgp_be.models.ProductSucculent;
 import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.models.SucculentSpecies;
-import com.exe201.group1.psgp_be.models.Supplier;
 import com.exe201.group1.psgp_be.models.WishlistItem;
 import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
@@ -32,12 +23,10 @@ import com.exe201.group1.psgp_be.repositories.ProductRepo;
 import com.exe201.group1.psgp_be.repositories.ProductSucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentSpeciesRepo;
-import com.exe201.group1.psgp_be.repositories.SupplierRepo;
 import com.exe201.group1.psgp_be.repositories.WishListItemRepo;
 import com.exe201.group1.psgp_be.services.JWTService;
 import com.exe201.group1.psgp_be.services.ProductService;
 import com.exe201.group1.psgp_be.utils.CookieUtil;
-import com.exe201.group1.psgp_be.utils.EntityResponseBuilder;
 import com.exe201.group1.psgp_be.utils.MapUtils;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import com.vladmihalcea.hibernate.util.StringUtils;
@@ -55,7 +44,6 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -69,6 +57,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@SuppressWarnings("unchecked")
 public class ProductServiceImpl implements ProductService {
 
     SucculentRepo succulentRepo;
@@ -83,12 +72,7 @@ public class ProductServiceImpl implements ProductService {
     // =========================== Succulent ========================== \\
     @Override
     @Transactional
-    public ResponseEntity<ResponseObject> createSucculent(CreateSucculentRequest request, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
+    public ResponseEntity<ResponseObject> createSucculent(CreateSucculentRequest request) {
 
         String error = validateCreateSucculent(request);
         if (!error.isEmpty()) {
@@ -270,11 +254,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> viewSucculentList(HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
+    public ResponseEntity<ResponseObject> viewSucculentList() {
 
         return ResponseBuilder.build(HttpStatus.OK, "Lấy danh sách catalog sen đá thành công", buildListSucculent(succulentRepo.findAll(Sort.by(Sort.Direction.DESC, "id"))));
     }
@@ -325,12 +305,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ResponseEntity<ResponseObject> updateSucculent(UpdateSucculentRequest request, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Tài khoản không hợp lệ", null);
-        }
+    public ResponseEntity<ResponseObject> updateSucculent(UpdateSucculentRequest request) {
 
         if (succulentRepo.findById(request.getId()).isEmpty()) {
             return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy mặt hàng ", null);
@@ -483,7 +458,8 @@ public class ProductServiceImpl implements ProductService {
     // =========================== Accessory ========================== \\
 
     @Override
-    public ResponseEntity<ResponseObject> createAccessory(CreateAccessoryRequest request) {
+    public ResponseEntity<ResponseObject> createOrUpdateAccessory(CreateOrUpdateAccessoryRequest request) {
+
         String error = validateCreateAccessory(request);
         if (!error.isEmpty()) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
@@ -505,7 +481,7 @@ public class ProductServiceImpl implements ProductService {
                                 ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Invalid accessory creation method", null);
     }
 
-    private String validateCreateAccessory(CreateAccessoryRequest request) {
+    private String validateCreateAccessory(CreateOrUpdateAccessoryRequest request) {
         if (request == null) {
             return "Request cannot be null";
         }
@@ -520,7 +496,7 @@ public class ProductServiceImpl implements ProductService {
         }
         // Validate Pot
         if (request.isCreatePot()) {
-            CreateAccessoryRequest.PotData potData = request.getPotData();
+            CreateOrUpdateAccessoryRequest.PotData potData = request.getPotData();
             if (potData == null) {
                 return "Pot data cannot be null";
             }
@@ -540,7 +516,7 @@ public class ProductServiceImpl implements ProductService {
                 return "Pot must have at least one size configuration";
             }
             // Validate each size
-            for (CreateAccessoryRequest.Size size : potData.getSizes()) {
+            for (CreateOrUpdateAccessoryRequest.Size size : potData.getSizes()) {
                 if (StringUtils.isBlank(size.getName())) {
                     return "Size name cannot be empty";
                 }
@@ -564,7 +540,7 @@ public class ProductServiceImpl implements ProductService {
 
         // Validate Soil
         if (request.isCreateSoil()) {
-            CreateAccessoryRequest.SoilData soilData = request.getSoilData();
+            CreateOrUpdateAccessoryRequest.SoilData soilData = request.getSoilData();
             if (soilData == null) {
                 return "Soil data cannot be null";
             }
@@ -581,7 +557,7 @@ public class ProductServiceImpl implements ProductService {
                 return "Soil must have at least one image";
             }
             // Validate base pricing
-            CreateAccessoryRequest.BasePricing basePricing = soilData.getBasePricing();
+            CreateOrUpdateAccessoryRequest.BasePricing basePricing = soilData.getBasePricing();
             if (basePricing == null) {
                 return "Base pricing cannot be null";
             }
@@ -598,7 +574,7 @@ public class ProductServiceImpl implements ProductService {
 
         // Validate Decoration
         if (request.isCreateDecoration()) {
-            CreateAccessoryRequest.DecorationData decorationData = request.getDecorationData();
+            CreateOrUpdateAccessoryRequest.DecorationData decorationData = request.getDecorationData();
             if (decorationData == null) {
                 return "Decoration data cannot be null";
             }
@@ -622,10 +598,10 @@ public class ProductServiceImpl implements ProductService {
         return ""; // No validation errors
     }
 
-    private ResponseEntity<ResponseObject> createPot(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
+    private ResponseEntity<ResponseObject> createPot(CreateOrUpdateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
         boolean create = request.isCreateAction();
         boolean update = !create;
-        CreateAccessoryRequest.PotData potData = request.getPotData();
+        CreateOrUpdateAccessoryRequest.PotData potData = request.getPotData();
 
         if (accessoryData.get("pot") == null) {
             if (create) {
@@ -661,16 +637,16 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.OK, (create ? "Tạo " : "Cập nhật ") + "chậu cây thành công", null);
     }
 
-    private Map<String, Object> createPotDetail(CreateAccessoryRequest.PotData potData) {
+    private Map<String, Object> createPotDetail(CreateOrUpdateAccessoryRequest.PotData potData) {
         Map<String, Object> potDetailMap = new HashMap<>();
         potDetailMap.put("material", potData.getMaterial());
         potDetailMap.put("color", potData.getColor());
         potDetailMap.put("description", potData.getDescription());
-        potDetailMap.put("image", potData.getImages().stream().map(CreateAccessoryRequest.Image::getImage).toList());
+        potDetailMap.put("image", potData.getImages().stream().map(CreateOrUpdateAccessoryRequest.Image::getImage).toList());
 
         Map<String, Object> sizeDetailMap = new HashMap<>();// pot size detail level
 
-        for (CreateAccessoryRequest.Size size : potData.getSizes()) {
+        for (CreateOrUpdateAccessoryRequest.Size size : potData.getSizes()) {
             sizeDetailMap.put(size.getName(),
                     Map.of(
                             "potHeight", size.getPotHeight(),
@@ -686,10 +662,10 @@ public class ProductServiceImpl implements ProductService {
         return potDetailMap;
     }
 
-    private ResponseEntity<ResponseObject> createSoil(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
+    private ResponseEntity<ResponseObject> createSoil(CreateOrUpdateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
         boolean create = request.isCreateAction();
         boolean update = !create;
-        CreateAccessoryRequest.SoilData soilData = request.getSoilData();
+        CreateOrUpdateAccessoryRequest.SoilData soilData = request.getSoilData();
 
         if (accessoryData.get("soil") == null) {
             if (create) {
@@ -725,11 +701,11 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.OK, (create ? "Tạo " : "Cập nhật ") + "đất thành công", null);
     }
 
-    private Map<String, Object> createSoilDetail(CreateAccessoryRequest.SoilData soilData) {
+    private Map<String, Object> createSoilDetail(CreateOrUpdateAccessoryRequest.SoilData soilData) {
         Map<String, Object> soilDetailMap = new HashMap<>();
         soilDetailMap.put("description", soilData.getDescription());
         soilDetailMap.put("availableMassValue", soilData.getAvailableMassValue());
-        soilDetailMap.put("image", soilData.getImages().stream().map(CreateAccessoryRequest.Image::getImage).toList());
+        soilDetailMap.put("image", soilData.getImages().stream().map(CreateOrUpdateAccessoryRequest.Image::getImage).toList());
 
         Map<String, Object> basePriceDetailMap = new HashMap<>();// base price detail level
         basePriceDetailMap.put("massValue", soilData.getBasePricing().getMassValue());
@@ -740,10 +716,10 @@ public class ProductServiceImpl implements ProductService {
         return soilDetailMap;
     }
 
-    private ResponseEntity<ResponseObject> createDecoration(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
+    private ResponseEntity<ResponseObject> createDecoration(CreateOrUpdateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
         boolean create = request.isCreateAction();
         boolean update = !create;
-        CreateAccessoryRequest.DecorationData decorationData = request.getDecorationData();
+        CreateOrUpdateAccessoryRequest.DecorationData decorationData = request.getDecorationData();
 
         if (accessoryData.get("decoration") == null) {
             if (create) {
@@ -779,12 +755,12 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.OK, (create ? "Tạo " : "Cập nhật ") + "đồ trang trí thành công", null);
     }
 
-    private Map<String, Object> createDecorDetail(CreateAccessoryRequest.DecorationData decorationData) {
+    private Map<String, Object> createDecorDetail(CreateOrUpdateAccessoryRequest.DecorationData decorationData) {
         Map<String, Object> decorDetailMap = new HashMap<>();
         decorDetailMap.put("description", decorationData.getDescription());
         decorDetailMap.put("price", decorationData.getPrice());
         decorDetailMap.put("availableQty", decorationData.getAvailableQty());
-        decorDetailMap.put("image", decorationData.getImages().stream().map(CreateAccessoryRequest.Image::getImage).toList());
+        decorDetailMap.put("image", decorationData.getImages().stream().map(CreateOrUpdateAccessoryRequest.Image::getImage).toList());
         return decorDetailMap;
     }
 
@@ -902,7 +878,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ResponseEntity<ResponseObject> createProduct(ProductCreateRequest request) {
+    public ResponseEntity<ResponseObject> createOrUpdateProduct(CreateOrUpdateProductRequest request) {
         String error = validateCreateProduct(request);
         if (!error.isEmpty()) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
 
@@ -910,7 +886,7 @@ public class ProductServiceImpl implements ProductService {
 
         Set<Integer> succulentIDs = new LinkedHashSet<>();
 
-        for (ProductCreateRequest.Size size : request.getSizes()) {
+        for (CreateOrUpdateProductRequest.Size size : request.getSizes()) {
             Map<String, Object> data = new HashMap<>(buildSizeMap(size));
 
             Set<Integer> idUsedList = (Set<Integer>) ((Map<String, Object>) data.get("succulents")).get("ids");
@@ -932,16 +908,30 @@ public class ProductServiceImpl implements ProductService {
 
         LocalDateTime now = LocalDateTime.now();
 
-        Product product = productRepo.save(
-                Product.builder()
-                        .name(request.getName())
-                        .description(request.getDescription())
-                        .createdAt(now)
-                        .updatedAt(now)
-                        .status(null)
-                        .size(sizes)
-                        .build()
-        );
+        Product product;
+
+        if(request.isCreateAction()){
+            product = productRepo.save(
+                    Product.builder()
+                            .name(request.getName())
+                            .description(request.getDescription())
+                            .createdAt(now)
+                            .updatedAt(now)
+                            .status(null)
+                            .size(sizes)
+                            .build()
+            );
+        }else {
+            product = productRepo.findById(request.getProductId()).orElse(null);
+            if(product == null) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
+            product.setName(request.getName());
+            product.setDescription(request.getDescription());
+            product.setUpdatedAt(now);
+            product.setStatus(null);
+            product.setSize(sizes);
+            product = productRepo.save(product);
+        }
+
         product.setStatus(checkProductStatus(product) ? Status.AVAILABLE : Status.OUT_OF_STOCK);
         product = productRepo.save(product);
 
@@ -964,12 +954,12 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.CREATED, "Tạo sản phẩm thành công", null);
     }
 
-    private String validateCreateProduct(ProductCreateRequest request) {
+    private String validateCreateProduct(CreateOrUpdateProductRequest request) {
         //TODO: Validate here
         return "";
     }
 
-    private Map<String, Object> buildSizeMap(ProductCreateRequest.Size size) {
+    private Map<String, Object> buildSizeMap(CreateOrUpdateProductRequest.Size size) {
         Map<String, Object> result = new HashMap<>();
         result.put("succulents", buildSucculentsMap(size.getSucculents()));
         result.put("pot", buildPotMap(size.getPot()));
@@ -979,13 +969,13 @@ public class ProductServiceImpl implements ProductService {
         return result;
     }
 
-    private Map<String, Object> buildSucculentsMap(List<ProductCreateRequest.Succulent> succulents) {
+    private Map<String, Object> buildSucculentsMap(List<CreateOrUpdateProductRequest.Succulent> succulents) {
         Set<Integer> idUsedList = new LinkedHashSet<>();
         List<Map<String, Object>> succulentList = new ArrayList<>();
 
         Map<String, Object> result = new HashMap<>();
 
-        for (ProductCreateRequest.Succulent succulent : succulents) {
+        for (CreateOrUpdateProductRequest.Succulent succulent : succulents) {
             boolean added = idUsedList.add(succulent.getId());
 
             if (added) {
@@ -1005,31 +995,31 @@ public class ProductServiceImpl implements ProductService {
         return result;
     }
 
-    private Map<String, Object> buildPotMap(ProductCreateRequest.Pot pot) {
+    private Map<String, Object> buildPotMap(CreateOrUpdateProductRequest.Pot pot) {
         return Map.of(
                 "name", pot.getName(),
                 "size", pot.getSize()
         );
     }
 
-    private Map<String, Object> buildSoilMap(ProductCreateRequest.Soil soil) {
+    private Map<String, Object> buildSoilMap(CreateOrUpdateProductRequest.Soil soil) {
         return Map.of(
                 "name", soil.getName(),
                 "massAmount", soil.getMassAmount()
         );
     }
 
-    private Map<String, Object> buildDecorationsMap(ProductCreateRequest.Decoration decoration) {
+    private Map<String, Object> buildDecorationsMap(CreateOrUpdateProductRequest.Decoration decoration) {
         return Map.of(
                 "included", decoration.isIncluded(),
                 "detail", Objects.requireNonNullElse(buildDecorationDetailMap(decoration.getDetails(), decoration.isIncluded()), "")
         );
     }
 
-    private Map<String, Object> buildDecorationDetailMap(List<ProductCreateRequest.DecorationDetail> details, boolean included) {
+    private Map<String, Object> buildDecorationDetailMap(List<CreateOrUpdateProductRequest.DecorationDetail> details, boolean included) {
         Map<String, Object> resultMap = new HashMap<>();
 
-        for (ProductCreateRequest.DecorationDetail detail : details) {
+        for (CreateOrUpdateProductRequest.DecorationDetail detail : details) {
             resultMap.put(detail.getName(), detail.getQuantity());
         }
 
@@ -1299,13 +1289,17 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> updateProduct(ProductUpdateRequest request, HttpServletRequest httpRequest) {
-        return null;
-    }
+    public ResponseEntity<ResponseObject> deactivateProduct(int id) {
+        Product product = productRepo.findById(id).orElse(null);
+        if(product == null) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
+        if(!product.getStatus().equals(Status.UNAVAILABLE)){
+            product.setStatus(Status.UNAVAILABLE);
+        }else {
+            product.setStatus(checkProductStatus(product) ? Status.AVAILABLE : Status.OUT_OF_STOCK);
+        }
 
-    @Override
-    public ResponseEntity<ResponseObject> deleteProduct(int id, HttpServletRequest httpRequest) {
-        return null;
+        productRepo.save(product);
+        return ResponseBuilder.build(HttpStatus.OK, "Xóa sản phẩm thành công", null);
     }
 
     // =========================== WishList ========================== \\

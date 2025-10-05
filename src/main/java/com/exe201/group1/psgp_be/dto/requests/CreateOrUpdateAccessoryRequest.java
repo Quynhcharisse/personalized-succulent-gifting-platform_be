@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreateAccessoryRequest {
+public class CreateOrUpdateAccessoryRequest {
 
     boolean createAction;
 
