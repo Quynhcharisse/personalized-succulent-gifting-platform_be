@@ -1,7 +1,10 @@
 package com.exe201.group1.psgp_be.controllers;
 
+import com.exe201.group1.psgp_be.dto.requests.CreateSupplierRequest;
 import com.exe201.group1.psgp_be.dto.requests.ProcessAccountRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateProfileRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateSupplierStatusRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.AccountService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -71,4 +74,36 @@ public class AccountController {
     public ResponseEntity<ResponseObject> unbanAccount(@RequestBody ProcessAccountRequest request) {
         return accountService.processAccount(request, "unban");
     }
+
+    //=================== supplier =====================\\
+    @PostMapping("/supplier")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseObject> createSupplier(@RequestBody CreateSupplierRequest request, HttpServletRequest httpRequest) {
+        return accountService.createSupplier(request, httpRequest);
+    }
+
+    @PutMapping("/supplier")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseObject> updateSupplier(@RequestBody UpdateSupplierRequest request, HttpServletRequest httpRequest) {
+        return accountService.updateSupplier(request, httpRequest);
+    }
+
+    @PutMapping("/supplier/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseObject> updateSupplierStatus(@RequestBody UpdateSupplierStatusRequest request, HttpServletRequest httpRequest) {
+        return accountService.updateSupplierStatus(request, httpRequest);
+    }
+
+    @GetMapping("/supplier/list")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseObject> getSupplierList(HttpServletRequest httpRequest) {
+        return accountService.getSupplierList(httpRequest);
+    }
+
+    @GetMapping("/stats/supplier")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseObject> getTotalSupplierCount(HttpServletRequest httpRequest) {
+        return accountService.getTotalSupplierCount(httpRequest);
+    }
+
 }

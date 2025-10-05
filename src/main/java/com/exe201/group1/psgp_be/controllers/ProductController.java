@@ -37,31 +37,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProductController {
     private final ProductService productService;
 
-    //=================== supplier =====================\\
-    @PostMapping("/supplier")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> createSupplier(@RequestBody CreateSupplierRequest request, HttpServletRequest httpRequest) {
-        return productService.createSupplier(request, httpRequest);
-    }
-
-    @PutMapping("/supplier")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> updateSupplier(@RequestBody UpdateSupplierRequest request, HttpServletRequest httpRequest) {
-        return productService.updateSupplier(request, httpRequest);
-    }
-
-    @PutMapping("/supplier/status")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> updateSupplierStatus(@RequestBody UpdateSupplierStatusRequest request, HttpServletRequest httpRequest) {
-        return productService.updateSupplierStatus(request, httpRequest);
-    }
-
-    @GetMapping("/supplier/list")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> getSupplierList(HttpServletRequest httpRequest) {
-        return productService.getSupplierList(httpRequest);
-    }
-
     //=================== succulent =====================\\
     @GetMapping("/succulents")
     @PreAuthorize("hasRole('SELLER')")
@@ -117,37 +92,6 @@ public class ProductController {
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> deleteProduct(@PathVariable int id, HttpServletRequest httpRequest) {
         return productService.deleteProduct(id, httpRequest);
-    }
-
-    //=================== custom request =====================\\
-    @GetMapping("/custom/requests")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> customRequestListByBuyer(HttpServletRequest request) {
-        return productService.customRequestListByBuyer(request);
-    }
-
-    @PostMapping("/custom/requests")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> createCustomRequest(@RequestBody CreateCustomRequest request) {
-        return productService.createCustomRequest(request);
-    }
-
-    @PutMapping("/custom/requests")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> updateCustomRequest(@RequestBody UpdateCustomRequestRequest request) {
-        return productService.updateCustomRequest(request);
-    }
-
-    @DeleteMapping("/custom/requests")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> deleteCustomRequest(@RequestBody DeleteCustomRequestRequest request) {
-        return productService.deleteCustomRequest(request);
-    }
-
-    @GetMapping("/stats/supplier")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResponseObject> getTotalSupplierCount(HttpServletRequest httpRequest) {
-        return productService.getTotalSupplierCount(httpRequest);
     }
 
     //=================== wish list =====================\\
