@@ -13,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -27,7 +26,6 @@ public class SystemServiceImpl implements SystemService {
     public ResponseEntity<ResponseObject> getBusinessConfig() {
         AppConfig businessConfig = appConfigRepo.findByKey("business").orElse(null);
         assert businessConfig != null;
-
         return ResponseBuilder.build(HttpStatus.OK, "", (Map<String, Object>) businessConfig.getValue());
     }
 
