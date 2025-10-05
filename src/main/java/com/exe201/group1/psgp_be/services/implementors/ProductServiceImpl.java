@@ -40,6 +40,7 @@ import com.exe201.group1.psgp_be.utils.CookieUtil;
 import com.exe201.group1.psgp_be.utils.EntityResponseBuilder;
 import com.exe201.group1.psgp_be.utils.MapUtils;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
+import com.vladmihalcea.hibernate.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -483,7 +484,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ResponseEntity<ResponseObject> createAccessory(CreateAccessoryRequest request) {
-
         String error = validateCreateAccessory(request);
         if (!error.isEmpty()) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
@@ -506,8 +506,120 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private String validateCreateAccessory(CreateAccessoryRequest request) {
-        //TODO: validate here
-        return "";
+        if (request == null) {
+            return "Request cannot be null";
+        }
+        // Check that exactly one type of accessory is being created
+        int accessoryTypeCount = 0;
+        if (request.isCreatePot()) accessoryTypeCount++;
+        if (request.isCreateSoil()) accessoryTypeCount++;
+        if (request.isCreateDecoration()) accessoryTypeCount++;
+
+        if (accessoryTypeCount != 1) {
+            return "Exactly one type of accessory (pot, soil, or decoration) must be specified";
+        }
+        // Validate Pot
+        if (request.isCreatePot()) {
+            CreateAccessoryRequest.PotData potData = request.getPotData();
+            if (potData == null) {
+                return "Pot data cannot be null";
+            }
+            if (StringUtils.isBlank(potData.getName())) {
+                return "Pot name cannot be empty";
+            }
+            if (StringUtils.isBlank(potData.getMaterial())) {
+                return "Pot material cannot be empty";
+            }
+            if (StringUtils.isBlank(potData.getColor())) {
+                return "Pot color cannot be empty";
+            }
+            if (potData.getImages() == null || potData.getImages().isEmpty()) {
+                return "Pot must have at least one image";
+            }
+            if (potData.getSizes() == null || potData.getSizes().isEmpty()) {
+                return "Pot must have at least one size configuration";
+            }
+            // Validate each size
+            for (CreateAccessoryRequest.Size size : potData.getSizes()) {
+                if (StringUtils.isBlank(size.getName())) {
+                    return "Size name cannot be empty";
+                }
+                if (size.getPotHeight() <= 0) {
+                    return "Pot height must be greater than 0";
+                }
+                if (size.getPotUpperCrossSectionArea() <= 0) {
+                    return "Pot upper cross section area must be greater than 0";
+                }
+                if (size.getMaxSoilMassValue() <= 0) {
+                    return "Maximum soil mass value must be greater than 0";
+                }
+                if (size.getAvailableQty() < 0) {
+                    return "Available quantity cannot be negative";
+                }
+                if (size.getPrice() <= 0) {
+                    return "Price must be greater than 0";
+                }
+            }
+        }
+
+        // Validate Soil
+        if (request.isCreateSoil()) {
+            CreateAccessoryRequest.SoilData soilData = request.getSoilData();
+            if (soilData == null) {
+                return "Soil data cannot be null";
+            }
+            if (StringUtils.isBlank(soilData.getName())) {
+                return "Soil name cannot be empty";
+            }
+            if (StringUtils.isBlank(soilData.getDescription())) {
+                return "Soil description cannot be empty";
+            }
+            if (soilData.getAvailableMassValue() <= 0) {
+                return "Available mass value must be greater than 0";
+            }
+            if (soilData.getImages() == null || soilData.getImages().isEmpty()) {
+                return "Soil must have at least one image";
+            }
+            // Validate base pricing
+            CreateAccessoryRequest.BasePricing basePricing = soilData.getBasePricing();
+            if (basePricing == null) {
+                return "Base pricing cannot be null";
+            }
+            if (basePricing.getMassValue() <= 0) {
+                return "Base pricing mass value must be greater than 0";
+            }
+            if (StringUtils.isBlank(basePricing.getMassUnit())) {
+                return "Base pricing mass unit cannot be empty";
+            }
+            if (basePricing.getPrice() <= 0) {
+                return "Base pricing price must be greater than 0";
+            }
+        }
+
+        // Validate Decoration
+        if (request.isCreateDecoration()) {
+            CreateAccessoryRequest.DecorationData decorationData = request.getDecorationData();
+            if (decorationData == null) {
+                return "Decoration data cannot be null";
+            }
+            if (StringUtils.isBlank(decorationData.getName())) {
+                return "Decoration name cannot be empty";
+            }
+            if (StringUtils.isBlank(decorationData.getDescription())) {
+                return "Decoration description cannot be empty";
+            }
+            if (decorationData.getPrice() <= 0) {
+                return "Decoration price must be greater than 0";
+            }
+            if (decorationData.getAvailableQty() < 0) {
+                return "Available quantity cannot be negative";
+            }
+            if (decorationData.getImages() == null || decorationData.getImages().isEmpty()) {
+                return "Decoration must have at least one image";
+            }
+        }
+
+        return ""; // No validation errors
     }
 
     private ResponseEntity<ResponseObject> createPot(CreateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
@@ -675,7 +787,6 @@ public class ProductServiceImpl implements ProductService {
         decorDetailMap.put("image", decorationData.getImages().stream().map(CreateAccessoryRequest.Image::getImage).toList());
         return decorDetailMap;
     }
-
 
     @Override
     public ResponseEntity<ResponseObject> getAccessories(String type) {
