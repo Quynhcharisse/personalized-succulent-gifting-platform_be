@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -62,6 +63,17 @@ public class Post {
     @Column(length = 20)
     Status status;
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "product_id")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    Product product;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    List<Comment> comments;
+
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
@@ -71,4 +83,4 @@ public class Post {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     List<PostTag> postTagList;
-} 
+}

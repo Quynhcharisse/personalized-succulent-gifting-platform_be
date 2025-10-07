@@ -22,6 +22,7 @@ public class CreateOrUpdatePostRequest {
     String title;
     String description;
     Status status;
+    Integer productId;
     List<CreatePostImageRequest> postImages;
     List<Integer> TagIds;
 }

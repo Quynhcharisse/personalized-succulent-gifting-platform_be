@@ -1,5 +1,6 @@
 package com.exe201.group1.psgp_be.services.implementors;
 
+import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateCommentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdatePostRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.models.*;
@@ -24,6 +25,8 @@ public class PostServiceImpl implements PostService {
     private final AccountRepo accountRepo;
     private final JWTService jwtService;
     private final TagRepo tagRepo;
+    private final CommentRepo commentRepo;
+    private final ProductRepo productRepo;
 
     @Override
     public ResponseEntity<ResponseObject> createPost(CreateOrUpdatePostRequest request, HttpServletRequest httpRequest) {
@@ -34,11 +37,18 @@ public class PostServiceImpl implements PostService {
 
         User seller = account.getUser();
 
+        Integer productId = request.getProductId();
+        Product product = productRepo.findById(productId).orElse(null);
+        if (product == null) {
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found with id: " + productId, null);
+        }
+
         Post post = postRepo.save(Post.builder()
                 .seller(seller)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .status(request.getStatus())
+                .product(product)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build());
@@ -79,9 +89,16 @@ public class PostServiceImpl implements PostService {
             return ResponseBuilder.build(HttpStatus.FORBIDDEN, "You do not have permission to update this post", null);
         }
 
+        Integer productId = request.getProductId();
+        Product product = productRepo.findById(productId).orElse(null);
+        if (product == null) {
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found with id: " + productId, null);
+        }
+
         post.setTitle(request.getTitle());
         post.setDescription(request.getDescription());
         post.setStatus(request.getStatus());
+        post.setProduct(product);
         post.setUpdatedAt(LocalDateTime.now());
 
         createOrUpdatePost(request, post);
@@ -108,6 +125,78 @@ public class PostServiceImpl implements PostService {
         postRepo.delete(post);
 
         return ResponseEntity.ok(new ResponseObject("Post deleted successfully", null));
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> createPostComment(Integer postId, CreateOrUpdateCommentRequest request, HttpServletRequest httpRequest) {
+        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
+        if (account == null) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không tìm thấy tài khoản", null);
+        }
+
+        User buyer = account.getUser();
+
+        String content = request.getContent();
+
+        Post post = postRepo.findById(postId).orElse(null);
+        if (post == null) {
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Post not found with id: " + postId, null);
+        }
+
+        Comment comment = Comment.builder()
+                .post(post)
+                .buyer(buyer)
+                .content(content)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        commentRepo.save(comment);
+
+        return ResponseEntity.ok(new ResponseObject("Comment added successfully", comment));
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> updatePostComment(Integer commentId, CreateOrUpdateCommentRequest request, HttpServletRequest httpRequest) {
+        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
+        if (account == null) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không tìm thấy tài khoản", null);
+        }
+
+        String content = request.getContent();
+
+        Comment comment = commentRepo.findById(commentId).orElse(null);
+        if (comment == null) {
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Comment not found with id: " + commentId, null);
+        }
+
+        if (!comment.getBuyer().getId().equals(account.getUser().getId())) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "You do not have permission to update this comment", null);
+        }
+
+        comment.setContent(content);
+        comment.setUpdatedAt(LocalDateTime.now());
+        commentRepo.save(comment);
+        return ResponseEntity.ok(new ResponseObject("Comment updated successfully", comment));
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> deletePostComment(Integer commentId, HttpServletRequest httpRequest) {
+        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
+        if (account == null) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không tìm thấy tài khoản", null);
+        }
+
+        Comment comment = commentRepo.findById(commentId).orElse(null);
+        if (comment == null) {
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Comment not found with id: " + commentId, null);
+        }
+
+        if (!comment.getBuyer().getId().equals(account.getUser().getId())) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "You do not have permission to delete this comment", null);
+        }
+
+        commentRepo.delete(comment);
+        return ResponseEntity.ok(new ResponseObject("Comment deleted successfully", null));
     }
 
     private void createOrUpdatePost(CreateOrUpdatePostRequest request, Post post) {
