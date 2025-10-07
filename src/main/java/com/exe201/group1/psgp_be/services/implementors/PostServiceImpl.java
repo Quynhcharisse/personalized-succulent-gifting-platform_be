@@ -3,6 +3,7 @@ package com.exe201.group1.psgp_be.services.implementors;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateCommentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdatePostRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
+import com.exe201.group1.psgp_be.enums.Status;
 import com.exe201.group1.psgp_be.models.*;
 import com.exe201.group1.psgp_be.repositories.*;
 import com.exe201.group1.psgp_be.services.JWTService;
@@ -60,7 +61,24 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public ResponseEntity<ResponseObject> viewPosts() {
-        List<Post> posts = postRepo.findAll();
+        List<Post> posts = postRepo.findAllByStatus(Status.PUBLISHED).stream().peek(post -> {
+            List<Comment> comments = post.getComments().stream().filter(c -> Status.PUBLISHED.equals(c.getStatus())).toList();
+            post.setComments(comments);
+        }).toList();
+        return ResponseEntity.ok(new ResponseObject("Posts fetched successfully", posts));
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> viewPostsBySeller(HttpServletRequest httpRequest) {
+        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
+        if (account == null) {
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không tìm thấy tài khoản", null);
+        }
+        Integer sellerId = account.getUser().getId();
+        List<Post> posts = postRepo.findAllBySellerId(sellerId).stream().peek(post -> {
+            List<Comment> comments = post.getComments().stream().filter(c -> Status.PUBLISHED.equals(c.getStatus())).toList();
+            post.setComments(comments);
+        }).toList();
         return ResponseEntity.ok(new ResponseObject("Posts fetched successfully", posts));
     }
 
@@ -70,6 +88,8 @@ public class PostServiceImpl implements PostService {
         if (post == null) {
             return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Post not found with id: " + id, null);
         }
+        List<Comment> comments = post.getComments().stream().filter(c -> Status.PUBLISHED.equals(c.getStatus())).toList();
+        post.setComments(comments);
         return ResponseEntity.ok(new ResponseObject("Post fetched successfully", post));
     }
 
@@ -107,27 +127,6 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public ResponseEntity<ResponseObject> deletePost(Integer id, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không tìm thấy tài khoản", null);
-        }
-
-        Post post = postRepo.findById(id).orElse(null);
-        if (post == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Post not found with id: " + id, null);
-        }
-
-        if (!post.getSeller().getId().equals(account.getUser().getId())) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "You do not have permission to delete this post", null);
-        }
-
-        postRepo.delete(post);
-
-        return ResponseEntity.ok(new ResponseObject("Post deleted successfully", null));
-    }
-
-    @Override
     public ResponseEntity<ResponseObject> createPostComment(Integer postId, CreateOrUpdateCommentRequest request, HttpServletRequest httpRequest) {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
         if (account == null) {
@@ -147,6 +146,7 @@ public class PostServiceImpl implements PostService {
                 .post(post)
                 .buyer(buyer)
                 .content(content)
+                .status(request.getStatus())
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -174,29 +174,16 @@ public class PostServiceImpl implements PostService {
         }
 
         comment.setContent(content);
+        comment.setStatus(request.getStatus());
         comment.setUpdatedAt(LocalDateTime.now());
         commentRepo.save(comment);
         return ResponseEntity.ok(new ResponseObject("Comment updated successfully", comment));
     }
 
     @Override
-    public ResponseEntity<ResponseObject> deletePostComment(Integer commentId, HttpServletRequest httpRequest) {
-        Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-        if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không tìm thấy tài khoản", null);
-        }
-
-        Comment comment = commentRepo.findById(commentId).orElse(null);
-        if (comment == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Comment not found with id: " + commentId, null);
-        }
-
-        if (!comment.getBuyer().getId().equals(account.getUser().getId())) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "You do not have permission to delete this comment", null);
-        }
-
-        commentRepo.delete(comment);
-        return ResponseEntity.ok(new ResponseObject("Comment deleted successfully", null));
+    public ResponseEntity<ResponseObject> getPostTags() {
+        List<Tag> tags = tagRepo.findAll();
+        return ResponseEntity.ok(new ResponseObject("Tags fetched successfully", tags));
     }
 
     private void createOrUpdatePost(CreateOrUpdatePostRequest request, Post post) {
@@ -211,12 +198,15 @@ public class PostServiceImpl implements PostService {
                 ).toList();
         post.setPostImageList(images);
 
-        List<PostTag> tags = request.getTagIds()
+        List<PostTag> tags = request.getTagNames()
                 .stream()
-                .map(tagId -> {
-                    Tag tag = tagRepo.findById(tagId).orElse(null);
-                    if (tag == null) {
-                        throw new IllegalArgumentException("Tag not found with id: " + tagId);
+                .map(tagName -> {
+                    Tag tag;
+                    if (tagRepo.existsByName(tagName)) {
+                        tag = Tag.builder().name(tagName).build();
+                        tagRepo.save(tag);
+                    } else {
+                        tag = tagRepo.findByName(tagName);
                     }
                     return PostTag.builder().post(post).tag(tag).build();
                 })

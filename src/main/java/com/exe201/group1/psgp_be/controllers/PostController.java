@@ -11,7 +11,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,6 +42,12 @@ public class PostController {
         return postService.viewPosts();
     }
 
+    @GetMapping("/seller")
+    @Operation(summary = "View all posts by a specific seller")
+    public ResponseEntity<ResponseObject> viewPostsBySeller(HttpServletRequest httpRequest) {
+        return postService.viewPostsBySeller(httpRequest);
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "View a post by ID")
     public ResponseEntity<ResponseObject> viewPost(@PathVariable Integer id) {
@@ -58,16 +63,6 @@ public class PostController {
             HttpServletRequest httpRequest
     ) {
         return postService.updatePost(id, request, httpRequest);
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SELLER')")
-    @Operation(summary = "Delete a post by ID (Seller only)")
-    public ResponseEntity<ResponseObject> deletePost(
-            @PathVariable Integer id,
-            HttpServletRequest httpRequest
-    ) {
-        return postService.deletePost(id, httpRequest);
     }
 
     @PostMapping("/{id}/comments")
@@ -90,13 +85,10 @@ public class PostController {
         return postService.updatePostComment(id, request, httpRequest);
     }
 
-    @DeleteMapping("comments/{id}")
-    @Operation(summary = "Delete a comment by ID")
-    public ResponseEntity<ResponseObject> deletePostComment(
-            @PathVariable Integer id,
-            HttpServletRequest httpRequest
-    ) {
-        return postService.deletePostComment(id, httpRequest);
+    @GetMapping("/tags")
+    @Operation(summary = "Get all post tags")
+    public ResponseEntity<ResponseObject> getPostTags() {
+        return postService.getPostTags();
     }
 
 }
