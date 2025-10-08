@@ -1256,6 +1256,8 @@ public class ProductServiceImpl implements ProductService {
 
         if (rawData == null) return null;
 
+        rawData = new HashMap<>(rawData);
+
         rawData.remove("availableMassValue");
 
         rawData.put("massAmount", soilData.get("massAmount"));
