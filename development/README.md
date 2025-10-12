@@ -16,7 +16,7 @@ This guide explains how to set up and use the PostgreSQL database for developmen
     docker-compose -f database-compose.yml up -d
     ```
 
-1. Stop the database:
+2. Stop the database:
 
     ```bash
     docker-compose -f database-compose.yml down
@@ -59,7 +59,7 @@ The database data is stored in a Docker volume named `psgp_postgres_data`. This 
 docker volume ls | grep psgp_postgres_data
 ```
 
-1. Remove the volume (⚠️ This will delete all data):
+2. Remove the volume (⚠️ This will delete all data):
 
 ```bash
 docker-compose -f database-compose.yml down -v
@@ -106,14 +106,14 @@ You can connect using tools like DBeaver or pgAdmin with these details:
    ```
    Solution: Stop any existing PostgreSQL instances or change the port in database-compose.yml
 
-3. **Permission Issues**
+2. **Permission Issues**
 
    ```bash
    Error: permission denied to create database
    ```
    Solution: Check that the POSTGRES_USER has appropriate privileges
 
-4. **Container Won't Start**
+3. **Container Won't Start**
 
    ```bash
    Check the logs: docker-compose -f database-compose.yml logs
@@ -127,13 +127,13 @@ You can connect using tools like DBeaver or pgAdmin with these details:
 docker-compose -f database-compose.yml logs -f
 ```
 
-1. Restart the container:
+2. Restart the container:
 
 ```bash
 docker-compose -f database-compose.yml restart
 ```
 
-1. Check container status:
+3. Check container status:
 
 ```bash
 docker-compose -f database-compose.yml ps
