@@ -8,6 +8,11 @@ This guide explains how to set up and use the PostgreSQL database for developmen
 - Docker Compose installed on your machine
 - Basic understanding of Docker and PostgreSQL
 
+## Documentation
+
+[Docker installation guide](https://nquangit.io.vn/post/docker/docker-introduction/)
+[Official Docker Documentation](https://docs.docker.com/)
+
 ## Quick Start
 
 1. Start the database:
