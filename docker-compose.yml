@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ACCESS_EXPIRED=${JWT_ACCESS_EXPIRED}
+      - JWT_REFRESH_EXPIRED=${JWT_REFRESH_EXPIRED}
+      - CLIENT_URL=${CLIENT_URL}
+    # depends_on:
+      # - db
+    networks:
+      - psgp-network
+
+  # db:
+  #   image: postgres:15-alpine
+  #   ports:
+  #     - "5432:5432"
+  #   environment:
+  #     - POSTGRES_DB=psgp_db
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - psgp-network
+
+networks:
+  psgp-network:
+    driver: bridge
+
+# volumes:
+  # postgres_data:
