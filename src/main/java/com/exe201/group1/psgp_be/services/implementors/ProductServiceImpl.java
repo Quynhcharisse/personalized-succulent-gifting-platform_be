@@ -1047,11 +1047,30 @@ public class ProductServiceImpl implements ProductService {
                     }
                 }
             } else {
-                // Nếu không bao gồm (included = false) thì danh sách chi tiết (details) nên là null hoặc rỗng
-                if (size.getDecoration().getDetails() != null && !size.getDecoration().getDetails().isEmpty()) {
-                    // Đây là một cảnh báo về dữ liệu không nhất quán, nhưng không bắt buộc phải báo lỗi nghiêm trọng
-                    // Tùy theo yêu cầu, có thể bỏ qua hoặc báo lỗi.
-                    // Ví dụ: return "Nếu không bao gồm trang trí, chi tiết trang trí phải là rỗng cho kích cỡ: " + size.getName() + ".";
+                if (size.getDecoration().isIncluded()) {
+                    // Nếu CÓ bao gồm (included = true)
+                    if (size.getDecoration().getDetails() == null || size.getDecoration().getDetails().isEmpty()) {
+                        return "Nếu có trang trí đi kèm, chi tiết trang trí không được để trống cho kích cỡ: " + size.getName() + ".";
+                    }
+
+                    Set<String> decorationNames = new HashSet<>();
+                    for (CreateOrUpdateProductRequest.DecorationDetail detail : size.getDecoration().getDetails()) {
+                        if (detail.getName() == null || detail.getName().trim().isEmpty()) {
+                            return "Tên vật trang trí chi tiết không được để trống cho kích cỡ: " + size.getName() + ".";
+                        }
+                        if (detail.getQuantity() <= 0) {
+                            return "Số lượng vật trang trí chi tiết phải lớn hơn 0 cho kích cỡ: " + size.getName() + " (Vật: " + detail.getName() + ").";
+                        }
+                        // Kiểm tra trùng lặp vật trang trí chi tiết
+                        if (!decorationNames.add(detail.getName().trim().toLowerCase())) {
+                            return "Vật trang trí chi tiết bị lặp lại trong cùng một kích cỡ: " + size.getName() + " (Vật: " + detail.getName() + ").";
+                        }
+                    }
+                } else {
+                    // Nếu KHÔNG bao gồm (included = false), thì details phải null/rỗng
+                    if (size.getDecoration().getDetails() != null && !size.getDecoration().getDetails().isEmpty()) {
+                        return "Nếu không bao gồm trang trí, danh sách chi tiết trang trí (details) phải rỗng hoặc null cho kích cỡ: " + size.getName() + ".";
+                    }
                 }
             }
         }
@@ -1119,7 +1138,8 @@ public class ProductServiceImpl implements ProductService {
         );
     }
 
-    private Map<String, Object> buildDecorationDetailMap(List<CreateOrUpdateProductRequest.DecorationDetail> details, boolean included) {
+    private Map<String, Object> buildDecorationDetailMap
+            (List<CreateOrUpdateProductRequest.DecorationDetail> details, boolean included) {
         Map<String, Object> resultMap = new HashMap<>();
 
         for (CreateOrUpdateProductRequest.DecorationDetail detail : details) {
@@ -1195,7 +1215,8 @@ public class ProductServiceImpl implements ProductService {
         return availableMassValue >= massAmount;
     }
 
-    private boolean checkDecorationAvailable(boolean included, Map<String, Object> detail, List<Map<String, Object>> decorationConfig) {
+    private boolean checkDecorationAvailable(boolean included, Map<
+            String, Object> detail, List<Map<String, Object>> decorationConfig) {
         if (!included) return true;
 
         for (String key : detail.keySet()) {
@@ -1285,7 +1306,8 @@ public class ProductServiceImpl implements ProductService {
         ).toList();
     }
 
-    private List<Map<String, Object>> buildProductSucculentListResponse(List<Map<String, Object>> rawSucculents) {
+    private List<Map<String, Object>> buildProductSucculentListResponse
+            (List<Map<String, Object>> rawSucculents) {
         return rawSucculents.stream().map(
                 succulent -> {
                     int id = (int) succulent.get("id");
@@ -1328,7 +1350,8 @@ public class ProductServiceImpl implements ProductService {
         );
     }
 
-    private Map<String, Object> buildProductPotResponse(Map<String, Object> accessoryConfigData, Map<String, Object> potData) {
+    private Map<String, Object> buildProductPotResponse
+            (Map<String, Object> accessoryConfigData, Map<String, Object> potData) {
         return buildPotResponse(accessoryConfigData).stream()
                 .filter(pot -> pot.get("name").toString().equalsIgnoreCase(potData.get("name").toString()))
                 .findFirst()
@@ -1358,7 +1381,8 @@ public class ProductServiceImpl implements ProductService {
                 .orElse(null);
     }
 
-    private Map<String, Object> buildProductSoilResponse(Map<String, Object> accessoryConfigData, Map<String, Object> soilData) {
+    private Map<String, Object> buildProductSoilResponse
+            (Map<String, Object> accessoryConfigData, Map<String, Object> soilData) {
         Map<String, Object> rawData = buildSoilResponse(accessoryConfigData).stream()
                 .filter(soil -> soil.get("name").toString().equalsIgnoreCase(soilData.get("name").toString()))
                 .findFirst()
@@ -1375,7 +1399,8 @@ public class ProductServiceImpl implements ProductService {
         return rawData;
     }
 
-    private List<Map<String, Object>> buildProductDecorationListResponse(Map<String, Object> accessoryConfigData, Map<String, Object> decorationData) {
+    private List<Map<String, Object>> buildProductDecorationListResponse
+            (Map<String, Object> accessoryConfigData, Map<String, Object> decorationData) {
         if ((boolean) decorationData.get("included")) {
             Map<String, Object> decorationDataMap = MapUtils.checkIfObjectIsMap(decorationData.get("detail"));
 
@@ -1403,7 +1428,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ResponseEntity<ResponseObject> deactivateProduct(int id) {
         Product product = productRepo.findById(id).orElse(null);
-        if (product == null) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
+        if (product == null)
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
         if (!product.getStatus().equals(Status.UNAVAILABLE)) {
             product.setStatus(Status.UNAVAILABLE);
         } else {
