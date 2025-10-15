@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/product")
@@ -63,13 +62,13 @@ public class ProductController {
     }
 
     //=================== Product =====================\\
-    @PostMapping("/")
+    @PostMapping("")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> createProduct(@RequestBody CreateOrUpdateProductRequest request) {
         return productService.createOrUpdateProduct(request);
     }
 
-    @GetMapping("/")
+    @GetMapping("")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> viewProduct() {
         return productService.viewProduct();

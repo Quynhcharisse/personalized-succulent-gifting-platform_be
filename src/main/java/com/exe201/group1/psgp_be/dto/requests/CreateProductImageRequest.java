@@ -14,7 +14,4 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateProductImageRequest {
     String imageUrl;
-    String altText;
-    boolean primary;
-    Integer displayOrder;
 }
