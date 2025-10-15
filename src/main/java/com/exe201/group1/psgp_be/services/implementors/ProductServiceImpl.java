@@ -2,8 +2,8 @@ package com.exe201.group1.psgp_be.services.implementors;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.enums.FengShui;
@@ -17,20 +17,16 @@ import com.exe201.group1.psgp_be.models.ProductSucculent;
 import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.models.SucculentSpecies;
 import com.exe201.group1.psgp_be.models.WishlistItem;
-import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
 import com.exe201.group1.psgp_be.repositories.ProductSucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentSpeciesRepo;
 import com.exe201.group1.psgp_be.repositories.WishListItemRepo;
-import com.exe201.group1.psgp_be.services.JWTService;
 import com.exe201.group1.psgp_be.services.ProductService;
-import com.exe201.group1.psgp_be.utils.CookieUtil;
 import com.exe201.group1.psgp_be.utils.MapUtils;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import com.vladmihalcea.hibernate.util.StringUtils;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -63,8 +59,6 @@ public class ProductServiceImpl implements ProductService {
     SucculentRepo succulentRepo;
     SucculentSpeciesRepo succulentSpeciesRepo;
     ProductRepo productRepo;
-    JWTService jwtService;
-    AccountRepo accountRepo;
     WishListItemRepo wishListItemRepo;
     AppConfigRepo appConfigRepo;
     ProductSucculentRepo productSucculentRepo;
@@ -595,7 +589,7 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        return ""; // No validation errors
+        return "";
     }
 
     private ResponseEntity<ResponseObject> createPot(CreateOrUpdateAccessoryRequest request, Map<String, Object> accessoryData, AppConfig accessoryConfig) {
@@ -841,8 +835,8 @@ public class ProductServiceImpl implements ProductService {
                                 "name", key.toLowerCase(),
                                 "description", soilDetail.get("description"),
                                 "availableMassValue", soilDetail.get("availableMassValue"),
-                                "basePricing", ((Map<String, Object>) soilDetail.get("basePricing")),
-                                "image", ((List<String>) soilDetail.get("image")).stream().map(img -> Map.of("image", img)).toList()
+                                "basePricing", soilDetail.get("basePricing"),
+                                "image", ((List<String>) soilDetail.get("image")).stream().map(img -> Map.of("url", img)).toList()
                         );
                     }
             ).toList();
@@ -910,7 +904,7 @@ public class ProductServiceImpl implements ProductService {
 
         Product product;
 
-        if(request.isCreateAction()){
+        if (request.isCreateAction()) {
             product = productRepo.save(
                     Product.builder()
                             .name(request.getName())
@@ -921,9 +915,9 @@ public class ProductServiceImpl implements ProductService {
                             .size(sizes)
                             .build()
             );
-        }else {
+        } else {
             product = productRepo.findById(request.getProductId()).orElse(null);
-            if(product == null) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
+            if (product == null) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
             product.setName(request.getName());
             product.setDescription(request.getDescription());
             product.setUpdatedAt(now);
@@ -979,11 +973,15 @@ public class ProductServiceImpl implements ProductService {
             boolean added = idUsedList.add(succulent.getId());
 
             if (added) {
+                Map<String, Object> sizeDetail = new HashMap<>();
+                for(CreateOrUpdateProductRequest.SucculentSize s: succulent.getSizes()){
+                    sizeDetail.put(s.getSize().toLowerCase(), s.getQuantity());
+                }
+
                 Map<String, Object> succulentData = new HashMap<>();
                 succulentData.put("id", succulent.getId());
                 succulentData.put("name", succulent.getName());
-                succulentData.put("size", succulent.getSize());
-                succulentData.put("quantity", succulent.getQuantity());
+                succulentData.put("size", sizeDetail);
 
                 succulentList.add(succulentData);
             }
@@ -1188,12 +1186,21 @@ public class ProductServiceImpl implements ProductService {
                     int id = (int) succulent.get("id");
                     Succulent s = succulentRepo.findById(id).orElse(null);
                     if (s == null) return null;
-                    return buildProductSucculentResponse(s, (int) succulent.get("quantity"), succulent.get("size").toString());
+                    return buildProductSucculentResponse(s, (Map<String, Object>) succulent.get("size"));
                 }
         ).toList();
     }
 
-    private Map<String, Object> buildProductSucculentResponse(Succulent succulent, int quantity, String size) {
+    private Map<String, Object> buildProductSucculentResponse(Succulent succulent, Map<String, Object> size) {
+        List<Map<String, Object>> sizeDetail = size.keySet().stream().map(
+                key -> {
+                    Map<String, Object> detail = new HashMap<>(buildProductSucculentSizeResponse(succulent.getSize(), key));
+                    detail.put("name", key.toLowerCase());
+                    detail.put("quantity", size.get(key));
+                    return detail;
+                }
+        ).toList();
+
         return Map.of(
                 "id", succulent.getId(),
                 "name", succulent.getSpecies().getSpeciesName(),
@@ -1201,15 +1208,13 @@ public class ProductServiceImpl implements ProductService {
                 "createAt", succulent.getCreatedAt(),
                 "updateAt", succulent.getUpdatedAt(),
                 "image", succulent.getImageUrl(),
-                "size", buildProductSucculentSizeResponse(succulent.getSize(), size),
-                "quantity", quantity
+                "size", sizeDetail
         );
     }
 
     private Map<String, Object> buildProductSucculentSizeResponse(Object succulentSize, String size) {
         Map<String, Object> sizeData = ((Map<String, Object>) ((Map<String, Object>) succulentSize).get(size.toLowerCase().trim()));
         return Map.of(
-                "name", size.toLowerCase().trim(),
                 "area", Map.of(
                         "min", (Integer) sizeData.get("minArea"),
                         "max", (Integer) sizeData.get("maxArea")
@@ -1232,15 +1237,15 @@ public class ProductServiceImpl implements ProductService {
                     map.put("size", ((List<Map<String, Object>>) pot.get("size")).stream()
                             .filter(p -> p.get("name").toString().equalsIgnoreCase(potData.get("size").toString()))
                             .map(
-                                p -> {
-                                    Map<String, Object> sizeDetail = new HashMap<>();
-                                    sizeDetail.put("name", p.get("name"));
-                                    sizeDetail.put("height", p.get("potHeight"));
-                                    sizeDetail.put("upperCrossSectionArea", p.get("potUpperCrossSectionArea"));
-                                    sizeDetail.put("maxMassValue", p.get("maxSoilMassValue"));
-                                    sizeDetail.put("price", p.get("price"));
-                                    return sizeDetail;
-                                }
+                                    p -> {
+                                        Map<String, Object> sizeDetail = new HashMap<>();
+                                        sizeDetail.put("name", p.get("name"));
+                                        sizeDetail.put("height", p.get("potHeight"));
+                                        sizeDetail.put("upperCrossSectionArea", p.get("potUpperCrossSectionArea"));
+                                        sizeDetail.put("maxMassValue", p.get("maxSoilMassValue"));
+                                        sizeDetail.put("price", p.get("price"));
+                                        return sizeDetail;
+                                    }
                             ).toList()
                     );
                     return map;
@@ -1255,6 +1260,8 @@ public class ProductServiceImpl implements ProductService {
                 .orElse(null);
 
         if (rawData == null) return null;
+
+        rawData = new HashMap<>(rawData);
 
         rawData.remove("availableMassValue");
 
@@ -1291,10 +1298,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ResponseEntity<ResponseObject> deactivateProduct(int id) {
         Product product = productRepo.findById(id).orElse(null);
-        if(product == null) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
-        if(!product.getStatus().equals(Status.UNAVAILABLE)){
+        if (product == null) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
+        if (!product.getStatus().equals(Status.UNAVAILABLE)) {
             product.setStatus(Status.UNAVAILABLE);
-        }else {
+        } else {
             product.setStatus(checkProductStatus(product) ? Status.AVAILABLE : Status.OUT_OF_STOCK);
         }
 
