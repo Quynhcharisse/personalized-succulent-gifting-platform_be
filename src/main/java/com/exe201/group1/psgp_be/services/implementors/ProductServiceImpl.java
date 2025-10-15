@@ -18,6 +18,7 @@ import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.models.SucculentSpecies;
 import com.exe201.group1.psgp_be.models.WishlistItem;
 import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
+import com.exe201.group1.psgp_be.repositories.ProductImageRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
 import com.exe201.group1.psgp_be.repositories.ProductSucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
@@ -59,6 +60,7 @@ public class ProductServiceImpl implements ProductService {
     SucculentRepo succulentRepo;
     SucculentSpeciesRepo succulentSpeciesRepo;
     ProductRepo productRepo;
+    ProductImageRepo productImageRepo;
     WishListItemRepo wishListItemRepo;
     AppConfigRepo appConfigRepo;
     ProductSucculentRepo productSucculentRepo;
@@ -915,6 +917,15 @@ public class ProductServiceImpl implements ProductService {
                             .size(sizes)
                             .build()
             );
+
+            for(CreateOrUpdateProductRequest.Image image: request.getImages()){
+                productImageRepo.save(
+                        ProductImage.builder()
+                                .imageUrl(image.getUrl())
+                                .product(product)
+                                .build()
+                );
+            }
         } else {
             product = productRepo.findById(request.getProductId()).orElse(null);
             if (product == null) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
@@ -923,7 +934,19 @@ public class ProductServiceImpl implements ProductService {
             product.setUpdatedAt(now);
             product.setStatus(null);
             product.setSize(sizes);
+            product.setProductImages(null);
             product = productRepo.save(product);
+
+            productImageRepo.deleteAllByProduct_Id(product.getId());
+
+            for(CreateOrUpdateProductRequest.Image image: request.getImages()){
+                productImageRepo.save(
+                        ProductImage.builder()
+                                .imageUrl(image.getUrl())
+                                .product(product)
+                                .build()
+                );
+            }
         }
 
         product.setStatus(checkProductStatus(product) ? Status.AVAILABLE : Status.OUT_OF_STOCK);
@@ -1142,12 +1165,7 @@ public class ProductServiceImpl implements ProductService {
                 image -> {
                     Map<String, Object> map = new HashMap<>();
                     map.put("id", image.getId());
-                    map.put("primary", image.getIsPrimary());
-                    map.put("displayOrder", image.getDisplayOrder());
-                    map.put("createAt", image.getCreatedAt());
-                    map.put("updateAt", image.getUpdatedAt());
                     map.put("url", image.getImageUrl());
-                    map.put("altText", image.getAltText());
                     return map;
                 }
         ).toList();

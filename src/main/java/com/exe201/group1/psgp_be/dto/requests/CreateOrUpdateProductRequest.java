@@ -21,7 +21,7 @@ public class CreateOrUpdateProductRequest {
     String name;
     String description;
     List<Size> sizes;
-    List<CreateProductImageRequest> images;
+    List<Image> images;
 
     @NoArgsConstructor
     @AllArgsConstructor
@@ -95,5 +95,14 @@ public class CreateOrUpdateProductRequest {
     public static class DecorationDetail {
         String name;
         int quantity;
+    }
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Data
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class Image {
+        String url;
     }
 }
