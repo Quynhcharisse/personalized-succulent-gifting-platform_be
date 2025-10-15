@@ -984,11 +984,20 @@ public class ProductServiceImpl implements ProductService {
                 if (succulent.getId() <= 0) {
                     return "ID sen đá không hợp lệ.";
                 }
-                if (succulent.getSize() == null || succulent.getSize().trim().isEmpty()) {
-                    return "Kích cỡ sen đá không được để trống (ID: " + succulent.getId() + ").";
+
+                // Thay thế logic kiểm tra:
+                if (succulent.getSizes() == null || succulent.getSizes().isEmpty()) { // Kiểm tra List null hoặc rỗng
+                    return "Cấu hình kích cỡ sen đá không được để trống (ID: " + succulent.getId() + ").";
                 }
-                if (succulent.getQuantity() <= 0) {
-                    return "Số lượng sen đá phải lớn hơn 0 (ID: " + succulent.getId() + ").";
+
+                // Cần lặp qua các kích cỡ trong list để kiểm tra từng kích cỡ:
+                for (CreateOrUpdateProductRequest.SucculentSize succulentSize : succulent.getSizes()) {
+                    if (succulentSize.getSize() == null || succulentSize.getSize().trim().isEmpty()) {
+                        return "Tên kích cỡ sen đá không được để trống (ID: " + succulent.getId() + ").";
+                    }
+                    if (succulentSize.getQuantity() <= 0) {
+                        return "Số lượng sen đá phải lớn hơn 0 (ID: " + succulent.getId() + ").";
+                    }
                 }
             }
 
@@ -1046,7 +1055,6 @@ public class ProductServiceImpl implements ProductService {
                 }
             }
         }
-
         return "";
     }
 
@@ -1071,7 +1079,7 @@ public class ProductServiceImpl implements ProductService {
 
             if (added) {
                 Map<String, Object> sizeDetail = new HashMap<>();
-                for(CreateOrUpdateProductRequest.SucculentSize s: succulent.getSizes()){
+                for (CreateOrUpdateProductRequest.SucculentSize s : succulent.getSizes()) {
                     sizeDetail.put(s.getSize().toLowerCase(), s.getQuantity());
                 }
 
