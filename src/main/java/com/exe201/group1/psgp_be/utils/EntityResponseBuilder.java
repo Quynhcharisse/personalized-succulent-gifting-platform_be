@@ -80,7 +80,7 @@ public class EntityResponseBuilder {
         return MapUtils.build(keys, values);
     }
 
-    public static  Map<String, Object> buildNotificationsResponse(List<Notification> notifications) {
+    public static Map<String, Object> buildNotificationsResponse(List<Notification> notifications) {
         return Map.of(
                 "count", notifications.size(),
                 "notifications", notifications.stream().map(notification -> Map.of(
