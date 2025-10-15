@@ -18,6 +18,7 @@ import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.models.SucculentSpecies;
 import com.exe201.group1.psgp_be.models.WishlistItem;
 import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
+import com.exe201.group1.psgp_be.repositories.ProductImageRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
 import com.exe201.group1.psgp_be.repositories.ProductSucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
@@ -59,6 +60,7 @@ public class ProductServiceImpl implements ProductService {
     SucculentRepo succulentRepo;
     SucculentSpeciesRepo succulentSpeciesRepo;
     ProductRepo productRepo;
+    ProductImageRepo productImageRepo;
     WishListItemRepo wishListItemRepo;
     AppConfigRepo appConfigRepo;
     ProductSucculentRepo productSucculentRepo;
@@ -836,7 +838,7 @@ public class ProductServiceImpl implements ProductService {
                                 "description", soilDetail.get("description"),
                                 "availableMassValue", soilDetail.get("availableMassValue"),
                                 "basePricing", soilDetail.get("basePricing"),
-                                "image", ((List<String>) soilDetail.get("image")).stream().map(img -> Map.of("image", img)).toList()
+                                "image", ((List<String>) soilDetail.get("image")).stream().map(img -> Map.of("url", img)).toList()
                         );
                     }
             ).toList();
@@ -915,6 +917,15 @@ public class ProductServiceImpl implements ProductService {
                             .size(sizes)
                             .build()
             );
+
+            for(CreateOrUpdateProductRequest.Image image: request.getImages()){
+                productImageRepo.save(
+                        ProductImage.builder()
+                                .imageUrl(image.getUrl())
+                                .product(product)
+                                .build()
+                );
+            }
         } else {
             product = productRepo.findById(request.getProductId()).orElse(null);
             if (product == null) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
@@ -923,7 +934,19 @@ public class ProductServiceImpl implements ProductService {
             product.setUpdatedAt(now);
             product.setStatus(null);
             product.setSize(sizes);
+            product.setProductImages(null);
             product = productRepo.save(product);
+
+            productImageRepo.deleteAllByProduct_Id(product.getId());
+
+            for(CreateOrUpdateProductRequest.Image image: request.getImages()){
+                productImageRepo.save(
+                        ProductImage.builder()
+                                .imageUrl(image.getUrl())
+                                .product(product)
+                                .build()
+                );
+            }
         }
 
         product.setStatus(checkProductStatus(product) ? Status.AVAILABLE : Status.OUT_OF_STOCK);
@@ -1215,8 +1238,7 @@ public class ProductServiceImpl implements ProductService {
         return availableMassValue >= massAmount;
     }
 
-    private boolean checkDecorationAvailable(boolean included, Map<
-            String, Object> detail, List<Map<String, Object>> decorationConfig) {
+    private boolean checkDecorationAvailable(boolean included, Map<String, Object> detail, List<Map<String, Object>> decorationConfig) {
         if (!included) return true;
 
         for (String key : detail.keySet()) {
@@ -1301,8 +1323,7 @@ public class ProductServiceImpl implements ProductService {
         ).toList();
     }
 
-    private List<Map<String, Object>> buildProductSucculentListResponse
-            (List<Map<String, Object>> rawSucculents) {
+    private List<Map<String, Object>> buildProductSucculentListResponse(List<Map<String, Object>> rawSucculents) {
         return rawSucculents.stream().map(
                 succulent -> {
                     int id = (int) succulent.get("id");
@@ -1310,8 +1331,7 @@ public class ProductServiceImpl implements ProductService {
                     if (s == null) return null;
                     return buildProductSucculentResponse(s, (Map<String, Object>) succulent.get("size"));
                 }
-                )
-                .toList();
+        ).toList();
     }
 
     private Map<String, Object> buildProductSucculentResponse(Succulent succulent, Map<String, Object> size) {
@@ -1346,8 +1366,7 @@ public class ProductServiceImpl implements ProductService {
         );
     }
 
-    private Map<String, Object> buildProductPotResponse
-            (Map<String, Object> accessoryConfigData, Map<String, Object> potData) {
+    private Map<String, Object> buildProductPotResponse(Map<String, Object> accessoryConfigData, Map<String, Object> potData) {
         return buildPotResponse(accessoryConfigData).stream()
                 .filter(pot -> pot.get("name").toString().equalsIgnoreCase(potData.get("name").toString()))
                 .findFirst()
@@ -1377,8 +1396,7 @@ public class ProductServiceImpl implements ProductService {
                 .orElse(null);
     }
 
-    private Map<String, Object> buildProductSoilResponse
-            (Map<String, Object> accessoryConfigData, Map<String, Object> soilData) {
+    private Map<String, Object> buildProductSoilResponse(Map<String, Object> accessoryConfigData, Map<String, Object> soilData) {
         Map<String, Object> rawData = buildSoilResponse(accessoryConfigData).stream()
                 .filter(soil -> soil.get("name").toString().equalsIgnoreCase(soilData.get("name").toString()))
                 .findFirst()
@@ -1395,8 +1413,7 @@ public class ProductServiceImpl implements ProductService {
         return rawData;
     }
 
-    private List<Map<String, Object>> buildProductDecorationListResponse
-            (Map<String, Object> accessoryConfigData, Map<String, Object> decorationData) {
+    private List<Map<String, Object>> buildProductDecorationListResponse(Map<String, Object> accessoryConfigData, Map<String, Object> decorationData) {
         if ((boolean) decorationData.get("included")) {
             Map<String, Object> decorationDataMap = MapUtils.checkIfObjectIsMap(decorationData.get("detail"));
 
@@ -1424,8 +1441,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ResponseEntity<ResponseObject> deactivateProduct(int id) {
         Product product = productRepo.findById(id).orElse(null);
-        if (product == null)
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
+        if (product == null) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
         if (!product.getStatus().equals(Status.UNAVAILABLE)) {
             product.setStatus(Status.UNAVAILABLE);
         } else {

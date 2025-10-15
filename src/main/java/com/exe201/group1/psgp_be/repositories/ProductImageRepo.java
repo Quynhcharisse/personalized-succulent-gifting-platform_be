@@ -8,4 +8,6 @@ import java.util.List;
 
 @Repository
 public interface ProductImageRepo extends JpaRepository<ProductImage, Integer> {
+
+    void deleteAllByProduct_Id(int id);
 }
