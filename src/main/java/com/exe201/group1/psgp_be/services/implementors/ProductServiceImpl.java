@@ -17,14 +17,12 @@ import com.exe201.group1.psgp_be.models.ProductSucculent;
 import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.models.SucculentSpecies;
 import com.exe201.group1.psgp_be.models.WishlistItem;
-import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
 import com.exe201.group1.psgp_be.repositories.ProductSucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentSpeciesRepo;
 import com.exe201.group1.psgp_be.repositories.WishListItemRepo;
-import com.exe201.group1.psgp_be.services.JWTService;
 import com.exe201.group1.psgp_be.services.ProductService;
 import com.exe201.group1.psgp_be.utils.MapUtils;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
@@ -61,8 +59,6 @@ public class ProductServiceImpl implements ProductService {
     SucculentRepo succulentRepo;
     SucculentSpeciesRepo succulentSpeciesRepo;
     ProductRepo productRepo;
-    JWTService jwtService;
-    AccountRepo accountRepo;
     WishListItemRepo wishListItemRepo;
     AppConfigRepo appConfigRepo;
     ProductSucculentRepo productSucculentRepo;
@@ -977,11 +973,15 @@ public class ProductServiceImpl implements ProductService {
             boolean added = idUsedList.add(succulent.getId());
 
             if (added) {
+                Map<String, Object> sizeDetail = new HashMap<>();
+                for(CreateOrUpdateProductRequest.SucculentSize s: succulent.getSizes()){
+                    sizeDetail.put(s.getSize().toLowerCase(), s.getQuantity());
+                }
+
                 Map<String, Object> succulentData = new HashMap<>();
                 succulentData.put("id", succulent.getId());
                 succulentData.put("name", succulent.getName());
-                succulentData.put("size", succulent.getSize());
-                succulentData.put("quantity", succulent.getQuantity());
+                succulentData.put("size", sizeDetail);
 
                 succulentList.add(succulentData);
             }
@@ -1186,12 +1186,21 @@ public class ProductServiceImpl implements ProductService {
                     int id = (int) succulent.get("id");
                     Succulent s = succulentRepo.findById(id).orElse(null);
                     if (s == null) return null;
-                    return buildProductSucculentResponse(s, (int) succulent.get("quantity"), succulent.get("size").toString());
+                    return buildProductSucculentResponse(s, (Map<String, Object>) succulent.get("size"));
                 }
         ).toList();
     }
 
-    private Map<String, Object> buildProductSucculentResponse(Succulent succulent, int quantity, String size) {
+    private Map<String, Object> buildProductSucculentResponse(Succulent succulent, Map<String, Object> size) {
+        List<Map<String, Object>> sizeDetail = size.keySet().stream().map(
+                key -> {
+                    Map<String, Object> detail = new HashMap<>(buildProductSucculentSizeResponse(succulent.getSize(), key));
+                    detail.put("name", key.toLowerCase());
+                    detail.put("quantity", size.get(key));
+                    return detail;
+                }
+        ).toList();
+
         return Map.of(
                 "id", succulent.getId(),
                 "name", succulent.getSpecies().getSpeciesName(),
@@ -1199,15 +1208,13 @@ public class ProductServiceImpl implements ProductService {
                 "createAt", succulent.getCreatedAt(),
                 "updateAt", succulent.getUpdatedAt(),
                 "image", succulent.getImageUrl(),
-                "size", buildProductSucculentSizeResponse(succulent.getSize(), size),
-                "quantity", quantity
+                "size", sizeDetail
         );
     }
 
     private Map<String, Object> buildProductSucculentSizeResponse(Object succulentSize, String size) {
         Map<String, Object> sizeData = ((Map<String, Object>) ((Map<String, Object>) succulentSize).get(size.toLowerCase().trim()));
         return Map.of(
-                "name", size.toLowerCase().trim(),
                 "area", Map.of(
                         "min", (Integer) sizeData.get("minArea"),
                         "max", (Integer) sizeData.get("maxArea")
