@@ -1315,7 +1315,8 @@ public class ProductServiceImpl implements ProductService {
                     if (s == null) return null;
                     return buildProductSucculentResponse(s, (Map<String, Object>) succulent.get("size"));
                 }
-        ).toList();
+                )
+                .toList();
     }
 
     private Map<String, Object> buildProductSucculentResponse(Succulent succulent, Map<String, Object> size) {
