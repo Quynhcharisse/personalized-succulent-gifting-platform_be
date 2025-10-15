@@ -1,5 +1,6 @@
 package com.exe201.group1.psgp_be.services.implementors;
 
+import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.models.AppConfig;
 import com.exe201.group1.psgp_be.models.Order;
 import com.exe201.group1.psgp_be.models.OrderDetail;
@@ -7,12 +8,16 @@ import com.exe201.group1.psgp_be.models.Product;
 import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
 import com.exe201.group1.psgp_be.repositories.OrderDetailRepo;
+import com.exe201.group1.psgp_be.repositories.OrderRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
 import com.exe201.group1.psgp_be.services.OrderService;
 import com.exe201.group1.psgp_be.utils.MapUtils;
+import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
@@ -28,6 +33,7 @@ import java.util.Map;
 public class OrderServiceImpl implements OrderService {
 
     OrderDetailRepo orderDetailRepo;
+    OrderRepo orderRepo;
     AppConfigRepo appConfigRepo;
     SucculentRepo succulentRepo;
 
@@ -162,6 +168,14 @@ public class OrderServiceImpl implements OrderService {
     }
 
     //TODO: no usages function
+    @Override
+    public ResponseEntity<ResponseObject> getOrderDetailByOrderId(int orderId){
+        Order order = orderRepo.findById(orderId).orElse(null);
+        if(order == null) return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Order not found", null);
+
+        return ResponseBuilder.build(HttpStatus.OK, "", getOrderDetailByOrder(order));
+    }
+
     private List<Map<String, Object>> getOrderDetailByOrder(Order order) {
         return order.getOrderDetailList().stream().map(
                 detail -> {
