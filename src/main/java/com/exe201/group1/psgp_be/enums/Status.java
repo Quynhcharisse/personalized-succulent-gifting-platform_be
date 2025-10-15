@@ -14,7 +14,18 @@ public enum Status {
 
     //----------Supplier Status---------//
     ACTIVE("Đang hoạt động"),
-    INACTIVE("Ngưng hoạt động");
+    INACTIVE("Ngưng hoạt động"),
+
+    //----------Post Status---------//
+    DRAFT("Bản nháp"),
+    PUBLISHED("Đã đăng"),
+    ARCHIVED("Đã lưu trữ"),
+
+    //----------Comment Status---------//
+    VISIBLE("Hiển thị"),
+    DELETED("Đã xóa")
+
+    ;
 
     private final String value;
 
