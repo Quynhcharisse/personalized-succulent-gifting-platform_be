@@ -42,6 +42,10 @@ public class Comment {
     @JoinColumn(name = "product_id")
     Product product;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id")
+    Post post;
+
     @Column(columnDefinition = "TEXT")
     String content;
 
