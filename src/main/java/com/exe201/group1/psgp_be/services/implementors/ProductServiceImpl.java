@@ -18,6 +18,7 @@ import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.models.SucculentSpecies;
 import com.exe201.group1.psgp_be.models.WishlistItem;
 import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
+import com.exe201.group1.psgp_be.repositories.ProductImageRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
 import com.exe201.group1.psgp_be.repositories.ProductSucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
@@ -59,6 +60,7 @@ public class ProductServiceImpl implements ProductService {
     SucculentRepo succulentRepo;
     SucculentSpeciesRepo succulentSpeciesRepo;
     ProductRepo productRepo;
+    ProductImageRepo productImageRepo;
     WishListItemRepo wishListItemRepo;
     AppConfigRepo appConfigRepo;
     ProductSucculentRepo productSucculentRepo;
@@ -915,6 +917,15 @@ public class ProductServiceImpl implements ProductService {
                             .size(sizes)
                             .build()
             );
+
+            for(CreateOrUpdateProductRequest.Image image: request.getImages()){
+                productImageRepo.save(
+                        ProductImage.builder()
+                                .imageUrl(image.getUrl())
+                                .product(product)
+                                .build()
+                );
+            }
         } else {
             product = productRepo.findById(request.getProductId()).orElse(null);
             if (product == null) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
@@ -923,7 +934,19 @@ public class ProductServiceImpl implements ProductService {
             product.setUpdatedAt(now);
             product.setStatus(null);
             product.setSize(sizes);
+            product.setProductImages(null);
             product = productRepo.save(product);
+
+            productImageRepo.deleteAllByProduct_Id(product.getId());
+
+            for(CreateOrUpdateProductRequest.Image image: request.getImages()){
+                productImageRepo.save(
+                        ProductImage.builder()
+                                .imageUrl(image.getUrl())
+                                .product(product)
+                                .build()
+                );
+            }
         }
 
         product.setStatus(checkProductStatus(product) ? Status.AVAILABLE : Status.OUT_OF_STOCK);
@@ -950,6 +973,97 @@ public class ProductServiceImpl implements ProductService {
 
     private String validateCreateProduct(CreateOrUpdateProductRequest request) {
         //TODO: Validate here
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            return "Tên sản phẩm không được để trống.";
+        }
+        if (request.getName().length() > 200) {
+            return "Tên sản phẩm không được vượt quá 200 ký tự.";
+        }
+        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
+            return "Mô tả sản phẩm không được để trống.";
+        }
+        if (!request.isCreateAction()) {
+            if (request.getProductId() == null || request.getProductId() <= 0) {
+                return "ID sản phẩm cần cập nhật không hợp lệ.";
+            }
+        }
+        if (request.getSizes() == null || request.getSizes().isEmpty()) {
+            return "Sản phẩm phải có ít nhất một cấu hình kích cỡ.";
+        }
+
+        Set<String> sizeNames = new HashSet<>();
+        for (CreateOrUpdateProductRequest.Size size : request.getSizes()) {
+            if (size.getName() == null || size.getName().trim().isEmpty()) {
+                return "Tên kích cỡ không được để trống.";
+            }
+            if (!sizeNames.add(size.getName().trim().toLowerCase())) {
+                return "Các tên kích cỡ phải là duy nhất (trùng: " + size.getName() + ").";
+            }
+            if (size.getSucculents() == null || size.getSucculents().isEmpty()) {
+                return "Mỗi kích cỡ phải có ít nhất một loại sen đá.";
+            }
+
+            for (CreateOrUpdateProductRequest.Succulent succulent : size.getSucculents()) {
+                if (succulent.getId() <= 0) {
+                    return "ID sen đá không hợp lệ.";
+                }
+            }
+
+            // 3.3. Chậu (Pot)
+            if (size.getPot() == null) {
+                return "Thông tin chậu không được để trống cho kích cỡ: " + size.getName() + ".";
+            }
+            if (size.getPot().getName() == null || size.getPot().getName().trim().isEmpty()) {
+                return "Tên chậu không được để trống cho kích cỡ: " + size.getName() + ".";
+            }
+            if (size.getPot().getSize() == null || size.getPot().getSize().trim().isEmpty()) {
+                return "Kích cỡ chậu không được để trống cho kích cỡ: " + size.getName() + ".";
+            }
+
+            // 3.4. Đất (Soil)
+            if (size.getSoil() == null) {
+                return "Thông tin đất không được để trống cho kích cỡ: " + size.getName() + ".";
+            }
+            if (size.getSoil().getName() == null || size.getSoil().getName().trim().isEmpty()) {
+                return "Tên đất không được để trống cho kích cỡ: " + size.getName() + ".";
+            }
+            if (size.getSoil().getMassAmount() <= 0) {
+                return "Khối lượng đất phải lớn hơn 0 cho kích cỡ: " + size.getName() + ".";
+            }
+
+            // 3.5. Vật trang trí (Decoration)
+            if (size.getDecoration() == null) {
+                return "Thông tin vật trang trí không được để trống cho kích cỡ: " + size.getName() + ".";
+            }
+            if (size.getDecoration().isIncluded()) {
+                // Nếu có bao gồm (included = true) thì danh sách chi tiết (details) không được null/rỗng
+                if (size.getDecoration().getDetails() == null || size.getDecoration().getDetails().isEmpty()) {
+                    return "Nếu có trang trí đi kèm, chi tiết trang trí không được để trống cho kích cỡ: " + size.getName() + ".";
+                }
+
+                Set<String> decorationNames = new HashSet<>();
+                for (CreateOrUpdateProductRequest.DecorationDetail detail : size.getDecoration().getDetails()) {
+                    if (detail.getName() == null || detail.getName().trim().isEmpty()) {
+                        return "Tên vật trang trí chi tiết không được để trống cho kích cỡ: " + size.getName() + ".";
+                    }
+                    if (detail.getQuantity() <= 0) {
+                        return "Số lượng vật trang trí chi tiết phải lớn hơn 0 cho kích cỡ: " + size.getName() + " (Vật: " + detail.getName() + ").";
+                    }
+                    // Kiểm tra trùng lặp vật trang trí chi tiết
+                    if (!decorationNames.add(detail.getName().trim().toLowerCase())) {
+                        return "Vật trang trí chi tiết bị lặp lại trong cùng một kích cỡ: " + size.getName() + " (Vật: " + detail.getName() + ").";
+                    }
+                }
+            } else {
+                // Nếu không bao gồm (included = false) thì danh sách chi tiết (details) nên là null hoặc rỗng
+                if (size.getDecoration().getDetails() != null && !size.getDecoration().getDetails().isEmpty()) {
+                    // Đây là một cảnh báo về dữ liệu không nhất quán, nhưng không bắt buộc phải báo lỗi nghiêm trọng
+                    // Tùy theo yêu cầu, có thể bỏ qua hoặc báo lỗi.
+                    // Ví dụ: return "Nếu không bao gồm trang trí, chi tiết trang trí phải là rỗng cho kích cỡ: " + size.getName() + ".";
+                }
+            }
+        }
+
         return "";
     }
 
@@ -1142,12 +1256,7 @@ public class ProductServiceImpl implements ProductService {
                 image -> {
                     Map<String, Object> map = new HashMap<>();
                     map.put("id", image.getId());
-                    map.put("primary", image.getIsPrimary());
-                    map.put("displayOrder", image.getDisplayOrder());
-                    map.put("createAt", image.getCreatedAt());
-                    map.put("updateAt", image.getUpdatedAt());
                     map.put("url", image.getImageUrl());
-                    map.put("altText", image.getAltText());
                     return map;
                 }
         ).toList();
@@ -1354,7 +1463,6 @@ public class ProductServiceImpl implements ProductService {
         wishListItemRepo.removeAllByWishlist(account.getUser().getWishlist());
         return ResponseBuilder.build(HttpStatus.OK, "Xóa toàn bộ sản phẩm khỏi wishlist thành công", null);
     }
-
 
     private Map<String, Object> buildItemFromWishList(WishlistItem item) {
         Map<String, Object> result = new HashMap<>();
