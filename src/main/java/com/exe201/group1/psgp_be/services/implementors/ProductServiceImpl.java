@@ -1007,12 +1007,6 @@ public class ProductServiceImpl implements ProductService {
                 if (succulent.getId() <= 0) {
                     return "ID sen đá không hợp lệ.";
                 }
-                if (succulent.getSize() == null || succulent.getSize().trim().isEmpty()) {
-                    return "Kích cỡ sen đá không được để trống (ID: " + succulent.getId() + ").";
-                }
-                if (succulent.getQuantity() <= 0) {
-                    return "Số lượng sen đá phải lớn hơn 0 (ID: " + succulent.getId() + ").";
-                }
             }
 
             // 3.3. Chậu (Pot)
