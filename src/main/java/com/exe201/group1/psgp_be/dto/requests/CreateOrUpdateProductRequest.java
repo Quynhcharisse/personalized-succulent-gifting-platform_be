@@ -44,6 +44,15 @@ public class CreateOrUpdateProductRequest {
     public static class Succulent {
         int id;
         String name;
+        List<SucculentSize> sizes;
+    }
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Data
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class SucculentSize {
         String size;
         int quantity;
     }
