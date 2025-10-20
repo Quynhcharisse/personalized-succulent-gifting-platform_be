@@ -972,100 +972,100 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private String validateCreateProduct(CreateOrUpdateProductRequest request) {
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
-            return "Tên sản phẩm không được để trống.";
-        }
-        if (request.getName().length() > 200) {
-            return "Tên sản phẩm không được vượt quá 200 ký tự.";
-        }
-        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
-            return "Mô tả sản phẩm không được để trống.";
-        }
-        if (!request.isCreateAction()) {
-            if (request.getProductId() == null || request.getProductId() <= 0) {
-                return "ID sản phẩm cần cập nhật không hợp lệ.";
-            }
-        }
-        if (request.getSizes() == null || request.getSizes().isEmpty()) {
-            return "Sản phẩm phải có ít nhất một cấu hình kích cỡ.";
-        }
-
-        Set<String> sizeNames = new HashSet<>();
-        for (CreateOrUpdateProductRequest.Size size : request.getSizes()) {
-            if (size.getName() == null || size.getName().trim().isEmpty()) {
-                return "Tên kích cỡ không được để trống.";
-            }
-            if (!sizeNames.add(size.getName().trim().toLowerCase())) {
-                return "Các tên kích cỡ phải là duy nhất (trùng: " + size.getName() + ").";
-            }
-            if (size.getSucculents() == null || size.getSucculents().isEmpty()) {
-                return "Mỗi kích cỡ phải có ít nhất một loại sen đá.";
-            }
-            for (CreateOrUpdateProductRequest.Succulent succulent : size.getSucculents()) {
-                if (succulent.getId() <= 0) {
-                    return "ID sen đá không hợp lệ.";
-                }
-                if (succulent.getSizes() == null || succulent.getSizes().isEmpty()) {
-                    return "Cấu hình kích cỡ sen đá không được để trống (ID: " + succulent.getId() + ").";
-                }
-                for (CreateOrUpdateProductRequest.SucculentSize succulentSize : succulent.getSizes()) {
-                    if (succulentSize.getSize() == null || succulentSize.getSize().trim().isEmpty()) {
-                        return "Tên kích cỡ sen đá không được để trống (ID: " + succulent.getId() + ").";
-                    }
-                    if (succulentSize.getQuantity() <= 0) {
-                        return "Số lượng sen đá phải lớn hơn 0 (ID: " + succulent.getId() + ").";
-                    }
-                }
-            }
-
-            // Pot validation
-            if (size.getPot() == null) {
-                return "Thông tin chậu không được để trống cho kích cỡ: " + size.getName() + ".";
-            }
-            if (size.getPot().getName() == null || size.getPot().getName().trim().isEmpty()) {
-                return "Tên chậu không được để trống cho kích cỡ: " + size.getName() + ".";
-            }
-            if (size.getPot().getSize() == null || size.getPot().getSize().trim().isEmpty()) {
-                return "Kích cỡ chậu không được để trống cho kích cỡ: " + size.getName() + ".";
-            }
-
-            // Soil validation
-            if (size.getSoil() == null) {
-                return "Thông tin đất không được để trống cho kích cỡ: " + size.getName() + ".";
-            }
-            if (size.getSoil().getName() == null || size.getSoil().getName().trim().isEmpty()) {
-                return "Tên đất không được để trống cho kích cỡ: " + size.getName() + ".";
-            }
-            if (size.getSoil().getMassAmount() <= 0) {
-                return "Khối lượng đất phải lớn hơn 0 cho kích cỡ: " + size.getName() + ".";
-            }
-
-            // Decoration validation
-            if (size.getDecoration() == null) {
-                return "Thông tin vật trang trí không được để trống cho kích cỡ: " + size.getName() + ".";
-            }
-            if (size.getDecoration().isIncluded()) {
-                if (size.getDecoration().getDetails() == null || size.getDecoration().getDetails().isEmpty()) {
-                    return "Nếu có trang trí đi kèm, chi tiết trang trí không được để trống cho kích cỡ: " + size.getName() + ".";
-                }
-                Set<String> decorationNames = new HashSet<>();
-                for (CreateOrUpdateProductRequest.DecorationDetail detail : size.getDecoration().getDetails()) {
-                    if (detail.getName() == null || detail.getName().trim().isEmpty()) {
-                        return "Tên vật trang trí chi tiết không được để trống cho kích cỡ: " + size.getName() + ".";
-                    }
-                    if (detail.getQuantity() <= 0) {
-                        return "Số lượng vật trang trí chi tiết phải lớn hơn 0 cho kích cỡ: " + size.getName() + " (Vật: " + detail.getName() + ").";
-                    }
-                    if (!decorationNames.add(detail.getName().trim().toLowerCase())) {
-                        return "Vật trang trí chi tiết bị lặp lại trong cùng một kích cỡ: " + size.getName() + " (Vật: " + detail.getName() + ").";
-                    }
-                }
-            } else {
-                if (size.getDecoration().getDetails() != null && !size.getDecoration().getDetails().isEmpty()) {
-                    return "Nếu không bao gồm trang trí, danh sách chi tiết trang trí (details) phải rỗng hoặc null cho kích cỡ: " + size.getName() + ".";
-                }
-            }
-        }
+//        if (request.getName() == null || request.getName().trim().isEmpty()) {
+//            return "Tên sản phẩm không được để trống.";
+//        }
+//        if (request.getName().length() > 250) {
+//            return "Tên sản phẩm không được vượt quá 250 ký tự.";
+//        }
+//        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
+//            return "Mô tả sản phẩm không được để trống.";
+//        }
+//        if (!request.isCreateAction()) {
+//            if (request.getProductId() == null || request.getProductId() <= 0) {
+//                return "ID sản phẩm cần cập nhật không hợp lệ.";
+//            }
+//        }
+//        if (request.getSizes() == null || request.getSizes().isEmpty()) {
+//            return "Sản phẩm phải có ít nhất một cấu hình kích cỡ.";
+//        }
+//
+//        Set<String> sizeNames = new HashSet<>();
+//        for (CreateOrUpdateProductRequest.Size size : request.getSizes()) {
+//            if (size.getName() == null || size.getName().trim().isEmpty()) {
+//                return "Tên kích cỡ không được để trống.";
+//            }
+//            if (!sizeNames.add(size.getName().trim().toLowerCase())) {
+//                return "Các tên kích cỡ phải là duy nhất (trùng: " + size.getName() + ").";
+//            }
+//            if (size.getSucculents() == null || size.getSucculents().isEmpty()) {
+//                return "Mỗi kích cỡ phải có ít nhất một loại sen đá.";
+//            }
+//            for (CreateOrUpdateProductRequest.Succulent succulent : size.getSucculents()) {
+//                if (succulent.getId() <= 0) {
+//                    return "ID sen đá không hợp lệ.";
+//                }
+//                if (succulent.getSizes() == null || succulent.getSizes().isEmpty()) {
+//                    return "Cấu hình kích cỡ sen đá không được để trống (ID: " + succulent.getId() + ").";
+//                }
+//                for (CreateOrUpdateProductRequest.SucculentSize succulentSize : succulent.getSizes()) {
+//                    if (succulentSize.getSize() == null || succulentSize.getSize().trim().isEmpty()) {
+//                        return "Tên kích cỡ sen đá không được để trống (ID: " + succulent.getId() + ").";
+//                    }
+//                    if (succulentSize.getQuantity() <= 0) {
+//                        return "Số lượng sen đá phải lớn hơn 0 (ID: " + succulent.getId() + ").";
+//                    }
+//                }
+//            }
+//
+//            // Pot validation
+//            if (size.getPot() == null) {
+//                return "Thông tin chậu không được để trống cho kích cỡ: " + size.getName() + ".";
+//            }
+//            if (size.getPot().getName() == null || size.getPot().getName().trim().isEmpty()) {
+//                return "Tên chậu không được để trống cho kích cỡ: " + size.getName() + ".";
+//            }
+//            if (size.getPot().getSize() == null || size.getPot().getSize().trim().isEmpty()) {
+//                return "Kích cỡ chậu không được để trống cho kích cỡ: " + size.getName() + ".";
+//            }
+//
+//            // Soil validation
+//            if (size.getSoil() == null) {
+//                return "Thông tin đất không được để trống cho kích cỡ: " + size.getName() + ".";
+//            }
+//            if (size.getSoil().getName() == null || size.getSoil().getName().trim().isEmpty()) {
+//                return "Tên đất không được để trống cho kích cỡ: " + size.getName() + ".";
+//            }
+//            if (size.getSoil().getMassAmount() <= 0) {
+//                return "Khối lượng đất phải lớn hơn 0 cho kích cỡ: " + size.getName() + ".";
+//            }
+//
+//            // Decoration validation
+//            if (size.getDecoration() == null) {
+//                return "Thông tin vật trang trí không được để trống cho kích cỡ: " + size.getName() + ".";
+//            }
+//            if (size.getDecoration().isIncluded()) {
+//                if (size.getDecoration().getDetails() == null || size.getDecoration().getDetails().isEmpty()) {
+//                    return "Nếu có trang trí đi kèm, chi tiết trang trí không được để trống cho kích cỡ: " + size.getName() + ".";
+//                }
+//                Set<String> decorationNames = new HashSet<>();
+//                for (CreateOrUpdateProductRequest.DecorationDetail detail : size.getDecoration().getDetails()) {
+//                    if (detail.getName() == null || detail.getName().trim().isEmpty()) {
+//                        return "Tên vật trang trí chi tiết không được để trống cho kích cỡ: " + size.getName() + ".";
+//                    }
+//                    if (detail.getQuantity() <= 0) {
+//                        return "Số lượng vật trang trí chi tiết phải lớn hơn 0 cho kích cỡ: " + size.getName() + " (Vật: " + detail.getName() + ").";
+//                    }
+//                    if (!decorationNames.add(detail.getName().trim().toLowerCase())) {
+//                        return "Vật trang trí chi tiết bị lặp lại trong cùng một kích cỡ: " + size.getName() + " (Vật: " + detail.getName() + ").";
+//                    }
+//                }
+//            } else {
+//                if (size.getDecoration().getDetails() != null && !size.getDecoration().getDetails().isEmpty()) {
+//                    return "Nếu không bao gồm trang trí, danh sách chi tiết trang trí (details) phải rỗng hoặc null cho kích cỡ: " + size.getName() + ".";
+//                }
+//            }
+//        }
         return "";
     }
 
@@ -1175,12 +1175,14 @@ public class ProductServiceImpl implements ProductService {
 
             List<Map<String, Object>> succulentData = (List<Map<String, Object>>) ((Map<Object, Object>) productSizeData.get(key)).get("succulents");
             for (Map<String, Object> succulent : succulentData) {
-                if (!checkSucculentAvailable((int) succulent.get("id"), succulent.get("size").toString(), (int) succulent.get("quantity"))) {
-                    succulentAvailable = false;
+                Map<String, Object> sizeData = MapUtils.getMapFromObject(succulent, "size");
+                for (String sizeKey : sizeData.keySet()) {
+                    if (!checkSucculentAvailable((int) succulent.get("id"), sizeKey, (int) sizeData.get(sizeKey))) {
+                        succulentAvailable = false;
+                    }
                 }
             }
         }
-
         return succulentAvailable && potAvailable && soilAvailable && decorationAvailable;
     }
 
@@ -1328,10 +1330,10 @@ public class ProductServiceImpl implements ProductService {
         Map<String, Object> sizeData = ((Map<String, Object>) ((Map<String, Object>) succulentSize).get(size.toLowerCase().trim()));
         return Map.of(
                 "area", Map.of(
-                        "min", (Integer) sizeData.get("minArea"),
-                        "max", (Integer) sizeData.get("maxArea")
+                        "min", ((Number) sizeData.get("minArea")).intValue(),
+                        "max", ((Number) sizeData.get("maxArea")).intValue()
                 ),
-                "price", ((Integer) sizeData.get("price")).longValue()
+                "price", ((Number) sizeData.get("price")).longValue()
         );
     }
 
