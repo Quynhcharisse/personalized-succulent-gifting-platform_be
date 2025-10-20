@@ -940,7 +940,11 @@ public class ProductServiceImpl implements ProductService {
                 );
             }
         } else {
+            if (request.getProductId() == null || request.getProductId() <= 0) {
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "ID sản phẩm cần cập nhật không hợp lệ.", null);
+            }
             product = productRepo.findById(request.getProductId()).orElse(null);
+
             if (product == null) return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sản phẩm không tồn tại", null);
             product.setName(request.getName());
             product.setDescription(request.getDescription());
