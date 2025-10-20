@@ -175,8 +175,6 @@ public class ProductServiceImpl implements ProductService {
         // description
         if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
             return "Mô tả là bắt buộc";
-        } else if (request.getDescription().length() > 300) {
-            return "Mô tả không được vượt quá 300 ký tự";
         }
 
         // imageUrl
@@ -325,9 +323,6 @@ public class ProductServiceImpl implements ProductService {
         species.setZodiacs(request.getZodiacList() == null ? new HashSet<>() : new HashSet<>(request.getZodiacList()));
         succulentSpeciesRepo.save(species);
 
-        succulent.setImageUrl(request.getImageUrl());
-        succulent.setUpdatedAt(LocalDateTime.now());
-
         if (succulent.getSize() == null) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Không có size để cập nhật", null);
         }
@@ -351,12 +346,16 @@ public class ProductServiceImpl implements ProductService {
 
             Map<String, Object> sizeDetail = (Map<String, Object>) sizeDetailObject;
 
+            sizeDetail.replace("minArea", size.getMinArea());
+            sizeDetail.replace("maxArea", size.getMaxArea());
             sizeDetail.replace("price", size.getPrice());
             sizeDetail.replace("quantity", size.getQuantity());
             sizeDetail.replace("status", size.getQuantity() > 0 ? Status.AVAILABLE.name() : Status.OUT_OF_STOCK.name());
         }
 
         succulent.setSize(sizeRangeMap);
+        succulent.setImageUrl(request.getImageUrl());
+        succulent.setUpdatedAt(LocalDateTime.now());
         succulentRepo.save(succulent);
 
         return ResponseBuilder.build(HttpStatus.OK, "Cập nhật mặt hàng thành công", null);
@@ -369,10 +368,6 @@ public class ProductServiceImpl implements ProductService {
         if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
             return "Mô tả là bắt buộc";
         }
-        if (request.getDescription().length() > 300) {
-            return "Mô tả không được vượt quá 300 ký tự";
-        }
-
         if (request.getImageUrl() == null || request.getImageUrl().trim().isEmpty()) {
             return "Image URL is required";
         }
@@ -415,15 +410,19 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        // Validate enum lists nếu có
+        // Validate lists if provided
         if (request.getFengShuiList() != null) {
             for (var e : request.getFengShuiList()) {
-                if (e == null) return "Danh sách phong thủy chứa giá trị không hợp lệ";
+                if (e == null) {
+                    return "Danh sách phong thủy chứa giá trị không hợp lệ";
+                }
             }
         }
         if (request.getZodiacList() != null) {
             for (var z : request.getZodiacList()) {
-                if (z == null) return "Danh sách cung hoàng đạo chứa giá trị không hợp lệ";
+                if (z == null) {
+                    return "Danh sách cung hoàng đạo chứa giá trị không hợp lệ";
+                }
             }
         }
         return "";
@@ -436,16 +435,30 @@ public class ProductServiceImpl implements ProductService {
         if (sizeList.size() > 5) {
             return "Hệ thống chỉ có tối đa 5 kích thước";
         }
+
+        Set<String> uniqueSizeNames = new HashSet<>();
+
         for (UpdateSucculentRequest.Size size : sizeList) {
             if (size.getSizeName() == null || size.getSizeName().trim().isEmpty()) {
                 return "Tên kích thước là bắt buộc";
             }
+
+            String normalizedSizeName = size.getSizeName().trim().toLowerCase();
+            if (!uniqueSizeNames.add(normalizedSizeName)) {
+                return "Kích thước '" + size.getSizeName() + "' đã bị trùng lặp. Vui lòng sử dụng tên khác.";
+            }
+
+            if (size.getMaxArea() < size.getMinArea()) {
+                return "Diện tích tối đa phải lớn hơn hoặc bằng diện tích tối thiểu";
+            }
+            if (size.getMaxArea() <= 0 || size.getMinArea() <= 0) {
+                return "Cần nhập diện tích lớn hơn 0";
+            }
             if (size.getPrice() <= 0) {
                 return "Cần nhập giá bán lớn hơn 0";
             }
-            // Cho phép 0 khi cập nhật
-            if (size.getQuantity() < 0) {
-                return "Số lượng cây không được là số âm";
+            if (size.getQuantity() <= 0) {
+                return "Cần nhập số lượng cây lớn hơn 0";
             }
         }
         return "";
