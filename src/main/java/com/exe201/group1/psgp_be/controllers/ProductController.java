@@ -69,7 +69,6 @@ public class ProductController {
     }
 
     @GetMapping("")
-    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> viewProduct() {
         return productService.viewProduct();
     }
