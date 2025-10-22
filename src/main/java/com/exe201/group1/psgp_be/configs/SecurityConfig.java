@@ -15,6 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.Collections;
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -37,10 +38,14 @@ public class SecurityConfig {
                                 cors.configurationSource(
                                         request -> {
                                             CorsConfiguration config = new CorsConfiguration();
-                                            config.setAllowedOrigins(Collections.singletonList(clientUrl));
+                                            config.setAllowedOriginPatterns(List.of(
+                                                    "https://lanhobenthem.onrender.com",
+                                                    "https://pesapp.orangeglacier-1e02abb7.southeastasia.azurecontainerapps.io"
+                                            ));
                                             config.setAllowedMethods(Collections.singletonList("*"));
                                             config.setAllowedHeaders(Collections.singletonList("*"));
                                             config.setAllowCredentials(true);
+                                            config.setExposedHeaders(Collections.singletonList("Set-Cookie"));
                                             return config;
                                         }
                                 )
