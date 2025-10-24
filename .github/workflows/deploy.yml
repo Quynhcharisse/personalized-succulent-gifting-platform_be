@@ -29,7 +29,7 @@ jobs:
           audience: api://AzureADTokenExchange
 
       - name: Docker Login
-        run: echo ${{ secrets.SUCCULENTSAPP_REGISTRY_USERNAME }} | docker login docker.io -u ${{ secrets.SUCCULENTSAPP_REGISTRY_PASSWORD }} --password-stdin
+        run: echo ${{ secrets.SUCCULENTSAPP_REGISTRY_PASSWORD }} | docker login docker.io -u ${{ secrets.SUCCULENTSAPP_REGISTRY_USERNAME }} --password-stdin
 
       - name: Build and push succulent image
         run: |
@@ -44,6 +44,7 @@ jobs:
             --image docker.io/huatri/personalized-succulent-gifting-platform_be-app:latest \
             --container-name succulentapp-v0 \
             --output none
+
 
 
 
