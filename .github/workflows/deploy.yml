@@ -1,4 +1,4 @@
-name: Trigger auto deployment for pesapp
+name: Trigger auto deployment for succulentapp
 
 on:
   push:
@@ -43,4 +43,5 @@ jobs:
             --image docker.io/huatri/personalized-succulent-gifting-platform_be-app:latest \
             --container-name succulentapp-v0 \
             --output none
+
 
