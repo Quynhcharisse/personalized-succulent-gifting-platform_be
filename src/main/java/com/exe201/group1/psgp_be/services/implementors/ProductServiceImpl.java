@@ -1185,8 +1185,16 @@ public class ProductServiceImpl implements ProductService {
                 soilAvailable = false;
             }
 
-            Map<String, Object> decorationData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("decoration");
-            if (!checkDecorationAvailable((boolean) decorationData.get("included"), (Map<String, Object>) decorationData.get("detail"), decorationConfig)) {
+//            Map<String, Object> decorationData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("decoration");
+            //xem sửa : 1189 ==> lỗi cash string object
+            Map<String, Object> productData = (Map<String, Object>) productSizeData.get(key);
+            Map<String, Object> decorationData = (Map<String, Object>) productData.get("decoration");
+            List<Map<String, Object>> details = (List<Map<String, Object>>) decorationData.get("details");
+
+            if (!checkDecorationAvailable(
+                    Boolean.parseBoolean(decorationData.get("included").toString()),
+                    details,
+                    decorationConfig)) {
                 decorationAvailable = false;
             }
 
@@ -1226,17 +1234,32 @@ public class ProductServiceImpl implements ProductService {
         return availableMassValue >= massAmount;
     }
 
-    private boolean checkDecorationAvailable(boolean included, Map<String, Object> detail, List<Map<String, Object>> decorationConfig) {
+    //Map<String, Object> detail
+    private boolean checkDecorationAvailable(boolean included, List<Map<String, Object>> details, List<Map<String, Object>> decorationConfig) {
         if (!included) return true;
 
-        for (String key : detail.keySet()) {
-            Map<String, Object> decorationData = decorationConfig.stream().filter(d -> d.get("name").toString().equalsIgnoreCase(key)).findFirst().orElse(null);
-            if (decorationData == null) return false;
+//        for (String key : details) {
+//            Map<String, Object> decorationData = decorationConfig.stream().filter(d -> d.get("name").toString().equalsIgnoreCase(key)).findFirst().orElse(null);
+//            if (decorationData == null) return false;
+//
+//            int availableQty = (int) decorationData.get("availableQty");
+//            if ((int) details.get(key) > availableQty) return false;
+//        }
 
-            int availableQty = (int) decorationData.get("availableQty");
-            if ((int) detail.get(key) > availableQty) return false;
+        for (Map<String, Object> detailItem : details) {
+            String name = detailItem.get("name").toString();
+            int requiredQty = (int) detailItem.get("quantity");
+
+            Map<String, Object> configItem = decorationConfig.stream()
+                    .filter(d -> d.get("name").toString().equalsIgnoreCase(name))
+                    .findFirst()
+                    .orElse(null);
+
+            if (configItem == null) return false;
+
+            int availableQty = (int) configItem.get("availableQty");
+            if (requiredQty > availableQty) return false;
         }
-
         return true;
     }
 
