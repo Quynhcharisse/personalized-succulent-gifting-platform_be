@@ -838,7 +838,7 @@ public class ProductServiceImpl implements ProductService {
                                 "description", soilDetail.get("description"),
                                 "availableMassValue", soilDetail.get("availableMassValue"),
                                 "basePricing", soilDetail.get("basePricing"),
-                                "image", ((List<String>) soilDetail.get("image")).stream().map(img -> Map.of("image", img)).toList()
+                                "image", ((List<String>) soilDetail.get("image")).stream().map(img -> Map.of("url", img)).toList()
                         );
                     }
             ).toList();
