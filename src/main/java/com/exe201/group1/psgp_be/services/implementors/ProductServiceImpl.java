@@ -1294,20 +1294,22 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ResponseEntity<ResponseObject> viewProduct() {
-        List<Map<String, Object>> data = productRepo.findAll().stream().map(
-                product -> {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("id", product.getId());
-                    map.put("name", product.getName());
-                    map.put("description", product.getDescription());
-                    map.put("createAt", product.getCreatedAt());
-                    map.put("updateAt", product.getUpdatedAt());
-                    map.put("status", product.getStatus().getValue().toLowerCase());
-                    map.put("images", buildProductImageResponse(product.getProductImages()));
-                    map.put("sizes", buildProductSizeResponse((Map<String, Object>) product.getSize()));
-                    return map;
-                }
-        ).toList();
+        List<Map<String, Object>> data = productRepo.findAll().stream()
+                .filter(Product::isPrivacy)
+                .map(
+                        product -> {
+                            Map<String, Object> map = new HashMap<>();
+                            map.put("id", product.getId());
+                            map.put("name", product.getName());
+                            map.put("description", product.getDescription());
+                            map.put("createAt", product.getCreatedAt());
+                            map.put("updateAt", product.getUpdatedAt());
+                            map.put("status", product.getStatus().getValue().toLowerCase());
+                            map.put("images", buildProductImageResponse(product.getProductImages()));
+                            map.put("sizes", buildProductSizeResponse((Map<String, Object>) product.getSize()));
+                            return map;
+                        }
+                ).toList();
         return ResponseBuilder.build(HttpStatus.OK, "", data);
     }
 
@@ -1550,12 +1552,12 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ResponseEntity<ResponseObject> createCustomProductRequest(CreateCustomProductRequestRequest request, HttpServletRequest httpRequest) {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
-        if(account == null){
+        if (account == null) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Account not found", null);
         }
 
         String error = validateCreateCustomProductRequest(request);
-        if(!error.isEmpty()){
+        if (!error.isEmpty()) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
         }
 
@@ -1589,13 +1591,13 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.CREATED, "Tạo yêu cầu điện cây thành công", null);
     }
 
-    private String validateCreateCustomProductRequest(CreateCustomProductRequestRequest request){
+    private String validateCreateCustomProductRequest(CreateCustomProductRequestRequest request) {
         String error = "";
         // TODO: validate here
         return error;
     }
 
-    private Map<String, Map<String, Object>> buildSizeData(CreateOrUpdateProductRequest request){
+    private Map<String, Map<String, Object>> buildSizeData(CreateOrUpdateProductRequest request) {
         Map<String, Map<String, Object>> sizes = new HashMap<>();
 
         for (CreateOrUpdateProductRequest.Size size : request.getSizes()) {
@@ -1636,7 +1638,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ResponseEntity<ResponseObject> viewCustomProductRequestDetail(int id) {
         CustomProductRequest request = customProductRequestRepo.findById(id).orElse(null);
-        if(request == null){
+        if (request == null) {
             return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
         }
 
@@ -1654,23 +1656,23 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(UpdateCustomProductRequestDesignImageRequest request, boolean approved) {
         CustomProductRequest customProductRequest = customProductRequestRepo.findById(request.getId()).orElse(null);
-        if(customProductRequest == null){
+        if (customProductRequest == null) {
             return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
         }
 
-        if(!approved){
+        if (!approved) {
             customProductRequest.setStatus(Status.REJECT);
             customProductRequestRepo.save(customProductRequest);
             return ResponseBuilder.build(HttpStatus.OK, "Custom product rejected", null);
         }
 
-        if(request.getImages().isEmpty()){
+        if (request.getImages().isEmpty()) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Designed image is empty", null);
         }
 
         Map<String, Object> data = new HashMap<>();
 
-        if(customProductRequest.getStatus().equals(Status.PENDING)){
+        if (customProductRequest.getStatus().equals(Status.PENDING)) {
             customProductRequest.setStatus(Status.APPROVE);
 
             data.put("v_1", buildCustomProductRequestDesignImageVersionData(request, 0));
@@ -1706,7 +1708,7 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.OK, "Custom product revision request submitted", null);
     }
 
-    private Map<String, Object> buildCustomProductRequestDesignImageVersionData(UpdateCustomProductRequestDesignImageRequest request, int previousVer){
+    private Map<String, Object> buildCustomProductRequestDesignImageVersionData(UpdateCustomProductRequestDesignImageRequest request, int previousVer) {
         Map<String, Object> data = new HashMap<>();
         data.put("images", request.getImages().stream().map(UpdateCustomProductRequestDesignImageRequest.Image::getUrl).toList());
         data.put("createDate", LocalDateTime.now());
@@ -1719,11 +1721,11 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ResponseEntity<ResponseObject> createRevision(CreateRevisionRequest request) {
         CustomProductRequest customProductRequest = customProductRequestRepo.findById(request.getId()).orElse(null);
-        if(customProductRequest == null){
+        if (customProductRequest == null) {
             return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
         }
 
-        if(!customProductRequest.getStatus().equals(Status.APPROVE)){
+        if (!customProductRequest.getStatus().equals(Status.APPROVE)) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Custom product not approved", null);
         }
 
