@@ -15,6 +15,11 @@ import io.swagger.v3.oas.annotations.servers.Server;
                 @Server (
                         description = "localhost",
                         url = "http://localhost:8080/"
+                ),
+                @Server (
+                        description = "Deploy",
+                        url = "https://succulentapp.orangeglacier-1e02abb7.southeastasia.azurecontainerapps.io"
+
                 )
         }
 )

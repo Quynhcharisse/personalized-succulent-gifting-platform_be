@@ -90,4 +90,14 @@ public class User {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     List<Comment> commentList;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    List<ShippingAddress> shippingAddressList;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    List<DiscountCode> discountCodes;
 }

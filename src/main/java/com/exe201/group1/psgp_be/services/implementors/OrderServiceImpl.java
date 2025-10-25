@@ -29,7 +29,6 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@SuppressWarnings("unchecked")
 public class OrderServiceImpl implements OrderService {
 
     OrderDetailRepo orderDetailRepo;
@@ -41,11 +40,7 @@ public class OrderServiceImpl implements OrderService {
 
     //TODO: no usages function
     @Transactional
-    public boolean createOrderDetail(Product product, Order order, int quantity, long price) {
-        if(product == null || order == null){
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return false;
-        }
+    public ResponseEntity<ResponseObject> createOrderDetail(Product product, Order order, int quantity, long price) {
 
         orderDetailRepo.save(
                 OrderDetail.builder()
@@ -56,7 +51,8 @@ public class OrderServiceImpl implements OrderService {
                         .productInfo(buildOrderDetailProductInfo(product))
                         .build()
         );
-        return true;
+
+        return ResponseBuilder.build(HttpStatus.OK, "Tạo order thành công", null);
     }
 
     private Map<String, Object> buildOrderDetailProductInfo(Product product){
@@ -71,6 +67,7 @@ public class OrderServiceImpl implements OrderService {
         Map<String, Object> potData = MapUtils.getMapFromObject(productInfo, "pot");
         Map<String, Object> soilData = MapUtils.getMapFromObject(productInfo, "soil");
         Map<String, Object> decoData = MapUtils.getMapFromObject(productInfo, "decoration");
+
         List<Map<String, Object>> succulentData = MapUtils.getMapListFromObject(productInfo, "succulents");
 
         productInfo.replace("pot", buildPotData(potData, potConfig));
@@ -262,7 +259,6 @@ public class OrderServiceImpl implements OrderService {
                     return detailMap;
                 }
         ).toList());
-
         return response;
     }
 

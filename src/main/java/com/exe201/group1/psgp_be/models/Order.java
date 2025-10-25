@@ -48,9 +48,6 @@ public class Order {
     @Column(name = "total_amount", precision = 10, scale = 2)
     BigDecimal totalAmount;
 
-    @Column(name = "shipping_fee", precision = 10, scale = 2)
-    BigDecimal shippingFee;
-
     @Column(name = "discount_amount", precision = 10, scale = 2)
     BigDecimal discountAmount;
 
@@ -63,20 +60,18 @@ public class Order {
 
     // =========================== THÔNG TIN GIAO HÀNG ========================== \\
 
-    @Column(name = "shipping_address", length = 500)
-    String shippingAddress;
 
-    @Column(name = "shipping_phone", length = 20)
-    String shippingPhone;
+    @Column(name = "shipping_fee", precision = 10, scale = 2)
+    BigDecimal shippingFee;
 
-    @Column(name = "shipping_note", length = 500)
-    String shippingNote;
+    @Column(name = "expected_delivery_date")
+    LocalDateTime expectedDeliveryDate;
 
     @Column(name = "payment_method", length = 50)
     String paymentMethod; // "COD", "BANK_TRANSFER", "CREDIT_CARD"
 
     @Column(name = "payment_status", length = 20)
-    String paymentStatus; // "PENDING", "PAID", "FAILED", "REFUNDED"
+    String paymentStatus; // "PENDING", "PAID", "REFUNDED"
 
     @Column(name = "shipping_status", length = 20)
     String shippingStatus; // "PENDING", "SHIPPED", "DELIVERED", "CANCELLED"

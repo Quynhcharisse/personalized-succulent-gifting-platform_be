@@ -1,10 +1,15 @@
 package com.exe201.group1.psgp_be.utils;
 
 import com.exe201.group1.psgp_be.models.Account;
+import com.exe201.group1.psgp_be.models.Comment;
 import com.exe201.group1.psgp_be.models.Notification;
+import com.exe201.group1.psgp_be.models.Post;
+import com.exe201.group1.psgp_be.models.PostImage;
+import com.exe201.group1.psgp_be.models.PostTag;
 import com.exe201.group1.psgp_be.models.Supplier;
 import com.exe201.group1.psgp_be.models.User;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -90,6 +95,76 @@ public class EntityResponseBuilder {
                         "createdAt", notification.getCreatedAt(),
                         "accountId", notification.getAccount().getId()
                 )).toList()
+        );
+    }
+
+    public static Map<String, Object> buildPostsResponse(List<Post> posts) {
+        return Map.of(
+                "count", posts.size(),
+                "posts", posts.stream().map(EntityResponseBuilder::buildPostsResponse).toList()
+        );
+    }
+
+    public static Map<String, Object> buildPostsResponse(Post post) {
+        Map<String, Object> response = new HashMap<>(Map.of(
+                "id", post.getId(),
+                "title", post.getTitle(),
+                "description", post.getDescription(),
+                "status", post.getStatus(),
+                "createdAt", post.getCreatedAt(),
+                "updatedAt", Objects.requireNonNullElse(post.getUpdatedAt(), ""),
+                "images", buildPostImageResponse(post.getPostImageList()),
+                "tags", buildPostTagResponse(post.getPostTagList()),
+                "sellerId", post.getSeller().getId(),
+                "productId", post.getProduct().getId()
+        ));
+        response.put("comments", buildCommentsResponse(post.getComments()));
+        return response;
+    }
+
+    public static Map<String, Object> buildPostImageResponse(List<PostImage> postImages) {
+        return Map.of(
+                "count", postImages.size(),
+                "postImages", postImages.stream().map(postImage -> Map.of(
+                        "id", postImage.getId(),
+                        "name", postImage.getName(),
+                        "link", postImage.getLink(),
+                        "postId", postImage.getPost().getId()
+                )).toList()
+        );
+    }
+
+    public static Map<String, Object> buildPostTagResponse(List<PostTag> postTags) {
+        return Map.of(
+                "count", postTags.size(),
+                "postTags", postTags.stream().map(postTag -> Map.of(
+                        "id", postTag.getId(),
+                        "tagName", postTag.getTag().getName(),
+                        "postId", postTag.getPost().getId()
+                )).toList()
+        );
+    }
+
+    public static Map<String, Object> buildCommentsResponse(List<Comment> comments) {
+        return Map.of(
+                "count", comments.size(),
+                "comments", comments.stream().map(EntityResponseBuilder::buildCommentsResponse
+                ).toList()
+        );
+    }
+
+    public static Map<String, Object> buildCommentsResponse(Comment comment) {
+        if (comment == null) {
+            return Map.of();
+        }
+        return Map.of(
+                "id", comment.getId(),
+                "content", comment.getContent(),
+                "createdAt", comment.getCreatedAt(),
+                "updatedAt", Objects.requireNonNullElse(comment.getUpdatedAt(), ""),
+                "postId", comment.getPost().getId(),
+                "buyerName", comment.getBuyer().getName(),
+                "accountId", comment.getBuyer().getAccount().getId()
         );
     }
 

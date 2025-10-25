@@ -9,7 +9,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @NoArgsConstructor
@@ -24,7 +23,6 @@ public class UpdateSucculentRequest {
     String imageUrl;
     List<FengShui> fengShuiList;
     List<Zodiac> zodiacList;
-
     List<Size> sizeList;
 
     @NoArgsConstructor
@@ -35,6 +33,8 @@ public class UpdateSucculentRequest {
     public static class Size {
         String sizeName;
         long price;
+        double minArea;
+        double maxArea;
         int quantity;
     }
 }

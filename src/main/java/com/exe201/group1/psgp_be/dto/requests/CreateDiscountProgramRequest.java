@@ -1,19 +1,20 @@
 package com.exe201.group1.psgp_be.dto.requests;
 
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-@NoArgsConstructor
-@AllArgsConstructor
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreatePostImageRequest {
-    Integer id;
+public class CreateDiscountProgramRequest {
     String name;
-    String link;
+    String description;
+    BigDecimal minimumOrderValue;
+    Integer usageLimit;
+    BigDecimal discountValue;
+    Boolean isPercentage;
 }
