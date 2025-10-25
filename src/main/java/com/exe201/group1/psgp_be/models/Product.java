@@ -53,6 +53,11 @@ public class Product {
     @Enumerated(EnumType.STRING)
     Status status;
 
+    boolean privacy; // true -> public, false -> private
+
+    @Column(name = "`created_by`")
+    String createdBy;
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
