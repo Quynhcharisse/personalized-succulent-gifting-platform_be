@@ -1,9 +1,12 @@
 package com.exe201.group1.psgp_be.controllers;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateCustomProductRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateRevisionRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateCustomProductRequestDesignImageRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.ProductService;
@@ -77,6 +80,43 @@ public class ProductController {
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> deactivateProduct(@PathVariable int id) {
         return productService.deactivateProduct(id);
+    }
+
+    //=================== Custom Product =====================\\
+    @PostMapping("/custom-request")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<ResponseObject> createCustomProductRequest(
+            @RequestBody CreateCustomProductRequestRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        return productService.createCustomProductRequest(request, httpRequest);
+    }
+
+    @GetMapping("/custom-request/list")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> viewCustomProductRequest() {
+        return productService.viewCustomProductRequest();
+    }
+
+    @GetMapping("/custom-request/list/{id}")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> viewCustomProductRequestDetail(@PathVariable int id) {
+        return productService.viewCustomProductRequestDetail(id);
+    }
+
+    @PutMapping("/custom-request/design-image")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(
+            @RequestBody UpdateCustomProductRequestDesignImageRequest request,
+            @RequestParam(name = "a", defaultValue = "true") String approved
+    ) {
+        return productService.updateCustomProductRequestDesignImage(request, approved.equalsIgnoreCase("true"));
+    }
+
+    @PutMapping("/custom-request/revision")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<ResponseObject> createRevision(@RequestBody CreateRevisionRequest request) {
+        return productService.createRevision(request);
     }
 
     //=================== wish list =====================\\

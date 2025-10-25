@@ -23,8 +23,12 @@ public enum Status {
 
     //----------Comment Status---------//
     VISIBLE("Hiển thị"),
-    DELETED("Đã xóa")
+    DELETED("Đã xóa"),
 
+    //----------Custom Product Request Status---------//
+    PENDING("Đang chờ duyệt"),
+    APPROVE("Đã duyệt"),
+    REJECT("Đã từ chối")
     ;
 
     private final String value;

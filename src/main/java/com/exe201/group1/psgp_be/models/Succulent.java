@@ -61,9 +61,4 @@ public class Succulent {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     List<ProductSucculent> productSucculentList;
-
-    @OneToMany(mappedBy = "succulent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<CustomProductRequestSucculent> customProductRequestSucculentList;
 }
