@@ -30,6 +30,12 @@ public class SecurityConfig {
     @Value("${client.url}")
     private String clientUrl;
 
+    @Value("${client.server.url}")
+    private String clientServerUrl;
+
+    @Value("${swagger.url}")
+    private String url;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -39,7 +45,9 @@ public class SecurityConfig {
                                         request -> {
                                             CorsConfiguration config = new CorsConfiguration();
                                             config.setAllowedOriginPatterns(List.of(
-                                                    clientUrl
+                                                    clientUrl,
+                                                    clientServerUrl,
+                                                    url
                                             ));
                                             config.setAllowedMethods(Collections.singletonList("*"));
                                             config.setAllowedHeaders(Collections.singletonList("*"));
