@@ -1,16 +1,52 @@
-name: Deploy to Server
+name: Trigger auto deployment for succulentapp
 
 on:
   push:
-    branches:
+    branches: 
       - main
+    paths:
+      - '**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: self-hosted
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write
+      contents: read
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Deploy with Docker Compose
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.SUCCULENTSAPP_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.SUCCULENTSAPP_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.SUCCULENTSAPP_AZURE_SUBCRIPTION_ID }}
+          audience: api://AzureADTokenExchange
+
+      - name: Docker Login
+        run: echo ${{ secrets.SUCCULENTSAPP_REGISTRY_PASSWORD }} | docker login docker.io -u ${{ secrets.SUCCULENTSAPP_REGISTRY_USERNAME }} --password-stdin
+
+      - name: Build and push succulent image
         run: |
-          docker compose -f postgres-docker-compose.yml down
-          docker compose -f postgres-docker-compose.yml up -d --build
+          docker build -t huatri/personalized-succulent-gifting-platform_be-app:latest -f ./Dockerfile .
+          docker push huatri/personalized-succulent-gifting-platform_be-app:latest
+ 
+      - name: Deploy succulent container
+        run: |
+          az containerapp update \
+            --name succulentapp \
+            --resource-group backend_server_management \
+            --image docker.io/huatri/personalized-succulent-gifting-platform_be-app:latest \
+            --container-name succulentapp-v0 \
+            --output none
+
+
+
+
+
+
