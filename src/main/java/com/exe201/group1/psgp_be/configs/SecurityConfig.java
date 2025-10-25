@@ -29,6 +29,10 @@ public class SecurityConfig {
 
     @Value("${client.url}")
     private String clientUrl;
+
+    @Value("${client.server.url}")
+    private String clientServerUrl;
+
     @Value("${swagger.url}")
     private String url;
 
@@ -42,6 +46,7 @@ public class SecurityConfig {
                                             CorsConfiguration config = new CorsConfiguration();
                                             config.setAllowedOriginPatterns(List.of(
                                                     clientUrl,
+                                                    clientServerUrl,
                                                     url
                                             ));
                                             config.setAllowedMethods(Collections.singletonList("*"));

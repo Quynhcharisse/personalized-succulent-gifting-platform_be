@@ -18,7 +18,8 @@ import io.swagger.v3.oas.annotations.servers.Server;
                 ),
                 @Server (
                         description = "Deploy",
-                        url = "https://pesapp.orangeglacier-1e02abb7.southeastasia.azurecontainerapps.io/"
+                        url = "https://succulentapp.orangeglacier-1e02abb7.southeastasia.azurecontainerapps.io"
+
                 )
         }
 )
