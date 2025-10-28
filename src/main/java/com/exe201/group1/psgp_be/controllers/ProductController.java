@@ -71,7 +71,8 @@ public class ProductController {
         return productService.createOrUpdateProduct(request);
     }
 
-    @GetMapping("")
+    @GetMapping("/list")
+    @PreAuthorize("hasAnyRole('SELLER', 'BUYER')")
     public ResponseEntity<ResponseObject> viewProduct() {
         return productService.viewProduct();
     }
