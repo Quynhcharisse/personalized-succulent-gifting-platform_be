@@ -36,14 +36,14 @@ jobs:
           docker build -t huatri/personalized-succulent-gifting-platform_be-app:latest -f ./Dockerfile .
           docker push huatri/personalized-succulent-gifting-platform_be-app:latest
  
-      - name: Deploy succulent container
+      - name: Deploy to Azure Container App
         run: |
           az containerapp update \
             --name succulentapp \
             --resource-group backend_server_management \
-            --image docker.io/huatri/personalized-succulent-gifting-platform_be-app:latest \
-            --container-name succulentapp-v0 \
+            --image huatri/personalized-succulent-gifting-platform_be-app:latest \
             --output none
+
 
 
 
