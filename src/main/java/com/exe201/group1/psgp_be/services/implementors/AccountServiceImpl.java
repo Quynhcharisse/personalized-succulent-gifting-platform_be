@@ -66,19 +66,18 @@ public class AccountServiceImpl implements AccountService {
     public ResponseEntity<ResponseObject> getAccessToken(HttpServletRequest request) {
         Cookie access = CookieUtil.getCookie(request, "access");
         if (access == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không có quyền truy cập", null);
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "No access", null);
         }
 
         Account account = CookieUtil.extractAccountFromCookie(request, jwtService, accountRepo);
         if (account == null) {
-            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không tìm thấy tài khoản", null);
+            return ResponseBuilder.build(HttpStatus.FORBIDDEN, "No account", null);
         }
-
         Map<String, Object> data = new HashMap<>();
         data.put("access", access.getValue());
         data.put("id", account.getId());
         data.put("email", account.getEmail());
-        data.put("role", account.getRole());
+        data.put("role", account.getRole().getValue());
         return ResponseBuilder.build(HttpStatus.OK, "", data);
     }
 
