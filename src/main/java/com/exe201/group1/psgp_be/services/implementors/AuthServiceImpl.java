@@ -17,9 +17,7 @@ import com.exe201.group1.psgp_be.utils.CookieUtil;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -124,7 +122,7 @@ public class AuthServiceImpl implements AuthService {
         Map<String, Object> accountData = new HashMap<>();
         accountData.put("email", account.getEmail());
         accountData.put("registerDate", account.getRegisterDate());
-        accountData.put("role", account.getRole());
+        accountData.put("role", account.getRole().getValue());
         if (!account.getRole().equals(Role.ADMIN)) {
             accountData.put("user", buildUserData(account));
         }
