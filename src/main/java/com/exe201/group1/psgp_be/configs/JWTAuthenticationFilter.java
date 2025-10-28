@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -31,6 +32,20 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserDetailsService userDetailsService;
 
+    private boolean checkIsPublicOrEndPoint(String uri) {
+        List<String> publicEndPoint = List.of(
+                "/api/v1/auth",
+                "/api/v1/product/list"
+        );
+
+        for (String endpoint : publicEndPoint) {
+            if (uri.startsWith(endpoint)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
@@ -39,13 +54,13 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
-        if (requestURI.startsWith(AUTH_PATH_PREFIX)) {
+        if (checkIsPublicOrEndPoint(requestURI)) {
             filterChain.doFilter(request, response);
             return;
         }
 
         Cookie accessToken = CookieUtil.getCookie(request, COOKIE_NAME);
-        if(accessToken == null) {
+        if (accessToken == null) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -54,7 +69,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             Account account = (Account) userDetailsService.loadUserByUsername(email);
 
-            if(account == null || !account.isActive()) {
+            if (account == null || !account.isActive()) {
                 filterChain.doFilter(request, response);
                 return;
             }
