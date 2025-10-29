@@ -32,6 +32,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 
 @Service
@@ -120,7 +121,21 @@ public class CustomRequestServiceImpl implements CustomRequestService {
 
     @Override
     public ResponseEntity<ResponseObject> viewCustomProductRequest() {
-        List<Map<String, Object>> response = customProductRequestRepo.findAll().stream().map(
+        return ResponseBuilder.build(HttpStatus.OK, "", viewCustomProduct(customProductRequestRepo.findAll()));
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> viewCustomProductRequest(HttpServletRequest request) {
+
+        Account account = CookieUtil.extractAccountFromCookie(request, jwtService, accountRepo);
+        assert account != null;
+        return ResponseBuilder.build(HttpStatus.OK, "", viewCustomProduct(customProductRequestRepo.findAll()
+                .stream().filter(customRequest -> Objects.equals(customRequest.getBuyer().getId(), account.getUser().getId())).toList()
+        ));
+    }
+
+    private ResponseEntity<ResponseObject> viewCustomProduct(List<CustomProductRequest> requests) {
+        List<Map<String, Object>> response = requests.stream().map(
                 cp -> {
                     Map<String, Object> data = new HashMap<>();
                     data.put("id", cp.getId());

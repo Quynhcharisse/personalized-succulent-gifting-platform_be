@@ -13,6 +13,8 @@ public interface CustomRequestService {
 
     ResponseEntity<ResponseObject> viewCustomProductRequest();
 
+    ResponseEntity<ResponseObject> viewCustomProductRequest(HttpServletRequest request);
+
     ResponseEntity<ResponseObject> viewCustomProductRequestDetail(int id);
 
     ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(UpdateCustomProductRequestDesignImageRequest request, boolean approved);
