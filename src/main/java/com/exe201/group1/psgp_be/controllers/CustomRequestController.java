@@ -1,7 +1,10 @@
 package com.exe201.group1.psgp_be.controllers;
 
+import com.exe201.group1.psgp_be.dto.requests.CreateCustomProductRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateRevisionRequest;
 import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateCustomProductRequestDesignImageRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.CustomRequestService;
@@ -12,10 +15,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,29 +31,42 @@ public class CustomRequestController {
 
     private final CustomRequestService customRequestService;
 
-    //=================== custom request =====================\\
-    @GetMapping("/custom/requests")
+    //=================== Custom Product =====================\\
+    @PostMapping("/custom-request")
     @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> customRequestListByBuyer(HttpServletRequest request) {
-        return customRequestService.customRequestListByBuyer(request);
+    public ResponseEntity<ResponseObject> createCustomProductRequest(
+            @RequestBody CreateCustomProductRequestRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        return customRequestService.createCustomProductRequest(request, httpRequest);
     }
 
-    @PostMapping("/custom/requests")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> createCustomRequest(@RequestBody CreateCustomRequest request) {
-        return customRequestService.createCustomRequest(request);
+    @GetMapping("/custom-request/list")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> viewCustomProductRequest() {
+        return customRequestService.viewCustomProductRequest();
     }
 
-    @PutMapping("/custom/requests")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> updateCustomRequest(@RequestBody UpdateCustomRequestRequest request) {
-        return customRequestService.updateCustomRequest(request);
+    @GetMapping("/custom-request/list/{id}")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> viewCustomProductRequestDetail(@PathVariable int id) {
+        return customRequestService.viewCustomProductRequestDetail(id);
     }
 
-    @DeleteMapping("/custom/requests")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> deleteCustomRequest(@RequestBody DeleteCustomRequestRequest request) {
-        return customRequestService.deleteCustomRequest(request);
+    @PutMapping("/custom-request/design-image")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(
+            @RequestBody UpdateCustomProductRequestDesignImageRequest request,
+            @RequestParam(name = "a", defaultValue = "true") String approved
+    ) {
+        return customRequestService.updateCustomProductRequestDesignImage(request, approved.equalsIgnoreCase("true"));
     }
+
+    @PutMapping("/custom-request/revision")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<ResponseObject> createRevision(@RequestBody CreateRevisionRequest request) {
+        return customRequestService.createRevision(request);
+    }
+
 
 }

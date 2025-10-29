@@ -9,8 +9,12 @@ import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomProductRequestDesignImageRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
+import com.exe201.group1.psgp_be.models.Product;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
+
+import java.util.List;
+import java.util.Map;
 
 public interface ProductService {
 
@@ -29,8 +33,14 @@ public interface ProductService {
     //--------------------------------------------PRODUCT--------------------------------------------//
     ResponseEntity<ResponseObject> createOrUpdateProduct(CreateOrUpdateProductRequest request);
 
+    Map<String, Object> buildSizeMap(CreateOrUpdateProductRequest.Size size);
+
+    boolean checkProductStatus(Product product);
+
     ResponseEntity<ResponseObject> viewProduct();
-    
+
+    List<Map<String, Object>> buildProductSizeResponse(Map<String, Object> size);
+
     ResponseEntity<ResponseObject> deactivateProduct(int id);
 
     //--------------------------------------------WISHLIST--------------------------------------------//
@@ -41,15 +51,4 @@ public interface ProductService {
     ResponseEntity<ResponseObject> removeItemFromWishList(Integer id);
 
     ResponseEntity<ResponseObject> removeAllItemsFromWishList();
-
-    //--------------------------------------------CUSTOM PRODUCT--------------------------------------------//
-    ResponseEntity<ResponseObject> createCustomProductRequest(CreateCustomProductRequestRequest request, HttpServletRequest httpRequest);
-
-    ResponseEntity<ResponseObject> viewCustomProductRequest();
-
-    ResponseEntity<ResponseObject> viewCustomProductRequestDetail(int id);
-
-    ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(UpdateCustomProductRequestDesignImageRequest request, boolean approved);
-
-    ResponseEntity<ResponseObject> createRevision(CreateRevisionRequest request);
 }

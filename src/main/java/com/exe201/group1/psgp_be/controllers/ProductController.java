@@ -82,43 +82,6 @@ public class ProductController {
         return productService.deactivateProduct(id);
     }
 
-    //=================== Custom Product =====================\\
-    @PostMapping("/custom-request")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> createCustomProductRequest(
-            @RequestBody CreateCustomProductRequestRequest request,
-            HttpServletRequest httpRequest
-    ) {
-        return productService.createCustomProductRequest(request, httpRequest);
-    }
-
-    @GetMapping("/custom-request/list")
-    @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> viewCustomProductRequest() {
-        return productService.viewCustomProductRequest();
-    }
-
-    @GetMapping("/custom-request/list/{id}")
-    @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> viewCustomProductRequestDetail(@PathVariable int id) {
-        return productService.viewCustomProductRequestDetail(id);
-    }
-
-    @PutMapping("/custom-request/design-image")
-    @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(
-            @RequestBody UpdateCustomProductRequestDesignImageRequest request,
-            @RequestParam(name = "a", defaultValue = "true") String approved
-    ) {
-        return productService.updateCustomProductRequestDesignImage(request, approved.equalsIgnoreCase("true"));
-    }
-
-    @PutMapping("/custom-request/revision")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> createRevision(@RequestBody CreateRevisionRequest request) {
-        return productService.createRevision(request);
-    }
-
     //=================== wish list =====================\\
     @PostMapping("/wishlist/item")
     @PreAuthorize("hasRole('BUYER')")
