@@ -42,6 +42,7 @@ public class Product {
     @Column(length = 200)
     String name;
 
+    @Column(length = 1024)
     String description;
 
     @Column(name = "created_at")
