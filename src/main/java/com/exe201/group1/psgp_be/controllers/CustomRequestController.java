@@ -1,11 +1,8 @@
 package com.exe201.group1.psgp_be.controllers;
 
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomProductRequestRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreateCustomRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateRevisionRequest;
-import com.exe201.group1.psgp_be.dto.requests.DeleteCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateCustomProductRequestDesignImageRequest;
-import com.exe201.group1.psgp_be.dto.requests.UpdateCustomRequestRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.CustomRequestService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,7 +10,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,6 +37,18 @@ public class CustomRequestController {
         return customRequestService.createCustomProductRequest(request, httpRequest);
     }
 
+    @PutMapping("/custom-request/revision")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<ResponseObject> createRevision(@RequestBody CreateRevisionRequest request) {
+        return customRequestService.createRevision(request);
+    }
+
+    @PostMapping("/custom-request/list")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<ResponseObject> viewCustomProductRequest(HttpServletRequest request) {
+        return customRequestService.viewCustomProductRequest();
+    }
+
     @GetMapping("/custom-request/list")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> viewCustomProductRequest() {
@@ -61,12 +69,4 @@ public class CustomRequestController {
     ) {
         return customRequestService.updateCustomProductRequestDesignImage(request, approved.equalsIgnoreCase("true"));
     }
-
-    @PutMapping("/custom-request/revision")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> createRevision(@RequestBody CreateRevisionRequest request) {
-        return customRequestService.createRevision(request);
-    }
-
-
 }
