@@ -44,7 +44,7 @@ public class SucculentSpecies {
     @Column(name = "species_name", length = 100)
     String speciesName;
 
-    @Column(name = "description")
+    @Column(name = "description", length = 1024)
     String description;
 
     @ElementCollection(targetClass = FengShui.class)
