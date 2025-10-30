@@ -215,8 +215,8 @@ public class ProductServiceImpl implements ProductService {
         if (sizeList == null || sizeList.isEmpty()) {
             return "Vui lòng chọn ít nhất một kích thước";
         }
-        if (sizeList.size() > 5) {
-            return "Hệ thống chỉ có tối đa 5 kích thước";
+        if (sizeList.size() > 3) {
+            return "Hệ thống chỉ có tối đa 3 kích thước";
         }
 
         Set<String> uniqueSizeNames = new HashSet<>();
