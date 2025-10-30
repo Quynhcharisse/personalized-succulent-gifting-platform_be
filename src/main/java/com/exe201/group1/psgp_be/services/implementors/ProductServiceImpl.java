@@ -1358,6 +1358,8 @@ public class ProductServiceImpl implements ProductService {
                 "description", succulent.getSpecies().getDescription(),
                 "createAt", succulent.getCreatedAt(),
                 "updateAt", succulent.getUpdatedAt(),
+                "zodiacs", succulent.getSpecies().getZodiacs(),
+                "fengsui", succulent.getSpecies().getElements(),
                 "image", succulent.getImageUrl(),
                 "size", sizeDetail
         );
