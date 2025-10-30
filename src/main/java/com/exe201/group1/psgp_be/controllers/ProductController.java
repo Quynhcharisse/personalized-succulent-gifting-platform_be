@@ -34,7 +34,7 @@ public class ProductController {
 
     //=================== succulent =====================\\
     @GetMapping("/succulents")
-    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAnyRole('SELLER', 'BUYER')")
     public ResponseEntity<ResponseObject> viewSucculentList() {
         return productService.viewSucculentList();
     }
@@ -53,6 +53,7 @@ public class ProductController {
 
     //=================== Accessory =====================\\
     @GetMapping("/accessories")
+    @PreAuthorize("hasAnyRole('SELLER', 'BUYER')")
     public ResponseEntity<ResponseObject> getAccessories(@RequestParam(name = "t", defaultValue = "all") String type) {
         return productService.getAccessories(type);
     }
