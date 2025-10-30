@@ -53,7 +53,6 @@ public class ProductController {
 
     //=================== Accessory =====================\\
     @GetMapping("/accessories")
-    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> getAccessories(@RequestParam(name = "t", defaultValue = "all") String type) {
         return productService.getAccessories(type);
     }
