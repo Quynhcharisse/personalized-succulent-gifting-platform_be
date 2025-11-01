@@ -1189,8 +1189,6 @@ public class ProductServiceImpl implements ProductService {
                 soilAvailable = false;
             }
 
-//            Map<String, Object> decorationData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("decoration");
-            //xem sửa : 1189 ==> lỗi cash string object
             Map<String, Object> productData = (Map<String, Object>) productSizeData.get(key);
             Map<String, Object> decorationData = (Map<String, Object>) productData.get("decoration");
             List<Map<String, Object>> details = (List<Map<String, Object>>) decorationData.get("details");

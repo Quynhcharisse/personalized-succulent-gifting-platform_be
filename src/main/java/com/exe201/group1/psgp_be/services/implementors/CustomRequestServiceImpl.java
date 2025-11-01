@@ -140,6 +140,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
                     Map<String, Object> data = new HashMap<>();
                     data.put("id", cp.getId());
                     data.put("buyer", EntityResponseBuilder.buildUserResponse(cp.getBuyer()));
+                    data.put("customData", productService.buildProductSizeResponse(MapUtils.getMapFromObject(cp.getData())));
                     data.put("status", cp.getStatus().getValue());
                     data.put("createdAt", cp.getCreatedAt());
                     return data;
