@@ -37,16 +37,16 @@ public class CustomRequestController {
         return customRequestService.createCustomProductRequest(request, httpRequest);
     }
 
+    @PostMapping("/custom-request/list")
+    @PreAuthorize("hasRole('BUYER')")
+    public ResponseEntity<ResponseObject> viewCustomProductRequest(HttpServletRequest request) {
+        return customRequestService.viewCustomProductRequest(request);
+    }
+
     @PutMapping("/custom-request/revision")
     @PreAuthorize("hasRole('BUYER')")
     public ResponseEntity<ResponseObject> createRevision(@RequestBody CreateRevisionRequest request) {
         return customRequestService.createRevision(request);
-    }
-
-    @PostMapping("/custom-request/list")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ResponseObject> viewCustomProductRequest(HttpServletRequest request) {
-        return customRequestService.viewCustomProductRequest();
     }
 
     @GetMapping("/custom-request/list")

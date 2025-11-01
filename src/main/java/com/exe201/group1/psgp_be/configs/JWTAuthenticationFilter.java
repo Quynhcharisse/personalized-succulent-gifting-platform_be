@@ -24,8 +24,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String AUTH_PATH_PREFIX = "/api/v1/auth";
-
     private static final String COOKIE_NAME = "access";
 
     private final JWTService jwtService;

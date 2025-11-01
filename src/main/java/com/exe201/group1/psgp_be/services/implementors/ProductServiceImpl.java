@@ -1189,11 +1189,19 @@ public class ProductServiceImpl implements ProductService {
                 soilAvailable = false;
             }
 
-//            Map<String, Object> decorationData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("decoration");
-            //xem sửa : 1189 ==> lỗi cash string object
             Map<String, Object> productData = (Map<String, Object>) productSizeData.get(key);
             Map<String, Object> decorationData = (Map<String, Object>) productData.get("decoration");
-            List<Map<String, Object>> details = (List<Map<String, Object>>) decorationData.get("details");
+            
+            // Convert detail (Map) to details (List)
+            List<Map<String, Object>> details = null;
+            if (decorationData.get("details") instanceof List) {
+                details = (List<Map<String, Object>>) decorationData.get("details");
+            } else if (decorationData.get("detail") instanceof Map) {
+                Map<String, Object> detailMap = (Map<String, Object>) decorationData.get("detail");
+                details = detailMap.entrySet().stream()
+                        .map(entry -> Map.of("name", entry.getKey(), "quantity", entry.getValue()))
+                        .toList();
+            }
 
             if (!checkDecorationAvailable(
                     Boolean.parseBoolean(decorationData.get("included").toString()),
@@ -1240,6 +1248,7 @@ public class ProductServiceImpl implements ProductService {
 
     private boolean checkDecorationAvailable(boolean included, List<Map<String, Object>> details, List<Map<String, Object>> decorationConfig) {
         if (!included) return true;
+        if (details == null) return true;
         for (Map<String, Object> detailItem : details) {
             String name = detailItem.get("name").toString();
             int requiredQty = (int) detailItem.get("quantity");
@@ -1305,7 +1314,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<Map<String, Object>> buildProductSizeResponse(Map<String, Object> size) {
-        return size.keySet().stream().map(
+        return size.keySet().stream()
+                .filter(key -> !key.startsWith("v_")) // Filter out version keys (v_1, v_2, etc.)
+                .map(
                 key -> {
                     Map<String, Object> sizeData = (Map<String, Object>) size.get(key);
 
