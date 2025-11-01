@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -157,11 +158,27 @@ public class CustomRequestServiceImpl implements CustomRequestService {
             return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
         }
 
+        Map<String, Object> data = MapUtils.getMapFromObject(request.getData());
+        
+        // Separate customData and design versions
+        Map<String, Object> customData = new HashMap<>();
+        List<Map<String, Object>> versions = new ArrayList<>();
+        
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            if (entry.getKey().startsWith("v_")) {
+                Map<String, Object> versionData = MapUtils.getMapFromObject(entry.getValue());
+                versionData.put("version", entry.getKey());
+                versions.add(versionData);
+            } else {
+                customData.put(entry.getKey(), entry.getValue());
+            }
+        }
+
         Map<String, Object> response = new HashMap<>();
         response.put("id", request.getId());
         response.put("buyer", EntityResponseBuilder.buildUserResponse(request.getBuyer()));
-        response.put("customData", productService.buildProductSizeResponse(MapUtils.getMapFromObject(request.getData())));
-        response.put("designImage", request.getDesignImage());
+        response.put("customData", productService.buildProductSizeResponse(customData));
+        response.put("versions", versions.isEmpty() ? new ArrayList<>() : versions);
         response.put("status", request.getStatus().getValue());
         response.put("createdAt", request.getCreatedAt());
         return ResponseBuilder.build(HttpStatus.OK, "", response);
@@ -190,7 +207,15 @@ public class CustomRequestServiceImpl implements CustomRequestService {
         if (customProductRequest.getStatus().equals(Status.PENDING)) {
             customProductRequest.setStatus(Status.APPROVE);
 
+             //LẤY data cũ TRƯỚC khi thay đổi
+            Map<String, Object> originalData = MapUtils.getMapFromObject(customProductRequest.getData());
+             //Giữ lại customData để set vào Product
+            Map<String, Map<String, Object>> customDataForProduct = (Map<String, Map<String, Object>>) (Object) originalData;
+
+            //Thêm version mới
             data.put("v_1", buildCustomProductRequestDesignImageVersionData(request, 0));
+              //Merge với data cũ (giữ lại custom: {...})
+            data.putAll(originalData);
 
             customProductRequest.setData(data);
             customProductRequestRepo.save(customProductRequest);
@@ -199,6 +224,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
                     Product.builder()
                             .name("Custom product by " + customProductRequest.getBuyer().getName())
                             .description("")
+                            .size(customDataForProduct)
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
                             .status(null)
@@ -214,7 +240,13 @@ public class CustomRequestServiceImpl implements CustomRequestService {
         }
 
         data = MapUtils.getMapFromObject(customProductRequest.getData());
-        int latestVer = data.keySet().size();
+        
+        // Find the latest version by filtering v_* keys
+        int latestVer = data.keySet().stream()
+                .filter(key -> key.startsWith("v_"))
+                .mapToInt(key -> Integer.parseInt(key.substring(2)))
+                .max()
+                .orElse(0);
 
         data.put("v_" + (latestVer + 1), buildCustomProductRequestDesignImageVersionData(request, latestVer));
 
@@ -245,12 +277,19 @@ public class CustomRequestServiceImpl implements CustomRequestService {
         }
 
         Map<String, Object> data = MapUtils.getMapFromObject(customProductRequest.getData());
-        int latestVer = data.keySet().size();
-
-        Map<String, Object> latestData = MapUtils.getMapFromObject(data, "v_" + (latestVer + 1));
+        
+        // Find the latest version by filtering v_* keys
+        int latestVer = data.keySet().stream()
+                .filter(key -> key.startsWith("v_"))
+                .mapToInt(key -> Integer.parseInt(key.substring(2)))
+                .max()
+                .orElse(0);
+        
+        // Get the latest version data and add revision info
+        Map<String, Object> latestData = MapUtils.getMapFromObject(data, "v_" + latestVer);
         latestData.put("revisionContent", request.getComment());
         latestData.put("revisionDate", LocalDateTime.now());
-
+        
         data.replace("v_" + latestVer, latestData);
 
         customProductRequest.setData(data);
