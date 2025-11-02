@@ -5,8 +5,21 @@ import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdatePostRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreatePostImageRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.enums.Status;
-import com.exe201.group1.psgp_be.models.*;
-import com.exe201.group1.psgp_be.repositories.*;
+import com.exe201.group1.psgp_be.models.Account;
+import com.exe201.group1.psgp_be.models.Comment;
+import com.exe201.group1.psgp_be.models.Post;
+import com.exe201.group1.psgp_be.models.PostImage;
+import com.exe201.group1.psgp_be.models.PostTag;
+import com.exe201.group1.psgp_be.models.Product;
+import com.exe201.group1.psgp_be.models.Tag;
+import com.exe201.group1.psgp_be.models.User;
+import com.exe201.group1.psgp_be.repositories.AccountRepo;
+import com.exe201.group1.psgp_be.repositories.CommentRepo;
+import com.exe201.group1.psgp_be.repositories.PostImageRepo;
+import com.exe201.group1.psgp_be.repositories.PostRepo;
+import com.exe201.group1.psgp_be.repositories.PostTagRepo;
+import com.exe201.group1.psgp_be.repositories.ProductRepo;
+import com.exe201.group1.psgp_be.repositories.TagRepo;
 import com.exe201.group1.psgp_be.services.JWTService;
 import com.exe201.group1.psgp_be.services.PostService;
 import com.exe201.group1.psgp_be.utils.CookieUtil;
@@ -20,7 +33,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service

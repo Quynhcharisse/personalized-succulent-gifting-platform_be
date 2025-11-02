@@ -3,18 +3,15 @@ package com.exe201.group1.psgp_be.services.implementors;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.GhnApiService;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import org.springframework.http.HttpHeaders;
 
 import java.util.List;
 import java.util.Map;
@@ -39,13 +36,13 @@ public class GhnApiServiceImpl implements GhnApiService {
 
     public ResponseEntity<ResponseObject> getProvinces() {
         String url = BASE_URL + "/master-data/province";
-        HttpEntity<Void> entity = new HttpEntity<>(null,defaultHeaders());
+        HttpEntity<Void> entity = new HttpEntity<>(null, defaultHeaders());
         ResponseEntity<Map> res = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
         List<Map<String, Object>> result = (List<Map<String, Object>>) res.getBody().get("data");
         return ResponseBuilder.build(HttpStatus.OK, "Hiển thị danh sách các tỉnh/thành Việt Nam thành công", result);
     }
 
-    public ResponseEntity<ResponseObject> getDistricts(Integer provinceId){
+    public ResponseEntity<ResponseObject> getDistricts(Integer provinceId) {
         String url = BASE_URL + "/master-data/district?province_id=" + provinceId;
         HttpEntity<Void> entity = new HttpEntity<>(defaultHeaders());
         ResponseEntity<Map> res = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
@@ -53,14 +50,13 @@ public class GhnApiServiceImpl implements GhnApiService {
         return ResponseBuilder.build(HttpStatus.OK, "Lấy danh sách quận/huyện theo province_id thành công", result);
     }
 
-    public ResponseEntity<ResponseObject> getWards(Integer districtId){
+    public ResponseEntity<ResponseObject> getWards(Integer districtId) {
         String url = BASE_URL + "/master-data/ward?district_id=" + districtId;
         HttpEntity<Void> entity = new HttpEntity<>(defaultHeaders());
         ResponseEntity<Map> res = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
         var result = (List<Map<String, Object>>) res.getBody().get("data");
         return ResponseBuilder.build(HttpStatus.OK, "Lấy danh sách phường/xã theo district_id thành công", result);
     }
-
 
 
 }

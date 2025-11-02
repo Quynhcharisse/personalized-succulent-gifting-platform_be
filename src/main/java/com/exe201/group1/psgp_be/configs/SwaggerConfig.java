@@ -12,11 +12,11 @@ import io.swagger.v3.oas.annotations.servers.Server;
         ),
 
         servers = {
-                @Server (
+                @Server(
                         description = "localhost",
                         url = "http://localhost:8080/"
                 ),
-                @Server (
+                @Server(
                         description = "Deploy",
                         url = "https://personalized-succulent-gifting-platform.onrender.com/"
 
