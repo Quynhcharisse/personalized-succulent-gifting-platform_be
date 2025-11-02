@@ -50,6 +50,9 @@ public class CustomProductRequest {
     // version: list of images, creation date, status (pending / approve / reject), revision content, revision date
     // type (design / re-design), parentVersion
 
+    @Column(name = "reject_reason")
+    String reason;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     Status status;
