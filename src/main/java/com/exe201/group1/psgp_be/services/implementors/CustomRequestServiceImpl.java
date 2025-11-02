@@ -178,6 +178,11 @@ public class CustomRequestServiceImpl implements CustomRequestService {
         response.put("id", request.getId());
         response.put("buyer", EntityResponseBuilder.buildUserResponse(request.getBuyer()));
         response.put("customData", productService.buildProductSizeResponse(customData));
+
+        if (request.getStatus().equals(Status.REJECT)) {
+            response.put("rejectReason", request.getStatus());
+        }
+
         response.put("versions", versions.isEmpty() ? new ArrayList<>() : versions);
         response.put("status", request.getStatus().getValue());
         response.put("createdAt", request.getCreatedAt());
@@ -194,6 +199,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
 
         if (!approved) {
             customProductRequest.setStatus(Status.REJECT);
+            customProductRequest.setReason(request.getRejectReason());
             customProductRequestRepo.save(customProductRequest);
             return ResponseBuilder.build(HttpStatus.OK, "Custom product rejected", null);
         }

@@ -16,7 +16,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateCustomProductRequestDesignImageRequest {
     Integer id;
-
+    String rejectReason;
     List<Image> images;
 
     @Data
