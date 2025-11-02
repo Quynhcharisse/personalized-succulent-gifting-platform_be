@@ -34,7 +34,7 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
     @Override
     public ResponseEntity<ResponseObject> CreateShippingAddress(CreateShippingAddressRequest request) {
 
-        if( request.getShippingAddress().trim().isEmpty()){
+        if (request.getShippingAddress().trim().isEmpty()) {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Địa chỉ không được để trống!", null);
         }
 
@@ -53,7 +53,7 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
 
         boolean existingAddresses = shippingAddressRepo.findByUser(currentUser);
 
-        if(!existingAddresses){
+        if (!existingAddresses) {
             newAddress.setIsDefault(true);
         }
 
@@ -71,7 +71,7 @@ public class ShippingAddressServiceImpl implements ShippingAddressService {
     private List<Map<String, Object>> buildShippingAddressList(List<ShippingAddress> shippingAddressList) {
         List<Map<String, Object>> list = new ArrayList<>();
         for (ShippingAddress shippingAddress : shippingAddressList) {
-           list.add(buildShippingAddress(shippingAddress));
+            list.add(buildShippingAddress(shippingAddress));
         }
         return list;
     }

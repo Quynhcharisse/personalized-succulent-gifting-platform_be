@@ -1191,7 +1191,7 @@ public class ProductServiceImpl implements ProductService {
 
             Map<String, Object> productData = (Map<String, Object>) productSizeData.get(key);
             Map<String, Object> decorationData = (Map<String, Object>) productData.get("decoration");
-            
+
             // Convert detail (Map) to details (List)
             List<Map<String, Object>> details = null;
             if (decorationData.get("details") instanceof List) {
@@ -1317,29 +1317,29 @@ public class ProductServiceImpl implements ProductService {
         return size.keySet().stream()
                 .filter(key -> !key.startsWith("v_")) // Filter out version keys (v_1, v_2, etc.)
                 .map(
-                key -> {
-                    Map<String, Object> sizeData = (Map<String, Object>) size.get(key);
+                        key -> {
+                            Map<String, Object> sizeData = (Map<String, Object>) size.get(key);
 
-                    List<Map<String, Object>> succulentData = (List<Map<String, Object>>) sizeData.get("succulents");
-                    Map<String, Object> potData = (Map<String, Object>) sizeData.get("pot");
-                    Map<String, Object> soilData = (Map<String, Object>) sizeData.get("soil");
-                    Map<String, Object> decorationData = (Map<String, Object>) sizeData.get("decoration");
+                            List<Map<String, Object>> succulentData = (List<Map<String, Object>>) sizeData.get("succulents");
+                            Map<String, Object> potData = (Map<String, Object>) sizeData.get("pot");
+                            Map<String, Object> soilData = (Map<String, Object>) sizeData.get("soil");
+                            Map<String, Object> decorationData = (Map<String, Object>) sizeData.get("decoration");
 
-                    AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
-                    assert accessoryConfig != null;
+                            AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
+                            assert accessoryConfig != null;
 
-                    Map<String, Object> accessoryConfigData = (Map<String, Object>) accessoryConfig.getValue();
+                            Map<String, Object> accessoryConfigData = (Map<String, Object>) accessoryConfig.getValue();
 
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("name", key);
-                    map.put("succulents", buildProductSucculentListResponse(succulentData));
-                    map.put("pot", buildProductPotResponse(accessoryConfigData, potData));
-                    map.put("soil", buildProductSoilResponse(accessoryConfigData, soilData));
-                    map.put("decorations", buildProductDecorationListResponse(accessoryConfigData, decorationData)
-                    );
-                    return map;
-                }
-        ).toList();
+                            Map<String, Object> map = new HashMap<>();
+                            map.put("name", key);
+                            map.put("succulents", buildProductSucculentListResponse(succulentData));
+                            map.put("pot", buildProductPotResponse(accessoryConfigData, potData));
+                            map.put("soil", buildProductSoilResponse(accessoryConfigData, soilData));
+                            map.put("decorations", buildProductDecorationListResponse(accessoryConfigData, decorationData)
+                            );
+                            return map;
+                        }
+                ).toList();
     }
 
     private List<Map<String, Object>> buildProductSucculentListResponse(List<Map<String, Object>> rawSucculents) {

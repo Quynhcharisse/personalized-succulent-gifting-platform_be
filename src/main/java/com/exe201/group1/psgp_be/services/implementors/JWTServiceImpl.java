@@ -1,7 +1,6 @@
 package com.exe201.group1.psgp_be.services.implementors;
 
 import com.exe201.group1.psgp_be.models.Account;
-import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.services.JWTService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -23,9 +22,6 @@ import java.util.function.Function;
 @Service
 @RequiredArgsConstructor
 public class JWTServiceImpl implements JWTService {
-
-    private final AccountRepo accountRepo;
-
     @Value("${jwt.secret.key}")
     private String secretKey;
 

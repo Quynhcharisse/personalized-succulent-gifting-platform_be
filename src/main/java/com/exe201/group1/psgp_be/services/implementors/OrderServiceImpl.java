@@ -20,7 +20,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.HashMap;
 import java.util.List;
@@ -55,7 +54,7 @@ public class OrderServiceImpl implements OrderService {
         return ResponseBuilder.build(HttpStatus.OK, "Tạo order thành công", null);
     }
 
-    private Map<String, Object> buildOrderDetailProductInfo(Product product){
+    private Map<String, Object> buildOrderDetailProductInfo(Product product) {
         AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
         assert accessoryConfig != null;
         Map<String, Object> productInfo = new HashMap<>(((Map<String, Object>) product.getSize()));
@@ -77,7 +76,7 @@ public class OrderServiceImpl implements OrderService {
         return productInfo;
     }
 
-    private Map<String, Object> buildPotData(Map<String, Object> potData, Map<String, Object> potConfig){
+    private Map<String, Object> buildPotData(Map<String, Object> potData, Map<String, Object> potConfig) {
         potData = new HashMap<>(potData);
 
         Map<String, Object> potConfigMap = MapUtils.getMapFromObject(potConfig, potData.get("name").toString());
@@ -95,7 +94,7 @@ public class OrderServiceImpl implements OrderService {
         return potData;
     }
 
-    private Map<String, Object> buildSoilData(Map<String, Object> soilData, Map<String, Object> soilConfig){
+    private Map<String, Object> buildSoilData(Map<String, Object> soilData, Map<String, Object> soilConfig) {
         soilData = new HashMap<>(soilData);
         String soilName = soilData.get("name").toString();
         soilData.remove("name");
@@ -117,12 +116,12 @@ public class OrderServiceImpl implements OrderService {
         return soilData;
     }
 
-    private Map<String, Object> buildDecoData(Map<String, Object> decoData, Map<String, Object> decoConfig){
+    private Map<String, Object> buildDecoData(Map<String, Object> decoData, Map<String, Object> decoConfig) {
         decoData = new HashMap<>(decoData);
 
         Map<String, Object> decoDetail = MapUtils.getMapFromObject(decoData, "detail");
 
-        for(String key: decoDetail.keySet()){
+        for (String key : decoDetail.keySet()) {
             Integer quantity = (Integer) decoDetail.get(key);
             long configPrice = ((Integer) MapUtils.getMapFromObject(decoConfig, key).get("price")).longValue();
             decoDetail.replace(key, MapUtils.getMapFromObject(Map.of("price", configPrice, "quantity", quantity)));
@@ -131,17 +130,17 @@ public class OrderServiceImpl implements OrderService {
         return decoData;
     }
 
-    private List<Map<String, Object>> buildSucculentData(List<Map<String, Object>> succulentData){
+    private List<Map<String, Object>> buildSucculentData(List<Map<String, Object>> succulentData) {
         succulentData = succulentData.stream().map(
                 succulent -> {
                     Map<String, Object> succulentMap = new HashMap<>(succulent);
                     Map<String, Object> sizeMap = MapUtils.getMapFromObject(succulentMap, "size");
 
-                    for(String key: sizeMap.keySet()){
+                    for (String key : sizeMap.keySet()) {
                         Integer quantity = (Integer) sizeMap.get(key);
 
                         Succulent selectedSucculent = succulentRepo.findById((Integer) succulentMap.get("id")).orElse(null);
-                        if(selectedSucculent == null) return null;
+                        if (selectedSucculent == null) return null;
 
                         Map<String, Object> sizeData = MapUtils.getMapFromObject(selectedSucculent.getSize(), key);
 
@@ -166,9 +165,9 @@ public class OrderServiceImpl implements OrderService {
 
     //TODO: no usages function
     @Override
-    public ResponseEntity<ResponseObject> getOrderDetailByOrderId(int orderId){
+    public ResponseEntity<ResponseObject> getOrderDetailByOrderId(int orderId) {
         Order order = orderRepo.findById(orderId).orElse(null);
-        if(order == null) return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Order not found", null);
+        if (order == null) return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Order not found", null);
 
         return ResponseBuilder.build(HttpStatus.OK, "", getOrderDetailByOrder(order));
     }

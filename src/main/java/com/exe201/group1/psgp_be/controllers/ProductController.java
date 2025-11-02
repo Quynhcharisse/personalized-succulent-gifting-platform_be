@@ -1,17 +1,13 @@
 package com.exe201.group1.psgp_be.controllers;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreateCustomProductRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreateRevisionRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
-import com.exe201.group1.psgp_be.dto.requests.UpdateCustomProductRequestDesignImageRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.ProductService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

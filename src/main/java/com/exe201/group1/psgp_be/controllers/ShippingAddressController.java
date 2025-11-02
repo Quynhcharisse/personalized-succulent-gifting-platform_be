@@ -21,12 +21,12 @@ public class ShippingAddressController {
     private final ShippingAddressService shippingAddressService;
 
     @PostMapping
-    public ResponseEntity<ResponseObject> CreateShippingAddress(@RequestBody CreateShippingAddressRequest request){
+    public ResponseEntity<ResponseObject> CreateShippingAddress(@RequestBody CreateShippingAddressRequest request) {
         return shippingAddressService.CreateShippingAddress(request);
     }
 
     @GetMapping("/list")
-    public ResponseEntity<ResponseObject> GetAllShippingAddresses(){
+    public ResponseEntity<ResponseObject> GetAllShippingAddresses() {
         return shippingAddressService.getShippingAddressList();
     }
 
