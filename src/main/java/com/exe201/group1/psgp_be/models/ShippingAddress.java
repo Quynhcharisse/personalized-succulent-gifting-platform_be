@@ -34,6 +34,9 @@ public class ShippingAddress {
     @Column(name = "shipping_address", length = 500)
     String shippingAddress;
 
+    @Column(name = "shipping_province_id")
+    Integer shipping_province_id;
+
     @Column(name = "shipping_ward_code", length = 500)
     String shippingWardCode;
 

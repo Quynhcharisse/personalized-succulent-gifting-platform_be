@@ -22,6 +22,7 @@ public class CreateOrUpdateAccessoryRequest {
     PotData potData;// if createPot is false then send null here
 
     boolean createSoil;
+
     SoilData soilData;// if createSoil is false then send null here
 
     boolean createDecoration;

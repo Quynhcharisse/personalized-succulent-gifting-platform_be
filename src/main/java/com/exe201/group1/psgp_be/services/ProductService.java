@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.List;
 import java.util.Map;
 
+
 public interface ProductService {
 
     //--------------------------------------------SUCCULENT--------------------------------------------//
@@ -39,10 +40,11 @@ public interface ProductService {
 
     ResponseEntity<ResponseObject> viewProduct();
 
-    List<Map<String, Object>> buildProductSizeResponse(Map<String, Object> size);
+    ResponseEntity<ResponseObject> viewProductById(int id);
 
     ResponseEntity<ResponseObject> deactivateProduct(int id);
 
+    List<Map<String, Object>> buildProductSizeResponse(Map<String, Object> size);
     //--------------------------------------------WISHLIST--------------------------------------------//
     ResponseEntity<ResponseObject> addItemToWishList(AddWishListItemRequest item);
 
@@ -51,4 +53,15 @@ public interface ProductService {
     ResponseEntity<ResponseObject> removeItemFromWishList(Integer id);
 
     ResponseEntity<ResponseObject> removeAllItemsFromWishList();
+
+    //--------------------------------------------CUSTOM PRODUCT--------------------------------------------//
+    ResponseEntity<ResponseObject> createCustomProductRequest(CreateCustomProductRequestRequest request, HttpServletRequest httpRequest);
+
+    ResponseEntity<ResponseObject> viewCustomProductRequest();
+
+    ResponseEntity<ResponseObject> viewCustomProductRequestDetail(int id);
+
+    ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(UpdateCustomProductRequestDesignImageRequest request, boolean approved);
+
+    ResponseEntity<ResponseObject> createRevision(CreateRevisionRequest request);
 }

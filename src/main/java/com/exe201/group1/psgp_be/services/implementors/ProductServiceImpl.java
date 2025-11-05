@@ -1,9 +1,12 @@
 package com.exe201.group1.psgp_be.services.implementors;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateCustomProductRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateRevisionRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateCustomProductRequestDesignImageRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.enums.FengShui;
@@ -28,6 +31,7 @@ import com.exe201.group1.psgp_be.services.ProductService;
 import com.exe201.group1.psgp_be.utils.MapUtils;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import com.vladmihalcea.hibernate.util.StringUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -1281,6 +1285,26 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public ResponseEntity<ResponseObject> viewProductById(int id) {
+    if(!productRepo.findById(id).isPresent()){
+        return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found or be deleted", null);
+    }
+    Product product =  productRepo.findById(id).get();
+
+    Map<String, Object> data = new HashMap<>();
+        data.put("id", product.getId());
+        data.put("name", product.getName());
+        data.put("description", product.getDescription());
+        data.put("createAt", product.getCreatedAt());
+        data.put("updateAt", product.getUpdatedAt());
+        data.put("status", product.getStatus().getValue().toLowerCase());
+        data.put("images", buildProductImageResponse(product.getProductImages()));
+        data.put("sizes", buildProductSizeResponse((Map<String, Object>) product.getSize()));
+        return ResponseBuilder.build(HttpStatus.OK, "View product detail by id successfully", data);
+
+    }
+
+    @Override
     public ResponseEntity<ResponseObject> viewProduct() {
         List<Map<String, Object>> data = productRepo.findAll().stream()
                 .filter(Product::isPrivacy)
@@ -1517,6 +1541,31 @@ public class ProductServiceImpl implements ProductService {
         Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         wishListItemRepo.removeAllByWishlist(account.getUser().getWishlist());
         return ResponseBuilder.build(HttpStatus.OK, "Xóa toàn bộ sản phẩm khỏi wishlist thành công", null);
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> createCustomProductRequest(CreateCustomProductRequestRequest request, HttpServletRequest httpRequest) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> viewCustomProductRequest() {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> viewCustomProductRequestDetail(int id) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(UpdateCustomProductRequestDesignImageRequest request, boolean approved) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> createRevision(CreateRevisionRequest request) {
+        return null;
     }
 
     private Map<String, Object> buildItemFromWishList(WishlistItem item) {

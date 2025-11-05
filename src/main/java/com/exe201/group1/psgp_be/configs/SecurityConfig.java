@@ -33,8 +33,6 @@ public class SecurityConfig {
     @Value("${client.server.url}")
     private String clientServerUrl;
 
-    @Value("${swagger.url}")
-    private String url;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -46,8 +44,7 @@ public class SecurityConfig {
                                             CorsConfiguration config = new CorsConfiguration();
                                             config.setAllowedOriginPatterns(List.of(
                                                     clientUrl,
-                                                    clientServerUrl,
-                                                    url
+                                                    clientServerUrl
                                             ));
                                             config.setAllowedMethods(Collections.singletonList("*"));
                                             config.setAllowedHeaders(Collections.singletonList("*"));
@@ -73,7 +70,8 @@ public class SecurityConfig {
                                         "/webjars/**",
                                         "/swagger-ui.html",
                                         "/api/v1/product/list",
-                                        "/api/v1/ws-endpoint/**"
+                                        "/api/v1/ws-endpoint/**",
+                                "/api/v1/payment/**"
                                 ).permitAll()
                                 .anyRequest().authenticated()
                 )
