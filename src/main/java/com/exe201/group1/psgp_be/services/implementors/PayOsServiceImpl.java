@@ -44,12 +44,14 @@ public class PayOsServiceImpl implements PayOsService {
 
         String returnUrl = "http://localhost:5173/buyer/payment";
 
+        long finalAmount = (long) Math.ceil(totalAmount + request.getShippingFee());
+
         PaymentData paymentData = PaymentData.builder()
                 .orderCode(orderCode)
                 .returnUrl(returnUrl)
                 .cancelUrl(returnUrl)
-                .amount((int) totalAmount)
-                .description("Thanh toán đơn hàng "+orderCode)
+                .amount((int) finalAmount)
+                .description("Thanh toán đơn hàng")
                 .build();
 
         try {

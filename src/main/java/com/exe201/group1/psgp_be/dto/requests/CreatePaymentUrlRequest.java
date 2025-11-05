@@ -18,6 +18,7 @@ import java.util.List;
 public class CreatePaymentUrlRequest {
 
     List<ProductData> products;
+    long shippingFee;
 
     @Data
     @AllArgsConstructor
