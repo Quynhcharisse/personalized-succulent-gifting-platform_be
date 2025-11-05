@@ -17,7 +17,8 @@ import java.util.List;
 public class CreateCustomProductRequestRequest {
     Size size;
     List<CreateOrUpdateProductRequest.Image> images;
-
+    String occasion; // User nhập tự do
+    
     @NoArgsConstructor
     @AllArgsConstructor
     @Data

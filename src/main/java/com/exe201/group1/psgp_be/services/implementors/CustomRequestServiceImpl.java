@@ -85,6 +85,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
                         .data(data)
                         .designImage(null)
                         .status(Status.PENDING)
+                        .occasion(request.getOccasion().trim())
                         .createdAt(LocalDateTime.now())
                         .build()
         );
@@ -143,6 +144,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
                     data.put("buyer", EntityResponseBuilder.buildUserResponse(cp.getBuyer()));
                     data.put("customData", productService.buildProductSizeResponse(MapUtils.getMapFromObject(cp.getData())));
                     data.put("status", cp.getStatus().getValue());
+                    data.put("occasion", cp.getOccasion());
                     data.put("createdAt", cp.getCreatedAt());
                     return data;
                 }
@@ -178,6 +180,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
         response.put("id", request.getId());
         response.put("buyer", EntityResponseBuilder.buildUserResponse(request.getBuyer()));
         response.put("customData", productService.buildProductSizeResponse(customData));
+        response.put("occasion", request.getOccasion());
 
         if (request.getStatus().equals(Status.REJECT)) {
             response.put("rejectReason", request.getStatus());
@@ -226,10 +229,15 @@ public class CustomRequestServiceImpl implements CustomRequestService {
             customProductRequest.setData(data);
             customProductRequestRepo.save(customProductRequest);
 
+            String productName = "Custom product by " + customProductRequest.getBuyer().getName();
+            if (customProductRequest.getOccasion() != null && !customProductRequest.getOccasion().trim().isEmpty()) {
+                productName += " - " + customProductRequest.getOccasion();
+            }
+            
             Product product = productRepo.save(
                     Product.builder()
-                            .name("Custom product by " + customProductRequest.getBuyer().getName())
-                            .description("")
+                            .name(productName)
+                            .description("Sản phẩm custom cho dịp: " + (customProductRequest.getOccasion() != null && !customProductRequest.getOccasion().trim().isEmpty() ? customProductRequest.getOccasion() : "Sản phẩm custom"))
                             .size(customDataForProduct)
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
