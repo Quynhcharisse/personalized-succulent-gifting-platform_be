@@ -57,6 +57,9 @@ public class CustomProductRequest {
     @Column(length = 20)
     Status status;
 
+    @Column(name = "occasion", length = 100)
+    String occasion;
+
     @Column(name = "created_at")
     LocalDateTime createdAt;
 } 
