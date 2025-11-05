@@ -1167,92 +1167,105 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public boolean checkProductStatus(Product product) {
-        boolean succulentAvailable = true;
-        boolean potAvailable = true;
-        boolean soilAvailable = true;
-        boolean decorationAvailable = true;
+        Map<String, Object> productSizeData = (Map<String, Object>) product.getSize();
+
+        for (String key : productSizeData.keySet()) {
+            if (getProductAvailableQtyBySize(productSizeData, key) > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private int getProductAvailableQtyBySize(Map<String, Object> productSizeData, String key) {
+        int succulentAvailableQty = 0;
+        int potAvailableQty = 0;
+        int soilAvailableQty = 0;
+        int decorationAvailableQty = 0;
 
         AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
         assert accessoryConfig != null;
+
         Object valueJson = accessoryConfig.getValue();
 
         List<Map<String, Object>> potConfig = buildPotResponse((Map<String, Object>) valueJson);
         List<Map<String, Object>> soilConfig = buildSoilResponse((Map<String, Object>) valueJson);
         List<Map<String, Object>> decorationConfig = buildDecorationResponse((Map<String, Object>) valueJson);
 
-        Map<String, Object> productSizeData = (Map<String, Object>) product.getSize();
+        Map<String, Object> potData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("pot");
+        potAvailableQty = checkPotAvailable(potData.get("name").toString(), potData.get("size").toString(), potConfig);
 
-        for (String key : productSizeData.keySet()) {
-            Map<String, Object> potData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("pot");
-            if (!checkPotAvailable(potData.get("name").toString(), potData.get("size").toString(), potConfig)) {
-                potAvailable = false;
-            }
+        Map<String, Object> soilData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("soil");
+        soilAvailableQty = checkSoilAvailable(soilData.get("name").toString(), (double) soilData.get("massAmount"), soilConfig);
 
-            Map<String, Object> soilData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("soil");
-            if (!checkSoilAvailable(soilData.get("name").toString(), (double) soilData.get("massAmount"), soilConfig)) {
-                soilAvailable = false;
-            }
+        Map<String, Object> productData = (Map<String, Object>) productSizeData.get(key);
+        Map<String, Object> decorationData = (Map<String, Object>) productData.get("decoration");
 
-            Map<String, Object> productData = (Map<String, Object>) productSizeData.get(key);
-            Map<String, Object> decorationData = (Map<String, Object>) productData.get("decoration");
-
-            // Convert detail (Map) to details (List)
-            List<Map<String, Object>> details = null;
-            if (decorationData.get("details") instanceof List) {
-                details = (List<Map<String, Object>>) decorationData.get("details");
-            } else if (decorationData.get("detail") instanceof Map) {
-                Map<String, Object> detailMap = (Map<String, Object>) decorationData.get("detail");
-                details = detailMap.entrySet().stream()
-                        .map(entry -> Map.of("name", entry.getKey(), "quantity", entry.getValue()))
-                        .toList();
-            }
-
-            if (!checkDecorationAvailable(
-                    Boolean.parseBoolean(decorationData.get("included").toString()),
-                    details,
-                    decorationConfig)) {
-                decorationAvailable = false;
-            }
-
-            List<Map<String, Object>> succulentData = (List<Map<String, Object>>) ((Map<Object, Object>) productSizeData.get(key)).get("succulents");
-            for (Map<String, Object> succulent : succulentData) {
-                Map<String, Object> sizeData = MapUtils.getMapFromObject(succulent, "size");
-                for (String sizeKey : sizeData.keySet()) {
-                    if (!checkSucculentAvailable((int) succulent.get("id"), sizeKey, (int) sizeData.get(sizeKey))) {
-                        succulentAvailable = false;
-                    }
-                }
-            }
+        // Convert detail (Map) to details (List)
+        List<Map<String, Object>> details = null;
+        if (decorationData.get("details") instanceof List) {
+            details = (List<Map<String, Object>>) decorationData.get("details");
+        } else if (decorationData.get("detail") instanceof Map) {
+            Map<String, Object> detailMap = (Map<String, Object>) decorationData.get("detail");
+            details = detailMap.entrySet().stream()
+                    .map(entry -> Map.of("name", entry.getKey(), "quantity", entry.getValue()))
+                    .toList();
         }
-        return succulentAvailable && potAvailable && soilAvailable && decorationAvailable;
+
+        List<Map<String, Object>> succulentData = (List<Map<String, Object>>) ((Map<Object, Object>)
+                productSizeData.get(key)).get("succulents");
+        succulentAvailableQty = -1;
+        for (Map<String, Object> succulent : succulentData) {
+            Map<String, Object> sizeData = MapUtils.getMapFromObject(succulent, "size");
+            int succulentSizeMin = getAvailableQtyBySucculent(sizeData, succulent);
+            succulentAvailableQty = succulentAvailableQty == -1 ? succulentSizeMin : Math.min(succulentAvailableQty,
+                    succulentSizeMin);
+        }
+
+        decorationAvailableQty = checkDecorationAvailable(Boolean.parseBoolean(decorationData.get("included").toString()),
+                details, decorationConfig,
+                soilAvailableQty + potAvailableQty + succulentAvailableQty);
+
+        return Math.min((Math.min(potAvailableQty, soilAvailableQty)), (Math.min(decorationAvailableQty, succulentAvailableQty)));
     }
 
-    private boolean checkPotAvailable(String name, String size, List<Map<String, Object>> potConfig) {
+    private int getAvailableQtyBySucculent(Map<String, Object> sizeData, Map<String, Object> succulent) {
+        //TODO: đây là hàm lấy ra số lượng product có thể đc tạo, dựa trên loại sen đá
+        int min = -1;
+        for (String sizeKey : sizeData.keySet()) {
+            int succulentAvailable = checkSucculentAvailable((int) succulent.get("id"), sizeKey, (int) sizeData.get(sizeKey));
+            min = (min == -1) ? succulentAvailable : Math.min(min, succulentAvailable);
+        }
+        return min;
+    }
+
+    private int checkPotAvailable(String name, String size, List<Map<String, Object>> potConfig) {
         Map<String, Object> potData = potConfig.stream().filter(p -> p.get("name").toString().equalsIgnoreCase(name)).findFirst().orElse(null);
 
-        if (potData == null) return false;
+        if (potData == null) return 0;
 
         Map<String, Object> sizeData = ((List<Map<String, Object>>) potData.get("size")).stream().filter(s -> s.get("name").toString().equalsIgnoreCase(size)).findFirst().orElse(null);
-        if (sizeData == null) return false;
+        if (sizeData == null) return 0;
 
-        int availableQty = (int) sizeData.get("availableQty");
-
-        return availableQty >= 1;
+        return (int) sizeData.get("availableQty");
+//        return availableQty >= 1;
     }
 
-    private boolean checkSoilAvailable(String name, double massAmount, List<Map<String, Object>> soilConfig) {
+    private int checkSoilAvailable(String name, double massAmount, List<Map<String, Object>> soilConfig) {
         Map<String, Object> soilData = soilConfig.stream().filter(s -> s.get("name").toString().equalsIgnoreCase(name)).findFirst().orElse(null);
 
-        if (soilData == null) return false;
+        if (soilData == null) return 0;
 
         double availableMassValue = ((Integer) soilData.get("availableMassValue")).doubleValue();
 
-        return availableMassValue >= massAmount;
+        return (int) (availableMassValue / massAmount);
+//        return availableMassValue >= massAmount;
     }
 
-    private boolean checkDecorationAvailable(boolean included, List<Map<String, Object>> details, List<Map<String, Object>> decorationConfig) {
-        if (!included) return true;
-        if (details == null) return true;
+    private int checkDecorationAvailable(boolean included, List<Map<String, Object>> details, List<Map<String, Object>> decorationConfig, int initValue) {
+        if (!included) return initValue;
+        if (details == null) return initValue;
+        int min = -1;
         for (Map<String, Object> detailItem : details) {
             String name = detailItem.get("name").toString();
             int requiredQty = (int) detailItem.get("quantity");
@@ -1262,26 +1275,28 @@ public class ProductServiceImpl implements ProductService {
                     .findFirst()
                     .orElse(null);
 
-            if (configItem == null) return false;
+            if (configItem == null) return 0;
 
             int availableQty = (int) configItem.get("availableQty");
-            if (requiredQty > availableQty) return false;
+            if (requiredQty > availableQty) return 0;
+            min = min == -1 ? availableQty / requiredQty : Math.min(min, availableQty / requiredQty);
         }
-        return true;
+        return min;
     }
 
-    private boolean checkSucculentAvailable(int id, String size, int qty) {
+    private int checkSucculentAvailable(int id, String size, int qty) {
         List<Map<String, Object>> succulents = succulentRepo.findAll().stream().map(this::buildSucculentDetail).toList();
 
         Map<String, Object> succulentData = succulents.stream().filter(s -> ((int) s.get("id")) == id).findFirst().orElse(null);
-        if (succulentData == null) return false;
+        if (succulentData == null) return 0;
 
         Map<String, Object> succulentSizeData = (Map<String, Object>) ((Map<String, Object>) succulentData.get("size")).get(size);
-        if (succulentSizeData == null) return false;
+        if (succulentSizeData == null) return 0;
 
         int availableQty = (int) succulentSizeData.get("quantity");
 
-        return availableQty >= qty;
+        return availableQty / qty;
+//        return availableQty >= qty;
     }
 
     @Override
@@ -1356,6 +1371,7 @@ public class ProductServiceImpl implements ProductService {
 
                             Map<String, Object> map = new HashMap<>();
                             map.put("name", key);
+                            map.put("quantity", getProductAvailableQtyBySize(size, key));
                             map.put("succulents", buildProductSucculentListResponse(succulentData));
                             map.put("pot", buildProductPotResponse(accessoryConfigData, potData));
                             map.put("soil", buildProductSoilResponse(accessoryConfigData, soilData));
