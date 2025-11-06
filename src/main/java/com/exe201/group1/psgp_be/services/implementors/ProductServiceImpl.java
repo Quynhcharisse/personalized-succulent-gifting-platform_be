@@ -616,7 +616,7 @@ public class ProductServiceImpl implements ProductService {
             if (create) {
                 Map<String, Object> potDetailMap = createPotDetail(potData);
 
-                accessoryData.put("pot", Map.of(potData.getName(), potDetailMap));
+                accessoryData.put("pot", Map.of(potData.getName().toLowerCase(), potDetailMap));
 
                 accessoryConfig.setValue(accessoryData);
                 appConfigRepo.save(accessoryConfig);
@@ -1131,7 +1131,7 @@ public class ProductServiceImpl implements ProductService {
 
     private Map<String, Object> buildPotMap(CreateOrUpdateProductRequest.Pot pot) {
         return Map.of(
-                "name", pot.getName(),
+                "name", pot.getName().toLowerCase(),
                 "size", pot.getSize()
         );
     }
