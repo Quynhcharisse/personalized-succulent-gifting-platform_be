@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -15,10 +14,12 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreatePaymentUrlRequest {
 
+public class ConfirmPaymentUrlRequest {
     List<ProductData> products;
+    long orderCode;
     long shippingFee;
+    boolean success;
 
     @Data
     @AllArgsConstructor
@@ -31,8 +32,4 @@ public class CreatePaymentUrlRequest {
         long price;
         Integer quantity;
     }
-
 }
-
-
-

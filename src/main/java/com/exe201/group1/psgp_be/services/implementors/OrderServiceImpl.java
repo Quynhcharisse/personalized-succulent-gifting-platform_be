@@ -47,7 +47,6 @@ public class OrderServiceImpl implements OrderService {
                         .order(order)
                         .quantity(quantity)
                         .price(price)
-                        .productInfo(buildOrderDetailProductInfo(product))
                         .build()
         );
 
@@ -177,7 +176,7 @@ public class OrderServiceImpl implements OrderService {
                 detail -> {
                     Map<String, Object> response = new HashMap<>();
                     response.put("id", detail.getId());
-                    response.put("product", buildOrderDetailProductResponse(detail));
+//                    response.put("product", buildOrderDetailProductResponse(detail));
                     response.put("quantity", detail.getQuantity());
                     response.put("price", detail.getPrice());
                     return response;
@@ -185,29 +184,29 @@ public class OrderServiceImpl implements OrderService {
         ).toList();
     }
 
-    private List<Map<String, Object>> buildOrderDetailProductResponse(OrderDetail detail) {
-        Map<String, Object> productInfo = MapUtils.getMapFromObject(detail.getProductInfo());
-
-        return productInfo.keySet().stream().map(
-                key -> {
-                    Map<String, Object> responseData = new HashMap<>();
-                    responseData.put("size", key);
-
-                    Map<String, Object> sizeData = new HashMap<>((Map<String, Object>) productInfo.get(key));
-                    Map<String, Object> potData = MapUtils.getMapFromObject(sizeData.get("pot"));
-                    Map<String, Object> soilData = MapUtils.getMapFromObject(sizeData.get("soil"));
-                    Map<String, Object> decoData = MapUtils.getMapFromObject(sizeData.get("decoration"));
-                    List<Map<String, Object>> succulentData = (List<Map<String, Object>>) sizeData.get("succulents");
-
-                    responseData.put("pot", new HashMap<>(buildODPotResponse(potData)));
-                    responseData.put("soil", new HashMap<>(buildODSoilResponse(soilData)));
-                    responseData.put("decoration", new HashMap<>(buildODDecoResponse(decoData)));
-                    responseData.put("succulents", buildODSucculentResponse(succulentData));
-
-                    return responseData;
-                }
-        ).toList();
-    }
+//    private List<Map<String, Object>> buildOrderDetailProductResponse(OrderDetail detail) {
+//        Map<String, Object> productInfo = MapUtils.getMapFromObject(detail.getProductInfo());
+//
+//        return productInfo.keySet().stream().map(
+//                key -> {
+//                    Map<String, Object> responseData = new HashMap<>();
+//                    responseData.put("size", key);
+//
+//                    Map<String, Object> sizeData = new HashMap<>((Map<String, Object>) productInfo.get(key));
+//                    Map<String, Object> potData = MapUtils.getMapFromObject(sizeData.get("pot"));
+//                    Map<String, Object> soilData = MapUtils.getMapFromObject(sizeData.get("soil"));
+//                    Map<String, Object> decoData = MapUtils.getMapFromObject(sizeData.get("decoration"));
+//                    List<Map<String, Object>> succulentData = (List<Map<String, Object>>) sizeData.get("succulents");
+//
+//                    responseData.put("pot", new HashMap<>(buildODPotResponse(potData)));
+//                    responseData.put("soil", new HashMap<>(buildODSoilResponse(soilData)));
+//                    responseData.put("decoration", new HashMap<>(buildODDecoResponse(decoData)));
+//                    responseData.put("succulents", buildODSucculentResponse(succulentData));
+//
+//                    return responseData;
+//                }
+//        ).toList();
+//    }
 
     // OD is Order Detail
     private Map<String, Object> buildODPotResponse(Map<String, Object> potData) {

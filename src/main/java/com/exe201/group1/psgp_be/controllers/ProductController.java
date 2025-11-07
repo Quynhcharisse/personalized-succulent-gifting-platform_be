@@ -1,8 +1,10 @@
 package com.exe201.group1.psgp_be.controllers;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
+import com.exe201.group1.psgp_be.dto.requests.CheckAvailableProductsBySizeRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreatePaymentUrlRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
@@ -72,14 +74,15 @@ public class ProductController {
         return productService.viewProduct();
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ResponseObject> getProductById(@PathVariable Integer id) {
-        return productService.viewProductById(id);
-    }
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> deactivateProduct(@PathVariable int id) {
         return productService.deactivateProduct(id);
+    }
+
+    @PutMapping("/check/availability/products")
+    public ResponseEntity<ResponseObject> checkAvailableProductsBySize(@RequestBody CheckAvailableProductsBySizeRequest request){
+        return productService.checkAvailableProductsBySize(request);
     }
 
     //=================== wish list =====================\\

@@ -30,10 +30,10 @@ public enum Status {
     APPROVE("Đã duyệt"),
     REJECT("Đã từ chối"),
 
-    //----------PAYMENT STATUS---------//
-    PAYING("Đang thanh toán"),
-    PAID("Đã thanh toán"),
-    FAILED("Đã từ chối");
+    //----------SHIPPING STATUS---------//
+    SHIPPING("Đang vận chuyển"),
+    DONE_SHIPPING("Vận chuyển thành công"),
+    FAILED_SHIPPING("Vận chuyển thất bại");
 
     private final String value;
 

@@ -1,8 +1,11 @@
 package com.exe201.group1.psgp_be.services;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
+import com.exe201.group1.psgp_be.dto.requests.CheckAvailableProductsBySizeRequest;
+import com.exe201.group1.psgp_be.dto.requests.ConfirmPaymentUrlRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomProductRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreatePaymentUrlRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateRevisionRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
@@ -38,9 +41,11 @@ public interface ProductService {
 
     boolean checkProductStatus(Product product);
 
-    ResponseEntity<ResponseObject> viewProduct();
+     ResponseEntity<ResponseObject> checkAvailableProductsBySize(CheckAvailableProductsBySizeRequest request);
 
-    ResponseEntity<ResponseObject> viewProductById(int id);
+    ResponseEntity<ResponseObject> restoreQuantityOfFailedPayment(List<ConfirmPaymentUrlRequest.ProductData> productDataList);
+
+    ResponseEntity<ResponseObject> viewProduct();
 
     ResponseEntity<ResponseObject> deactivateProduct(int id);
 
