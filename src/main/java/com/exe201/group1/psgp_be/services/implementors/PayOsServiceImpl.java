@@ -107,11 +107,15 @@ public class PayOsServiceImpl implements PayOsService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ResponseEntity<ResponseObject> confirmPayment(ConfirmPaymentUrlRequest request) {
+    public ResponseEntity<ResponseObject> confirmPayment(ConfirmPaymentUrlRequest request, HttpServletRequest httpServletRequest) {
 
         if(request.isSuccess()){
 
+            Account account = CookieUtil.extractAccountFromCookie(httpServletRequest, jwtService, accountRepo);
+            User buyer = account.getUser();
+
             Order order = Order.builder()
+                    .buyer(buyer)
                     .orderCode(request.getOrderCode()) // hoặc sinh bằng UUID/random generator
                     .orderDate(LocalDateTime.now())
                     .status(Status.SHIPPING)

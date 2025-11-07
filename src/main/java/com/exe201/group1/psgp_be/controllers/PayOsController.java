@@ -24,8 +24,8 @@ public class PayOsController {
     }
 
     @PostMapping("/confirm")
-    public ResponseEntity<?> confirmPayment(@RequestBody ConfirmPaymentUrlRequest request) {
-        return payOsService.confirmPayment(request);
+    public ResponseEntity<?> confirmPayment(@RequestBody ConfirmPaymentUrlRequest request, HttpServletRequest httpServletRequest) {
+        return payOsService.confirmPayment(request, httpServletRequest);
     }
 
 }

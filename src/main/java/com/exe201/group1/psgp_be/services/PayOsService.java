@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 
 public interface PayOsService {
     ResponseEntity<?> createPaymentUrl(CreatePaymentUrlRequest request);
-    ResponseEntity<ResponseObject> confirmPayment(ConfirmPaymentUrlRequest request);
+    ResponseEntity<ResponseObject> confirmPayment(ConfirmPaymentUrlRequest request, HttpServletRequest httpServletRequest);
 
 
 }
