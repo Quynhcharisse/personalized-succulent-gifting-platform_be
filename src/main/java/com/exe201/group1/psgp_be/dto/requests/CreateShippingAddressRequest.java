@@ -10,6 +10,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateShippingAddressRequest {
     String  shippingAddress;
+    Integer shippingProvinceId;
     Integer shippingDistrictId;
     String  shippingWardCode;
 }

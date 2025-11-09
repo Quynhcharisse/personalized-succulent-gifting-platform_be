@@ -1,9 +1,15 @@
 package com.exe201.group1.psgp_be.services.implementors;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
+import com.exe201.group1.psgp_be.dto.requests.CheckAvailableProductsBySizeRequest;
+import com.exe201.group1.psgp_be.dto.requests.ConfirmPaymentUrlRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateCustomProductRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreatePaymentUrlRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateRevisionRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateCustomProductRequestDesignImageRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.enums.FengShui;
@@ -28,6 +34,7 @@ import com.exe201.group1.psgp_be.services.ProductService;
 import com.exe201.group1.psgp_be.utils.MapUtils;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import com.vladmihalcea.hibernate.util.StringUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -680,7 +687,7 @@ public class ProductServiceImpl implements ProductService {
             if (create) {
                 Map<String, Object> soilDetailMap = createSoilDetail(soilData);
 
-                accessoryData.put("soil", Map.of(soilData.getName(), soilDetailMap));
+                accessoryData.put("soil", Map.of(soilData.getName().toLowerCase(), soilDetailMap));
 
                 accessoryConfig.setValue(accessoryData);
                 appConfigRepo.save(accessoryConfig);
@@ -1173,7 +1180,241 @@ public class ProductServiceImpl implements ProductService {
         return false;
     }
 
-    private int getProductAvailableQtyBySize(Map<String, Object> productSizeData, String key) {
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<ResponseObject> checkAvailableProductsBySize(CheckAvailableProductsBySizeRequest request) {
+
+        for (CreatePaymentUrlRequest.ProductData productData : request.getProducts()) {
+
+            Optional<Product> product = productRepo.findById(productData.getProductId());
+
+            if(!product.isPresent()) {
+                return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found or be deleted", null);
+            }
+
+            if(productData.getQuantity() > getProductAvailableQtyBySize((Map<String, Object>) product.get().getSize(), productData.getSize())){
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Số lượng sản phẩm tên "+ product.get().getName() +" với size " + productData.getSize() + " bạn cần mua lớn hơn số lượng còn lại trong kho. Vui lòng giảm số lượng hoặc chọn sản phẩm khác.", null);
+            }
+
+            Map<String, Object> sizeData = (Map<String, Object>) ((Map<?, ?>) product.get().getSize()).get(productData.getSize());;
+
+            AppConfig accessoryConfig = appConfigRepo.findByKey("accessory")
+                    .orElseThrow(() -> new RuntimeException("Accessory config not found"));
+
+            Map<String, Object> accessory = (Map<String, Object>) accessoryConfig.getValue();
+
+            List<Map<String, Object>> succulentDataList =
+                    (List<Map<String, Object>>) sizeData.get("succulents");
+
+            for (Map<String, Object> succulentData : succulentDataList) {
+
+                int succulentId = (int) succulentData.get("id");
+                Map<String, Integer> sizeMap =
+                        (Map<String, Integer>) succulentData.get("size");
+
+                Succulent succulent = succulentRepo.findById(succulentId)
+                        .orElseThrow(() -> new RuntimeException("Succulent not found"));
+
+                Map<String, Object> succulentSizeConfig =
+                        (Map<String, Object>) succulent.getSize();
+
+                for (var entry : sizeMap.entrySet()) {
+
+                    String sKey = entry.getKey();
+                    int usedPerProduct = entry.getValue();
+                    int needToDecrease = usedPerProduct * productData.getQuantity();
+
+                    Map<String, Object> oneSizeCfg =
+                            (Map<String, Object>) succulentSizeConfig.get(sKey);
+
+                    int available = (int) oneSizeCfg.get("quantity");
+                    oneSizeCfg.put("quantity", available - needToDecrease);
+                }
+                succulentRepo.save(succulent);
+            }
+
+
+            // ================= Pot =================
+            Map<String, Object> potData = (Map<String, Object>) sizeData.get("pot");
+            if (potData != null) {
+                String potName = potData.get("name").toString().trim();
+
+                String potSize = potData.get("size").toString();
+
+                Map<String, Object> pot = (Map<String, Object>) accessory.get("pot");
+                Map<String, Object> potDetail = (Map<String, Object>) pot.get(potName);
+
+                if (potDetail == null) {
+                    return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                            "Pot '" + potName + "' không tồn tại trong hệ thống", null);
+                }
+
+                Map<String, Object> potSizeDetail =
+                        (Map<String, Object>) ((Map<String, Object>) potDetail.get("size")).get(potSize);
+
+                if (potSizeDetail == null) {
+                    return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                            "Pot size '" + potSize + "' của '" + potName + "' không tồn tại", null);
+                }
+
+                int potAvailable = (int) potSizeDetail.get("availableQty");
+                potSizeDetail.put("availableQty", potAvailable - productData.getQuantity());
+            }
+
+            // ================= Soil =================
+            Map<String, Object> soilData = (Map<String, Object>) sizeData.get("soil");
+            if (soilData != null) {
+                String soilName = soilData.get("name").toString();
+                double massPerProduct = ((Number) soilData.get("massAmount")).doubleValue();
+
+                Map<String, Object> soil = (Map<String, Object>) accessory.get("soil");
+                Map<String, Object> soilDetail = (Map<String, Object>) soil.get(soilName);
+
+                double soilAvailable = ((Number) soilDetail.get("availableMassValue")).doubleValue();
+                soilDetail.put("availableMassValue", soilAvailable - massPerProduct * productData.getQuantity());
+            }
+
+
+            // ================= Decorations =================
+            Map<String, Object> decorData = (Map<String, Object>) sizeData.get("decoration");
+            if (decorData != null && Boolean.TRUE.equals(decorData.get("included"))) {
+
+                Map<String, Integer> detailData = (Map<String, Integer>) decorData.get("detail");
+                Map<String, Object> decoration = (Map<String, Object>) accessory.get("decoration");
+
+                for (var entry : detailData.entrySet()) {
+                    String decorName = entry.getKey();
+                    int usedQty = entry.getValue();
+
+                    Map<String, Object> decorDetail = (Map<String, Object>) decoration.get(decorName);
+
+                    int availableQty = (int) decorDetail.get("availableQty");
+                    decorDetail.put("availableQty", availableQty - usedQty * productData.getQuantity());
+                }
+            }
+
+            accessoryConfig.setValue(accessory);
+            appConfigRepo.save(accessoryConfig);
+
+        }
+        return ResponseBuilder.build(HttpStatus.OK, "Ok", null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<ResponseObject> restoreQuantityOfFailedPayment(List<ConfirmPaymentUrlRequest.ProductData> productDataList){
+
+        for (ConfirmPaymentUrlRequest.ProductData data : productDataList){
+
+            Optional<Product> product = productRepo.findById(data.getProductId());
+
+            if(!product.isPresent()) {
+                return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found or be deleted", null);
+            }
+
+            Map<String, Object> sizeData = (Map<String, Object>) ((Map<?, ?>) product.get().getSize()).get(data.getSize());;
+
+            AppConfig accessoryConfig = appConfigRepo.findByKey("accessory")
+                    .orElseThrow(() -> new RuntimeException("Accessory config not found"));
+
+            Map<String, Object> accessory = (Map<String, Object>) accessoryConfig.getValue();
+
+            List<Map<String, Object>> succulentDataList =
+                    (List<Map<String, Object>>) sizeData.get("succulents");
+
+            for (Map<String, Object> succulentData : succulentDataList) {
+
+                int succulentId = (int) succulentData.get("id");
+                Map<String, Integer> sizeMap =
+                        (Map<String, Integer>) succulentData.get("size");
+
+                Succulent succulent = succulentRepo.findById(succulentId)
+                        .orElseThrow(() -> new RuntimeException("Succulent not found"));
+
+                Map<String, Object> succulentSizeConfig =
+                        (Map<String, Object>) succulent.getSize();
+
+                for (var entry : sizeMap.entrySet()) {
+
+                    String sKey = entry.getKey();
+                    int usedPerProduct = entry.getValue();
+                    int needToIncrease = usedPerProduct * data.getQuantity();
+
+                    Map<String, Object> oneSizeCfg =
+                            (Map<String, Object>) succulentSizeConfig.get(sKey);
+
+                    int available = (int) oneSizeCfg.get("quantity");
+                    oneSizeCfg.put("quantity", available + needToIncrease);
+                }
+                succulentRepo.save(succulent);
+            }
+
+
+            // ================= Pot =================
+            Map<String, Object> potData = (Map<String, Object>) sizeData.get("pot");
+            if (potData != null) {
+                String potName = potData.get("name").toString().trim();
+
+                String potSize = potData.get("size").toString();
+
+                Map<String, Object> pot = (Map<String, Object>) accessory.get("pot");
+                Map<String, Object> potDetail = (Map<String, Object>) pot.get(potName);
+
+                if (potDetail == null) {
+                    return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                            "Pot '" + potName + "' không tồn tại trong hệ thống", null);
+                }
+
+                Map<String, Object> potSizeDetail =
+                        (Map<String, Object>) ((Map<String, Object>) potDetail.get("size")).get(potSize);
+
+                if (potSizeDetail == null) {
+                    return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                            "Pot size '" + potSize + "' của '" + potName + "' không tồn tại", null);
+                }
+
+                int potAvailable = (int) potSizeDetail.get("availableQty");
+                potSizeDetail.put("availableQty", potAvailable + data.getQuantity());
+            }
+
+            // ================= Soil =================
+            Map<String, Object> soilData = (Map<String, Object>) sizeData.get("soil");
+            if (soilData != null) {
+                String soilName = soilData.get("name").toString();
+                double massPerProduct = ((Number) soilData.get("massAmount")).doubleValue();
+
+                Map<String, Object> soil = (Map<String, Object>) accessory.get("soil");
+                Map<String, Object> soilDetail = (Map<String, Object>) soil.get(soilName);
+
+                double soilAvailable = ((Number) soilDetail.get("availableMassValue")).doubleValue();
+                soilDetail.put("availableMassValue", soilAvailable + massPerProduct * data.getQuantity());
+            }
+
+
+            // ================= Decorations =================
+            Map<String, Object> decorData = (Map<String, Object>) sizeData.get("decoration");
+            if (decorData != null && Boolean.TRUE.equals(decorData.get("included"))) {
+
+                Map<String, Integer> detailData = (Map<String, Integer>) decorData.get("detail");
+                Map<String, Object> decoration = (Map<String, Object>) accessory.get("decoration");
+
+                for (var entry : detailData.entrySet()) {
+                    String decorName = entry.getKey();
+                    int usedQty = entry.getValue();
+
+                    Map<String, Object> decorDetail = (Map<String, Object>) decoration.get(decorName);
+
+                    int availableQty = (int) decorDetail.get("availableQty");
+                    decorDetail.put("availableQty", availableQty + usedQty * data.getQuantity());
+                }
+            }
+
+            accessoryConfig.setValue(accessory);
+            appConfigRepo.save(accessoryConfig);
+        }
+        return ResponseBuilder.build(HttpStatus.OK, "Restore Successfully", null);
+    }
+
+    public int getProductAvailableQtyBySize(Map<String, Object> productSizeData, String key) {
         int succulentAvailableQty = 0;
         int potAvailableQty = 0;
         int soilAvailableQty = 0;
@@ -1252,7 +1493,7 @@ public class ProductServiceImpl implements ProductService {
 
         if (soilData == null) return 0;
 
-        double availableMassValue = ((Integer) soilData.get("availableMassValue")).doubleValue();
+        double availableMassValue = ((Number) soilData.get("availableMassValue")).doubleValue();
 
         return (int) (availableMassValue / massAmount);
 //        return availableMassValue >= massAmount;
@@ -1294,6 +1535,7 @@ public class ProductServiceImpl implements ProductService {
         return availableQty / qty;
 //        return availableQty >= qty;
     }
+
 
     @Override
     public ResponseEntity<ResponseObject> viewProduct() {
@@ -1460,7 +1702,6 @@ public class ProductServiceImpl implements ProductService {
                     .filter(decor -> decorationDataMap.get(decor.get("name").toString()) instanceof Integer)
                     .map(decor -> {
                         int quantity = (int) decorationDataMap.get(decor.get("name").toString());
-
                         Map<String, Object> map = new HashMap<>();
                         map.put("name", decor.get("name"));
                         map.put("description", decor.get("description"));
@@ -1533,6 +1774,31 @@ public class ProductServiceImpl implements ProductService {
         Account account = (Account) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         wishListItemRepo.removeAllByWishlist(account.getUser().getWishlist());
         return ResponseBuilder.build(HttpStatus.OK, "Xóa toàn bộ sản phẩm khỏi wishlist thành công", null);
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> createCustomProductRequest(CreateCustomProductRequestRequest request, HttpServletRequest httpRequest) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> viewCustomProductRequest() {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> viewCustomProductRequestDetail(int id) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(UpdateCustomProductRequestDesignImageRequest request, boolean approved) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> createRevision(CreateRevisionRequest request) {
+        return null;
     }
 
     private Map<String, Object> buildItemFromWishList(WishlistItem item) {

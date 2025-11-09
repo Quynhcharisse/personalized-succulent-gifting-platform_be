@@ -7,7 +7,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,13 +23,22 @@ public class ShippingAddressController {
     private final ShippingAddressService shippingAddressService;
 
     @PostMapping
-    public ResponseEntity<ResponseObject> CreateShippingAddress(@RequestBody CreateShippingAddressRequest request) {
-        return shippingAddressService.CreateShippingAddress(request);
+
+    public ResponseEntity<ResponseObject> CreateShippingAddress(@RequestBody CreateShippingAddressRequest request){
+        return shippingAddressService.createShippingAddress(request);
     }
 
     @GetMapping("/list")
     public ResponseEntity<ResponseObject> GetAllShippingAddresses() {
         return shippingAddressService.getShippingAddressList();
     }
+    @GetMapping("/default")
+    public ResponseEntity<ResponseObject> getDefaultShippingAddress(){
+        return shippingAddressService.getDefaultShippingAddress();
+    }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<ResponseObject> setDefaultShippingAddress(@PathVariable int id){
+        return shippingAddressService.setDefaultShippingAddress(id);
+    }
 }

@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -42,6 +43,9 @@ public class Order {
     @JoinColumn(name = "buyer_id")
     User buyer;
 
+    @Column(name = "order_code")
+    long orderCode;
+
     @Column(name = "order_date")
     LocalDateTime orderDate;
 
@@ -60,22 +64,14 @@ public class Order {
 
     // =========================== THÔNG TIN GIAO HÀNG ========================== \\
 
-
     @Column(name = "shipping_fee", precision = 10, scale = 2)
     BigDecimal shippingFee;
 
-    @Column(name = "expected_delivery_date")
-    LocalDateTime expectedDeliveryDate;
-
-    @Column(name = "payment_method", length = 50)
-    String paymentMethod; // "COD", "BANK_TRANSFER", "CREDIT_CARD"
-
-    @Column(name = "payment_status", length = 20)
-    String paymentStatus; // "PENDING", "PAID", "REFUNDED"
-
-    @Column(name = "shipping_status", length = 20)
-    String shippingStatus; // "PENDING", "SHIPPED", "DELIVERED", "CANCELLED"
-
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     List<OrderDetail> orderDetailList;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "transaction_id")
+    Transaction transaction;
+
 } 

@@ -6,10 +6,12 @@ import com.exe201.group1.psgp_be.enums.Role;
 import com.exe201.group1.psgp_be.models.Account;
 import com.exe201.group1.psgp_be.models.AccountRequest;
 import com.exe201.group1.psgp_be.models.User;
+import com.exe201.group1.psgp_be.models.Wallet;
 import com.exe201.group1.psgp_be.models.Wishlist;
 import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.repositories.AccountRequestRepo;
 import com.exe201.group1.psgp_be.repositories.UserRepo;
+import com.exe201.group1.psgp_be.repositories.WalletRepo;
 import com.exe201.group1.psgp_be.repositories.WishlistRepo;
 import com.exe201.group1.psgp_be.services.AuthService;
 import com.exe201.group1.psgp_be.services.JWTService;
@@ -23,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +34,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
+    private final WalletRepo walletRepo;
     @Value("${jwt.expiration.access}")
     private long accessExpiration;
 
@@ -107,6 +111,11 @@ public class AuthServiceImpl implements AuthService {
                         .version(1)
                         .build()
         );
+
+        walletRepo.save(Wallet.builder()
+                .account(account)
+                .balance(BigDecimal.ZERO)
+                .build());
 
         // User đã được set trong Account thông qua cascade, không cần save lại
 

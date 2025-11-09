@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Status {
 
-    //----------Succulent, Assessory, Product Status---------//
+    //----------Succulent, Accessory, Product Status---------//
     AVAILABLE("Đang còn hàng"),
     OUT_OF_STOCK("Hết hàng"),
     UNAVAILABLE("Ngừng kinh doanh"),
@@ -28,8 +28,12 @@ public enum Status {
     //----------Custom Product Request Status---------//
     PENDING("Đang chờ duyệt"),
     APPROVE("Đã duyệt"),
-    REJECT("Đã từ chối")
-    ;
+    REJECT("Đã từ chối"),
+
+    //----------SHIPPING STATUS---------//
+    SHIPPING("Đang vận chuyển"),
+    DONE_SHIPPING("Vận chuyển thành công"),
+    FAILED_SHIPPING("Vận chuyển thất bại");
 
     private final String value;
 
@@ -41,5 +45,4 @@ public enum Status {
         }
         return OUT_OF_STOCK;
     }
-
 }

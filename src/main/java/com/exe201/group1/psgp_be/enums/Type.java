@@ -9,7 +9,6 @@ public enum Type {
     DEPOSIT("Nạp tiền"),
     WITHDRAW("Rút tiền"),
     PAYMENT("Thanh toán"),
-    REFUND("Hoàn tiền"),
     TRANSFER("Chuyển tiền");
 
     private final String displayName;
