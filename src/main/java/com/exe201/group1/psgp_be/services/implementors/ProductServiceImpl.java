@@ -1297,6 +1297,7 @@ public class ProductServiceImpl implements ProductService {
                         (Map<String, Object>) ((Map<String, Object>) potDetail.get("size")).get(potSize);
 
                 if (potSizeDetail == null) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
                             "Pot size '" + potSize + "' của '" + potName + "' không tồn tại", null);
                 }
