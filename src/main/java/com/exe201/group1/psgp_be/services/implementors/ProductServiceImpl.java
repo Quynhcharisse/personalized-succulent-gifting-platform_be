@@ -630,12 +630,12 @@ public class ProductServiceImpl implements ProductService {
             if (update) {
                 return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Chậu cây không tồn tại", null);
             }
-            pot.put(potData.getName(), potDetailMap);
+            pot.put(potData.getName().toLowerCase(), potDetailMap);
         } else {
             if (create) {
                 return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Chậu cây đã tồn tại", null);
             }
-            pot.replace(potData.getName(), potDetailMap);
+            pot.replace(potData.getName().toLowerCase(), potDetailMap);
         }
 
         accessoryData.replace("pot", pot);
@@ -654,7 +654,7 @@ public class ProductServiceImpl implements ProductService {
         Map<String, Object> sizeDetailMap = new HashMap<>();// pot size detail level
 
         for (CreateOrUpdateAccessoryRequest.Size size : potData.getSizes()) {
-            sizeDetailMap.put(size.getName(),
+            sizeDetailMap.put(size.getName().toLowerCase(),
                     Map.of(
                             "potHeight", size.getPotHeight(),
                             "potUpperCrossSectionArea", size.getPotUpperCrossSectionArea(),
@@ -732,7 +732,7 @@ public class ProductServiceImpl implements ProductService {
             if (create) {
                 Map<String, Object> decorDetailMap = createDecorDetail(decorationData);
 
-                accessoryData.put("decoration", Map.of(decorationData.getName(), decorDetailMap));
+                accessoryData.put("decoration", Map.of(decorationData.getName().toLowerCase(), decorDetailMap));
 
                 accessoryConfig.setValue(accessoryData);
                 appConfigRepo.save(accessoryConfig);
