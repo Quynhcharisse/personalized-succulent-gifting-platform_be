@@ -1,18 +1,33 @@
 package com.exe201.group1.psgp_be.services.implementors;
 
+import com.exe201.group1.psgp_be.dto.requests.ConfirmPaymentUrlRequest;
+import com.exe201.group1.psgp_be.dto.requests.CreateOrderRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
+import com.exe201.group1.psgp_be.enums.Status;
+import com.exe201.group1.psgp_be.enums.Type;
+import com.exe201.group1.psgp_be.models.Account;
 import com.exe201.group1.psgp_be.models.AppConfig;
 import com.exe201.group1.psgp_be.models.Order;
 import com.exe201.group1.psgp_be.models.OrderDetail;
 import com.exe201.group1.psgp_be.models.Product;
+import com.exe201.group1.psgp_be.models.ShippingAddress;
 import com.exe201.group1.psgp_be.models.Succulent;
+import com.exe201.group1.psgp_be.models.Transaction;
+import com.exe201.group1.psgp_be.models.User;
+import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
 import com.exe201.group1.psgp_be.repositories.OrderDetailRepo;
 import com.exe201.group1.psgp_be.repositories.OrderRepo;
+import com.exe201.group1.psgp_be.repositories.ProductRepo;
+import com.exe201.group1.psgp_be.repositories.ShippingAddressRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
+import com.exe201.group1.psgp_be.repositories.TransactionRepo;
+import com.exe201.group1.psgp_be.services.JWTService;
 import com.exe201.group1.psgp_be.services.OrderService;
+import com.exe201.group1.psgp_be.utils.CookieUtil;
 import com.exe201.group1.psgp_be.utils.MapUtils;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -21,6 +36,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,24 +51,112 @@ public class OrderServiceImpl implements OrderService {
     OrderDetailRepo orderDetailRepo;
     OrderRepo orderRepo;
     AppConfigRepo appConfigRepo;
+    AccountRepo accountRepo;
     SucculentRepo succulentRepo;
+    JWTService jwtService;
+    private final TransactionRepo transactionRepo;
+    private final ProductRepo productRepo;
+    private final ShippingAddressRepo shippingAddressRepo;
 
     // =========================== Order Detail ========================== \\
 
-    //TODO: no usages function
-    @Transactional
-    public ResponseEntity<ResponseObject> createOrderDetail(Product product, Order order, int quantity, long price) {
 
-        orderDetailRepo.save(
-                OrderDetail.builder()
-                        .product(product)
+    public ResponseEntity<ResponseObject> createOrder(CreateOrderRequest request, HttpServletRequest httpServletRequest) {
+
+        Account account = CookieUtil.extractAccountFromCookie(httpServletRequest, jwtService, accountRepo);
+        User buyer = account.getUser();
+        if(request.getStatus().trim().toLowerCase().equals("shipping")) {
+            Order order = Order.builder()
+                    .buyer(buyer)
+                    .orderCode(request.getOrderCode()) // hoặc sinh bằng UUID/random generator
+                    .orderDate(LocalDateTime.now())
+                    .status(Status.SHIPPING)
+                    .shippingFee(BigDecimal.valueOf(request.getShippingFee()))
+                    .orderDetailList(new ArrayList<>())
+                    .build();
+
+            BigDecimal totalAmount = BigDecimal.ZERO;
+
+            for (CreateOrderRequest.ProductData data : request.getProducts()) {
+                Product product = productRepo.findById(data.getProductId())
+                        .orElseThrow(() -> new RuntimeException("Product not found: " + data.getProductId()));
+
+                // 🔹 Tạo chi tiết đơn hàng
+                OrderDetail detail = OrderDetail.builder()
                         .order(order)
-                        .quantity(quantity)
-                        .price(price)
-                        .build()
-        );
+                        .product(product)
+                        .sizeName(data.getSize())
+                        .price(data.getPrice())
+                        .quantity(data.getQuantity())
+                        .build();
 
-        return ResponseBuilder.build(HttpStatus.OK, "Tạo order thành công", null);
+                order.getOrderDetailList().add(detail);
+
+                totalAmount = totalAmount.add(BigDecimal.valueOf(data.getPrice() * data.getQuantity()));
+            }
+            order.setTotalAmount(totalAmount);
+            order.setFinalAmount(totalAmount.add(BigDecimal.valueOf(request.getShippingFee())));
+
+            ShippingAddress shippingAddress = shippingAddressRepo.getById(request.getShippingAddressId());
+
+            order.setShippingAddress(shippingAddress);
+
+            orderRepo.save(order);
+
+            Transaction transaction = Transaction.builder()
+                    .amount(totalAmount) // set tạm, lát nữa cộng lại
+                    .type(Type.PAYMENT)      // enum PAYMENT/REFUND...
+                    .order(order)
+                    .build();
+            transactionRepo.save(transaction);
+            return ResponseBuilder.build(HttpStatus.OK, "Tạo order thành công", null);
+        }
+        if(request.getStatus().trim().toLowerCase().equals("done")) {
+
+            Order order = Order.builder()
+                    .buyer(buyer)
+                    .orderCode(request.getOrderCode()) // hoặc sinh bằng UUID/random generator
+                    .orderDate(LocalDateTime.now())
+                    .status(Status.DONE)
+                    .shippingFee(BigDecimal.ZERO)
+                    .orderDetailList(new ArrayList<>())
+                    .build();
+
+            BigDecimal totalAmount = BigDecimal.ZERO;
+
+            for (CreateOrderRequest.ProductData data : request.getProducts()) {
+                Product product = productRepo.findById(data.getProductId())
+                        .orElseThrow(() -> new RuntimeException("Product not found: " + data.getProductId()));
+
+                // 🔹 Tạo chi tiết đơn hàng
+                OrderDetail detail = OrderDetail.builder()
+                        .order(order)
+                        .product(product)
+                        .sizeName(data.getSize())
+                        .price(data.getPrice())
+                        .quantity(data.getQuantity())
+                        .build();
+
+                order.getOrderDetailList().add(detail);
+
+                totalAmount = totalAmount.add(BigDecimal.valueOf(data.getPrice() * data.getQuantity()));
+            }
+            order.setTotalAmount(totalAmount);
+            order.setFinalAmount(totalAmount);
+
+
+            orderRepo.save(order);
+
+            Transaction transaction = Transaction.builder()
+                    .amount(totalAmount) // set tạm, lát nữa cộng lại
+                    .type(Type.PAYMENT)      // enum PAYMENT/REFUND...
+                    .order(order)
+                    .build();
+            transactionRepo.save(transaction);
+            return ResponseBuilder.build(HttpStatus.OK, "Tạo order thành công", null);
+        }
+
+        return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Invalid status (shipping, done)", null);
     }
 
     private Map<String, Object> buildOrderDetailProductInfo(Product product) {

@@ -32,7 +32,7 @@ public enum Status {
 
     //----------SHIPPING STATUS---------//
     SHIPPING("Đang vận chuyển"),
-    DONE_SHIPPING("Vận chuyển thành công"),
+    DONE("Đơn hàng thành công"),
     FAILED_SHIPPING("Vận chuyển thất bại");
 
     private final String value;
