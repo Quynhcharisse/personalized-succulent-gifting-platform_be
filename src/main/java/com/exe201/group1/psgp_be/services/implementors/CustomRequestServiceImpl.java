@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,12 +63,44 @@ public class CustomRequestServiceImpl implements CustomRequestService {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, error, null);
         }
 
+        CreateCustomProductRequestRequest.Size requestSize = request.getSize();
+
+        CreateOrUpdateProductRequest.Decoration decoration = requestSize.getDecoration();
+        if (decoration == null) {
+            decoration = CreateOrUpdateProductRequest.Decoration.builder()
+                    .included(false)
+                    .details(Collections.emptyList())
+                    .build();
+        } else if (decoration.getDetails() == null) {
+            decoration.setDetails(Collections.emptyList());
+        }
+
+        CreateOrUpdateProductRequest.Pot pot = requestSize.getPot();
+        if (pot == null) {
+            pot = CreateOrUpdateProductRequest.Pot.builder()
+                    .name("")
+                    .size("")
+                    .build();
+        }
+
+        CreateOrUpdateProductRequest.Soil soil = requestSize.getSoil();
+        if (soil == null) {
+            soil = CreateOrUpdateProductRequest.Soil.builder()
+                    .name("")
+                    .massAmount(0)
+                    .build();
+        }
+
+        List<CreateOrUpdateProductRequest.Succulent> succulents = requestSize.getSucculents() != null
+                ? requestSize.getSucculents()
+                : Collections.emptyList();
+
         CreateOrUpdateProductRequest.Size customSize = CreateOrUpdateProductRequest.Size.builder()
                 .name("custom")
-                .succulents(request.getSize().getSucculents())
-                .pot(request.getSize().getPot())
-                .soil(request.getSize().getSoil())
-                .decoration(request.getSize().getDecoration())
+                .succulents(succulents)
+                .pot(pot)
+                .soil(soil)
+                .decoration(decoration)
                 .build();
 
 
@@ -94,9 +127,75 @@ public class CustomRequestServiceImpl implements CustomRequestService {
     }
 
     private String validateCreateCustomProductRequest(CreateCustomProductRequestRequest request) {
-        String error = "";
-        // TODO: validate here
-        return error;
+        if (request.getSize() == null) {
+            return "Thông tin cấu hình sản phẩm không được để trống.";
+        }
+
+        CreateCustomProductRequestRequest.Size size = request.getSize();
+
+        if (size.getSucculents() == null || size.getSucculents().isEmpty()) {
+            return "Danh sách sen đá không được để trống.";
+        }
+
+        for (CreateOrUpdateProductRequest.Succulent succulent : size.getSucculents()) {
+            if (succulent.getSizes() == null || succulent.getSizes().isEmpty()) {
+                return "Thông tin kích cỡ của sen đá không được để trống.";
+            }
+            for (CreateOrUpdateProductRequest.SucculentSize succulentSize : succulent.getSizes()) {
+                if (succulentSize.getQuantity() <= 0) {
+                    return "Số lượng của sen đá phải lớn hơn 0.";
+                }
+            }
+        }
+
+        if (size.getPot() == null) {
+            return "Thông tin chậu không được để trống.";
+        }
+        if (size.getPot().getName() == null || size.getPot().getName().trim().isEmpty()) {
+            return "Tên chậu không được để trống.";
+        }
+        if (size.getPot().getSize() == null || size.getPot().getSize().trim().isEmpty()) {
+            return "Kích cỡ chậu không được để trống.";
+        }
+
+        if (size.getSoil() == null) {
+            return "Thông tin đất không được để trống.";
+        }
+        if (size.getSoil().getName() == null || size.getSoil().getName().trim().isEmpty()) {
+            return "Tên đất không được để trống.";
+        }
+        if (size.getSoil().getMassAmount() <= 0) {
+            return "Khối lượng đất phải lớn hơn 0.";
+        }
+
+        CreateOrUpdateProductRequest.Decoration decoration = size.getDecoration();
+        if (decoration != null && decoration.isIncluded()) {
+            if (decoration.getDetails() == null || decoration.getDetails().isEmpty()) {
+                return "Nếu trang trí được chọn, danh sách chi tiết không được để trống.";
+            }
+            for (CreateOrUpdateProductRequest.DecorationDetail detail : decoration.getDetails()) {
+                if (detail.getName() == null || detail.getName().trim().isEmpty()) {
+                    return "Tên vật trang trí không được để trống.";
+                }
+                if (detail.getQuantity() <= 0) {
+                    return "Số lượng vật trang trí phải lớn hơn 0.";
+                }
+            }
+        }
+
+        if (request.getImages() == null || request.getImages().isEmpty()) {
+            return "Hình ảnh tham khảo không được để trống.";
+        }
+
+        if (request.getOccasion() == null || request.getOccasion().trim().isEmpty()) {
+            return "Dịp đặc biệt không được để trống.";
+        }
+
+        if (request.getOccasion().length() > 100) {
+            return "Dịp đặc biệt không được vượt quá 100 ký tự.";
+        }
+
+        return "";
     }
 
     private Map<String, Map<String, Object>> buildSizeData(CreateOrUpdateProductRequest request) {
@@ -234,10 +333,17 @@ public class CustomRequestServiceImpl implements CustomRequestService {
                 productName += " - " + customProductRequest.getOccasion();
             }
             
+            String description;
+            if (customProductRequest.getOccasion() != null && !customProductRequest.getOccasion().trim().isEmpty()) {
+                description = "Sản phẩm custom cho dịp: " + customProductRequest.getOccasion();
+            } else {
+                description = "Sản phẩm custom";
+            }
+
             Product product = productRepo.save(
                     Product.builder()
                             .name(productName)
-                            .description("Sản phẩm custom cho dịp: " + (customProductRequest.getOccasion() != null && !customProductRequest.getOccasion().trim().isEmpty() ? customProductRequest.getOccasion() : "Sản phẩm custom"))
+                            .description(description)
                             .size(customDataForProduct)
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())

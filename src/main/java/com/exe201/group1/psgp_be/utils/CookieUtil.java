@@ -21,11 +21,23 @@ public class CookieUtil {
         return null;
     }
 
-    public static void createCookies(HttpServletResponse response, String accessValue, String refreshValue, long accessExp, long refreshExp) {
-        String accessCookie = String.format("access=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=None; Secure", accessValue, accessExp / 1000);
+    public static void createCookies(HttpServletRequest request, HttpServletResponse response, String accessValue, String refreshValue, long accessExp, long refreshExp) {
+
+        String accessCookie = "";
+
+        String refreshCookie = "";
+
+        if(request.isSecure()){
+            accessCookie = String.format("access=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=None; Secure", accessValue, accessExp / 1000);
+
+            refreshCookie = String.format("refresh=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=None; Secure", refreshValue, refreshExp / 1000);
+        }else {
+            accessCookie = String.format("access=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax", accessValue, accessExp / 1000);
+
+            refreshCookie = String.format("refresh=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax", refreshValue, refreshExp / 1000);
+        }
         response.addHeader("Set-Cookie", accessCookie);
 
-        String refreshCookie = String.format("refresh=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=None; Secure", refreshValue, refreshExp / 1000);
         response.addHeader("Set-Cookie", refreshCookie);
     }
 
