@@ -4,7 +4,6 @@ import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
 import com.exe201.group1.psgp_be.dto.requests.CheckAvailableProductsBySizeRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreatePaymentUrlRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
@@ -86,7 +85,7 @@ public class ProductController {
     }
 
     @PutMapping("/check/availability/products")
-    public ResponseEntity<ResponseObject> checkAvailableProductsBySize(@RequestBody CheckAvailableProductsBySizeRequest request){
+    public ResponseEntity<ResponseObject> checkAvailableProductsBySize(@RequestBody CheckAvailableProductsBySizeRequest request) {
         return productService.checkAvailableProductsBySize(request);
     }
 
