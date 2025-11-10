@@ -1279,6 +1279,7 @@ public class ProductServiceImpl implements ProductService {
                 Map<String, Object> potDetail = (Map<String, Object>) pot.get(potName);
 
                 if (potDetail == null) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
                             "Pot '" + potName + "' không tồn tại trong hệ thống", null);
                 }
