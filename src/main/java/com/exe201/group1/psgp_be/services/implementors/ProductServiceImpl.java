@@ -143,16 +143,6 @@ public class ProductServiceImpl implements ProductService {
                         .createdAt(LocalDateTime.now())
                         .updatedAt(LocalDateTime.now())
                         .build());
-//        {
-//                "small": {
-//                     "min": 0.1,
-//                     "max": 0.9,
-//                     "price": 1000,
-//                     "quantity": 12,
-//                     "status": "AVAILABLE"
-//                }
-//        }
-
         Map<String, Object> sizeRangeMap = new HashMap<>();
 
         for (CreateSucculentRequest.Size size : request.getSizeList()) {
@@ -982,7 +972,7 @@ public class ProductServiceImpl implements ProductService {
         for (Integer id : succulentIDs) {
             Succulent succulent = succulentRepo.findById(id).orElse(null);
             if (succulent == null) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();// make transaction rollback
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();// make transaction rollback ==> cưỡng chế transaction
                 return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Sen đá với id " + id + " không tồn tại", null);
             }
 
@@ -1233,7 +1223,7 @@ public class ProductServiceImpl implements ProductService {
             Optional<Product> product = productRepo.findById(productData.getProductId());
 
             if(!product.isPresent()) {
-                return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found or be deleted", null);
+                return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found", null);
             }
 
             if(productData.getQuantity() > getProductAvailableQtyBySize((Map<String, Object>) product.get().getSize(), productData.getSize())){
