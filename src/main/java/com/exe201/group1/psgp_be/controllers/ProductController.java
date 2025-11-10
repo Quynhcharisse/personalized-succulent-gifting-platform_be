@@ -74,6 +74,11 @@ public class ProductController {
         return productService.viewProduct();
     }
 
+    @GetMapping("/list/data")
+    public ResponseEntity<ResponseObject> viewProductDataList() {
+        return productService.viewProductDataList();
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> deactivateProduct(@PathVariable int id) {

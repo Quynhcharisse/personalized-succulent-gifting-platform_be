@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
@@ -13,15 +14,22 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateOrderRequest {
+    List<CreateOrderRequest.ProductData> products;
+    long orderCode;
+    long shippingFee;
+    boolean success;
+    String status;
+    Integer shippingAddressId;
 
-    BigDecimal shippingFee;
-    BigDecimal discountAmount;
-    BigDecimal finalAmount;
-
-    String shippingAddress;
-    String shippingPhone;
-    String shippingNote;
-    String paymentMethod;
-
-    List<Integer> productIds;
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class ProductData {
+        Integer productId;
+        String size;
+        long price;
+        Integer quantity;
+    }
 }

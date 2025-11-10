@@ -9,11 +9,13 @@ import com.exe201.group1.psgp_be.models.Account;
 import com.exe201.group1.psgp_be.models.Order;
 import com.exe201.group1.psgp_be.models.OrderDetail;
 import com.exe201.group1.psgp_be.models.Product;
+import com.exe201.group1.psgp_be.models.ShippingAddress;
 import com.exe201.group1.psgp_be.models.Transaction;
 import com.exe201.group1.psgp_be.models.User;
 import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.repositories.OrderRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
+import com.exe201.group1.psgp_be.repositories.ShippingAddressRepo;
 import com.exe201.group1.psgp_be.repositories.TransactionRepo;
 import com.exe201.group1.psgp_be.services.JWTService;
 import com.exe201.group1.psgp_be.services.PayOsService;
@@ -44,6 +46,7 @@ import java.util.Map;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PayOsServiceImpl implements PayOsService {
 
+    private final ShippingAddressRepo shippingAddressRepo;
     @Value("${client.return.url}")
     String clientReturnUrl;
 
@@ -145,6 +148,10 @@ public class PayOsServiceImpl implements PayOsService {
             order.setTotalAmount(totalAmount);
             order.setFinalAmount(totalAmount.add(BigDecimal.valueOf(request.getShippingFee())));
 
+            ShippingAddress shippingAddress = shippingAddressRepo.getById(request.getShippingAddressId());
+
+            order.setShippingAddress(shippingAddress);
+
             orderRepo.save(order);
 
             Transaction transaction = Transaction.builder()
@@ -157,18 +164,14 @@ public class PayOsServiceImpl implements PayOsService {
 
         }
 
-        productService.restoreQuantityOfFailedPayment(request.getProducts());
+      productService.restoreQuantityOfFailedPayment(request.getProducts());
+
+
 
         return ResponseBuilder.build(HttpStatus.OK, "Ok", null);
     }
 
-    private Map<String, Object> buildProductData(CreatePaymentUrlRequest.ProductData productData) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("productId", productData.getProductId());
-        result.put("size", productData.getSize());
-        result.put("price", productData.getPrice());
-        return result;
-    }
+
 
 
 

@@ -20,6 +20,7 @@ public class ConfirmPaymentUrlRequest {
     long orderCode;
     long shippingFee;
     boolean success;
+    Integer shippingAddressId;
 
     @Data
     @AllArgsConstructor

@@ -5,7 +5,6 @@ import com.exe201.group1.psgp_be.dto.requests.CheckAvailableProductsBySizeReques
 import com.exe201.group1.psgp_be.dto.requests.ConfirmPaymentUrlRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomProductRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
-import com.exe201.group1.psgp_be.dto.requests.CreatePaymentUrlRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateRevisionRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
@@ -43,13 +42,15 @@ public interface ProductService {
 
      ResponseEntity<ResponseObject> checkAvailableProductsBySize(CheckAvailableProductsBySizeRequest request);
 
-    ResponseEntity<ResponseObject> restoreQuantityOfFailedPayment(List<ConfirmPaymentUrlRequest.ProductData> productDataList);
+    void restoreQuantityOfFailedPayment(List<ConfirmPaymentUrlRequest.ProductData> productDataList);
 
     ResponseEntity<ResponseObject> viewProduct();
 
     ResponseEntity<ResponseObject> deactivateProduct(int id);
 
     List<Map<String, Object>> buildProductSizeResponse(Map<String, Object> size);
+
+    ResponseEntity<ResponseObject> viewProductDataList();
     //--------------------------------------------WISHLIST--------------------------------------------//
     ResponseEntity<ResponseObject> addItemToWishList(AddWishListItemRequest item);
 

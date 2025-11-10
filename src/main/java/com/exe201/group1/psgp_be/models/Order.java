@@ -64,6 +64,10 @@ public class Order {
 
     // =========================== THÔNG TIN GIAO HÀNG ========================== \\
 
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "shippingAddress_id")
+    ShippingAddress shippingAddress;
+
     @Column(name = "shipping_fee", precision = 10, scale = 2)
     BigDecimal shippingFee;
 
