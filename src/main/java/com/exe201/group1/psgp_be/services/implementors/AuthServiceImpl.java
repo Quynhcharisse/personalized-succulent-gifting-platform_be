@@ -52,7 +52,7 @@ public class AuthServiceImpl implements AuthService {
     private final JWTService jwtService;
 
     @Override
-    public ResponseEntity<ResponseObject> login(LoginRequest request, HttpServletResponse response) {
+    public ResponseEntity<ResponseObject> login(LoginRequest request, HttpServletResponse response, HttpServletRequest httpRequest) {
         Account account = accountRepo.findByEmail(request.getEmail()).orElse(null);
         AccountRequest accountRequest = accountRequestRepo.findByEmail(request.getEmail()).orElse(null);
 
@@ -65,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (account == null) {
-            return register(request, response);
+            return register(request, response, httpRequest);
         }
 
         if (!account.isActive()) {
@@ -75,13 +75,13 @@ public class AuthServiceImpl implements AuthService {
         String access = jwtService.generateAccessToken(account);
         String refresh = jwtService.generateRefreshToken(account);
 
-        CookieUtil.createCookies(response, access, refresh, accessExpiration, refreshExpiration);
+        CookieUtil.createCookies(httpRequest, response, access, refresh, accessExpiration, refreshExpiration);
 
         return ResponseBuilder.build(HttpStatus.OK, "Đăng nhập thành công", buildAccountData(account));
     }
 
 
-    private ResponseEntity<ResponseObject> register(LoginRequest request, HttpServletResponse response) {
+    private ResponseEntity<ResponseObject> register(LoginRequest request, HttpServletResponse response, HttpServletRequest httpRequest) {
         // Create Account
         Account account = accountRepo.save(
                 Account.builder()
@@ -122,7 +122,7 @@ public class AuthServiceImpl implements AuthService {
         String access = jwtService.generateAccessToken(account);
         String refresh = jwtService.generateRefreshToken(account);
 
-        CookieUtil.createCookies(response, access, refresh, accessExpiration, refreshExpiration);
+        CookieUtil.createCookies(httpRequest, response, access, refresh, accessExpiration, refreshExpiration);
 
         return ResponseBuilder.build(HttpStatus.OK, "Đăng nhập thành công", buildAccountData(account));
     }
@@ -167,7 +167,7 @@ public class AuthServiceImpl implements AuthService {
 
         String newRefresh = jwtService.generateRefreshToken(currentAcc);
 
-        CookieUtil.createCookies(response, newAccess, newRefresh, accessExpiration, refreshExpiration);
+        CookieUtil.createCookies(request, response, newAccess, newRefresh, accessExpiration, refreshExpiration);
 
         return ResponseBuilder.build(HttpStatus.OK, "Làm mới access token thành công", null);
     }
