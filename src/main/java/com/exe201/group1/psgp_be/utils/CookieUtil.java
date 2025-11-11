@@ -31,7 +31,7 @@ public class CookieUtil {
             accessCookie = String.format("access=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=None; Secure", accessValue, accessExp / 1000);
 
             refreshCookie = String.format("refresh=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=None; Secure", refreshValue, refreshExp / 1000);
-        }else {
+        } else {
             accessCookie = String.format("access=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax", accessValue, accessExp / 1000);
 
             refreshCookie = String.format("refresh=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Lax", refreshValue, refreshExp / 1000);
