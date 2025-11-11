@@ -119,7 +119,7 @@ public class PayOsServiceImpl implements PayOsService {
 
             Order order = Order.builder()
                     .buyer(buyer)
-                    .orderCode(request.getOrderCode()) // hoặc sinh bằng UUID/random generator
+                    .orderCode(request.getOrderCode())
                     .orderDate(LocalDateTime.now())
                     .status(Status.SHIPPING)
                     .shippingFee(BigDecimal.valueOf(request.getShippingFee()))

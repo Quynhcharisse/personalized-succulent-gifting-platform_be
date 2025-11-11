@@ -111,11 +111,12 @@ public class OrderServiceImpl implements OrderService {
             transactionRepo.save(transaction);
             return ResponseBuilder.build(HttpStatus.OK, "Tạo order thành công", null);
         }
+
         if(request.getStatus().trim().toLowerCase().equals("done")) {
 
             Order order = Order.builder()
                     .buyer(buyer)
-                    .orderCode(request.getOrderCode()) // hoặc sinh bằng UUID/random generator
+                    .orderCode(request.getOrderCode())
                     .orderDate(LocalDateTime.now())
                     .status(Status.DONE)
                     .shippingFee(BigDecimal.ZERO)
