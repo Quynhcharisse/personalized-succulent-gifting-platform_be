@@ -33,7 +33,8 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private boolean checkIsPublicOrEndPoint(String uri) {
         List<String> publicEndPoint = List.of(
                 "/api/v1/auth",
-                "/api/v1/product/list");
+                "/api/v1/product/list",
+                "/api/v1/custom/custom-ai");
 
         for (String endpoint : publicEndPoint) {
             if (uri.startsWith(endpoint)) {
