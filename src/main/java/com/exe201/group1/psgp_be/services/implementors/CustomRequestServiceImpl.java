@@ -247,9 +247,10 @@ public class CustomRequestServiceImpl implements CustomRequestService {
                     .filter(customRequest -> Objects.equals(customRequest.getBuyer().getId(), account.getUser().getId()))
                     .toList();
         }
-
-        List<Map<String, Object>> response = buildCustomProductDataOnly(requests);
-        return ResponseBuilder.build(HttpStatus.OK, "", response);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("succulents", productService.viewSucculentList().getBody().getData());
+        payload.put("accessories", productService.getAccessories("all").getBody().getData());
+        return ResponseBuilder.build(HttpStatus.OK, "", payload);
     }
 
     private List<Map<String, Object>> buildCustomProductDataOnly(List<CustomProductRequest> requests) {
