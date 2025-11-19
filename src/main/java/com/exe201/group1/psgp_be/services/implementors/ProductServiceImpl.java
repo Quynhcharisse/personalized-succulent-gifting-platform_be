@@ -50,6 +50,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -57,6 +58,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
@@ -71,6 +73,23 @@ public class ProductServiceImpl implements ProductService {
     WishListItemRepo wishListItemRepo;
     AppConfigRepo appConfigRepo;
     ProductSucculentRepo productSucculentRepo;
+
+    private static class AccessoryInventoryCache {
+        private final Map<String, Object> rawConfig;
+        private final Map<String, Map<String, Object>> potMap;
+        private final Map<String, Map<String, Object>> soilMap;
+        private final Map<String, Map<String, Object>> decorationMap;
+
+        private AccessoryInventoryCache(Map<String, Object> rawConfig,
+                                        Map<String, Map<String, Object>> potMap,
+                                        Map<String, Map<String, Object>> soilMap,
+                                        Map<String, Map<String, Object>> decorationMap) {
+            this.rawConfig = rawConfig;
+            this.potMap = potMap;
+            this.soilMap = soilMap;
+            this.decorationMap = decorationMap;
+        }
+    }
 
     // =========================== Succulent ========================== \\
     @Override
@@ -802,6 +821,56 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.OK, "", response);
     }
 
+    private AccessoryInventoryCache loadAccessoryInventoryCache() {
+        AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
+        if (accessoryConfig == null || accessoryConfig.getValue() == null) {
+            return new AccessoryInventoryCache(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
+        }
+        Map<String, Object> valueJson = (Map<String, Object>) accessoryConfig.getValue();
+
+        Map<String, Map<String, Object>> potMap = buildPotResponse(valueJson).stream()
+                .collect(Collectors.toMap(p -> p.get("name").toString().toLowerCase(), Function.identity()));
+        Map<String, Map<String, Object>> soilMap = buildSoilResponse(valueJson).stream()
+                .collect(Collectors.toMap(s -> s.get("name").toString().toLowerCase(), Function.identity()));
+        Map<String, Map<String, Object>> decorationMap = buildDecorationResponse(valueJson).stream()
+                .collect(Collectors.toMap(d -> d.get("name").toString().toLowerCase(), Function.identity()));
+
+        return new AccessoryInventoryCache(valueJson, potMap, soilMap, decorationMap);
+    }
+
+    private Map<Integer, Succulent> buildSucculentCacheFromProducts(List<Product> products) {
+        if (products == null || products.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Set<Integer> succulentIds = new HashSet<>();
+        for (Product product : products) {
+            if (product.getSize() == null) {
+                continue;
+            }
+            Map<String, Object> sizeMap = (Map<String, Object>) product.getSize();
+            for (Object sizeValue : sizeMap.values()) {
+                if (!(sizeValue instanceof Map<?, ?> sizeDetail)) {
+                    continue;
+                }
+                List<Map<String, Object>> succulentList = (List<Map<String, Object>>) ((Map<String, Object>) sizeDetail).get("succulents");
+                if (succulentList == null) {
+                    continue;
+                }
+                for (Map<String, Object> succulent : succulentList) {
+                    Object idObj = succulent.get("id");
+                    if (idObj instanceof Integer id) {
+                        succulentIds.add(id);
+                    }
+                }
+            }
+        }
+        if (succulentIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return succulentRepo.findAllById(succulentIds).stream()
+                .collect(Collectors.toMap(Succulent::getId, Function.identity()));
+    }
+
     private List<Map<String, Object>> buildPotResponse(Map<String, Object> value) {
         List<Map<String, Object>> potResponse = new ArrayList<>();
 
@@ -1445,65 +1514,211 @@ public class ProductServiceImpl implements ProductService {
 
 
     private int getProductAvailableQtyBySize(Map<String, Object> productSizeData, String key) {
-        int succulentAvailableQty = 0;
-        int potAvailableQty = 0;
-        int soilAvailableQty = 0;
-        int decorationAvailableQty = 0;
+        return getProductAvailableQtyBySize(productSizeData, key, null, null);
+    }
 
-        AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
-        assert accessoryConfig != null;
-
-        Object valueJson = accessoryConfig.getValue();
-
-        List<Map<String, Object>> potConfig = buildPotResponse((Map<String, Object>) valueJson);
-        List<Map<String, Object>> soilConfig = buildSoilResponse((Map<String, Object>) valueJson);
-        List<Map<String, Object>> decorationConfig = buildDecorationResponse((Map<String, Object>) valueJson);
-
-        Map<String, Object> potData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("pot");
-        potAvailableQty = checkPotAvailable(potData.get("name").toString(), potData.get("size").toString(), potConfig);
-
-        Map<String, Object> soilData = (Map<String, Object>) ((Map<Object, Object>) productSizeData.get(key)).get("soil");
-        soilAvailableQty = checkSoilAvailable(soilData.get("name").toString(), (double) soilData.get("massAmount"), soilConfig);
-
-        Map<String, Object> productData = (Map<String, Object>) productSizeData.get(key);
-        Map<String, Object> decorationData = (Map<String, Object>) productData.get("decoration");
-
-        // Convert detail (Map) to details (List)
-        List<Map<String, Object>> details = null;
-        if (decorationData.get("details") instanceof List) {
-            details = (List<Map<String, Object>>) decorationData.get("details");
-        } else if (decorationData.get("detail") instanceof Map) {
-            Map<String, Object> detailMap = (Map<String, Object>) decorationData.get("detail");
-            details = detailMap.entrySet().stream()
-                    .map(entry -> Map.of("name", entry.getKey(), "quantity", entry.getValue()))
-                    .toList();
+    private int getProductAvailableQtyBySize(Map<String, Object> productSizeData,
+                                             String key,
+                                             AccessoryInventoryCache accessoryCache,
+                                             Map<Integer, Succulent> succulentCache) {
+        if (productSizeData == null || key == null) {
+            return 0;
         }
 
-        List<Map<String, Object>> succulentData = (List<Map<String, Object>>) ((Map<Object, Object>)
-                productSizeData.get(key)).get("succulents");
-        succulentAvailableQty = -1;
-        for (Map<String, Object> succulent : succulentData) {
-            Map<String, Object> sizeData = MapUtils.getMapFromObject(succulent, "size");
-            int succulentSizeMin = getAvailableQtyBySucculent(sizeData, succulent);
-            succulentAvailableQty = succulentAvailableQty == -1 ? succulentSizeMin : Math.min(succulentAvailableQty,
-                    succulentSizeMin);
+        Map<String, Object> sizeData = (Map<String, Object>) productSizeData.get(key);
+        if (sizeData == null) {
+            return 0;
         }
 
-        decorationAvailableQty = checkDecorationAvailable(Boolean.parseBoolean(decorationData.get("included").toString()),
-                details, decorationConfig,
-                soilAvailableQty + potAvailableQty + succulentAvailableQty);
+        Map<String, Object> potData = (Map<String, Object>) sizeData.get("pot");
+        Map<String, Object> soilData = (Map<String, Object>) sizeData.get("soil");
+        Map<String, Object> decorationData = (Map<String, Object>) sizeData.get("decoration");
+        List<Map<String, Object>> succulentData = (List<Map<String, Object>>) sizeData.get("succulents");
 
-        return Math.min((Math.min(potAvailableQty, soilAvailableQty)), (Math.min(decorationAvailableQty, succulentAvailableQty)));
+        AccessoryInventoryCache cache = accessoryCache != null ? accessoryCache : loadAccessoryInventoryCache();
+
+        int potAvailableQty = cache == null || cache.potMap.isEmpty()
+                ? checkPotAvailableFromConfig(potData, cache != null ? cache.rawConfig : Collections.emptyMap())
+                : getPotAvailableFromCache(potData, cache);
+
+        int soilAvailableQty = cache == null || cache.soilMap.isEmpty()
+                ? checkSoilAvailableFromConfig(soilData, cache != null ? cache.rawConfig : Collections.emptyMap())
+                : getSoilAvailableFromCache(soilData, cache);
+
+        int succulentAvailableQty = calculateSucculentAvailableQty(succulentData, succulentCache);
+
+        int decorationAvailableQty = soilAvailableQty + potAvailableQty + succulentAvailableQty;
+        if (decorationData != null) {
+            List<Map<String, Object>> details = extractDecorationDetails(decorationData);
+            decorationAvailableQty = cache == null || cache.decorationMap.isEmpty()
+                    ? checkDecorationAvailable(
+                    Boolean.parseBoolean(String.valueOf(decorationData.get("included"))),
+                    details,
+                    cache != null ? buildDecorationResponse(cache.rawConfig) : Collections.emptyList(),
+                    soilAvailableQty + potAvailableQty + succulentAvailableQty)
+                    : getDecorationAvailableFromCache(decorationData, details, cache,
+                    soilAvailableQty + potAvailableQty + succulentAvailableQty);
+        }
+
+        List<Integer> capacities = Arrays.asList(potAvailableQty, soilAvailableQty, succulentAvailableQty, decorationAvailableQty);
+        return capacities.stream()
+                .filter(value -> value >= 0)
+                .min(Integer::compareTo)
+                .orElse(0);
     }
 
     private int getAvailableQtyBySucculent(Map<String, Object> sizeData, Map<String, Object> succulent) {
-        //TODO: đây là hàm lấy ra số lượng product có thể đc tạo, dựa trên loại sen đá
+        return getAvailableQtyBySucculent(sizeData, succulent, null);
+    }
+
+    private int getAvailableQtyBySucculent(Map<String, Object> sizeData,
+                                           Map<String, Object> succulent,
+                                           Map<Integer, Succulent> succulentCache) {
         int min = -1;
+        if (sizeData == null || sizeData.isEmpty()) {
+            return 0;
+        }
         for (String sizeKey : sizeData.keySet()) {
-            int succulentAvailable = checkSucculentAvailable((int) succulent.get("id"), sizeKey, (int) sizeData.get(sizeKey));
+            int succulentAvailable = checkSucculentAvailable((int) succulent.get("id"), sizeKey,
+                    (int) sizeData.get(sizeKey), succulentCache);
             min = (min == -1) ? succulentAvailable : Math.min(min, succulentAvailable);
         }
         return min;
+    }
+
+    private int calculateSucculentAvailableQty(List<Map<String, Object>> succulentData,
+                                               Map<Integer, Succulent> succulentCache) {
+        if (succulentData == null || succulentData.isEmpty()) {
+            return 0;
+        }
+        int availableQty = -1;
+        for (Map<String, Object> succulent : succulentData) {
+            Map<String, Object> sizeMap = MapUtils.getMapFromObject(succulent, "size");
+            int succulentSizeMin = getAvailableQtyBySucculent(sizeMap, succulent, succulentCache);
+            availableQty = availableQty == -1 ? succulentSizeMin : Math.min(availableQty, succulentSizeMin);
+        }
+        return Math.max(availableQty, 0);
+    }
+
+    private List<Map<String, Object>> extractDecorationDetails(Map<String, Object> decorationData) {
+        if (decorationData == null) {
+            return null;
+        }
+        if (decorationData.get("details") instanceof List<?> detailsList) {
+            return (List<Map<String, Object>>) detailsList;
+        }
+        Map<String, Object> detailMap = MapUtils.checkIfObjectIsMap(decorationData.get("detail"));
+        if (detailMap == null || detailMap.isEmpty()) {
+            return null;
+        }
+        return detailMap.entrySet().stream()
+                .map(entry -> {
+                    Object value = entry.getValue();
+                    if (!(value instanceof Number number)) {
+                        return null;
+                    }
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("name", entry.getKey());
+                    map.put("quantity", number.intValue());
+                    return map;
+                })
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private int getPotAvailableFromCache(Map<String, Object> potData, AccessoryInventoryCache cache) {
+        if (cache == null || potData == null) {
+            return 0;
+        }
+        Map<String, Object> pot = cache.potMap.getOrDefault(potData.get("name").toString().toLowerCase(), null);
+        if (pot == null) {
+            return 0;
+        }
+        List<Map<String, Object>> sizeList = (List<Map<String, Object>>) pot.get("size");
+        if (sizeList == null) {
+            return 0;
+        }
+        return sizeList.stream()
+                .filter(size -> size.get("name").toString().equalsIgnoreCase(potData.get("size").toString()))
+                .findFirst()
+                .map(size -> ((Number) size.get("availableQty")).intValue())
+                .orElse(0);
+    }
+
+    private int getSoilAvailableFromCache(Map<String, Object> soilData, AccessoryInventoryCache cache) {
+        if (cache == null || soilData == null) {
+            return 0;
+        }
+        Map<String, Object> soil = cache.soilMap.getOrDefault(soilData.get("name").toString().toLowerCase(), null);
+        if (soil == null) {
+            return 0;
+        }
+        double availableMassValue = ((Number) soil.get("availableMassValue")).doubleValue();
+        double massAmount = ((Number) soilData.get("massAmount")).doubleValue();
+        if (massAmount <= 0) {
+            return 0;
+        }
+        return (int) (availableMassValue / massAmount);
+    }
+
+    private int getDecorationAvailableFromCache(Map<String, Object> decorationData,
+                                                List<Map<String, Object>> details,
+                                                AccessoryInventoryCache cache,
+                                                int initValue) {
+        if (cache == null || decorationData == null) {
+            return initValue;
+        }
+        if (!Boolean.TRUE.equals(decorationData.get("included"))) {
+            return initValue;
+        }
+        if (details == null || details.isEmpty()) {
+            return initValue;
+        }
+        int min = -1;
+        for (Map<String, Object> detailItem : details) {
+            String name = detailItem.get("name").toString().toLowerCase();
+            Object quantityObj = detailItem.get("quantity");
+            if (!(quantityObj instanceof Number number)) {
+                return 0;
+            }
+            int requiredQty = number.intValue();
+            Map<String, Object> configItem = cache.decorationMap.get(name);
+            if (configItem == null) {
+                return 0;
+            }
+            int availableQty = ((Number) configItem.get("availableQty")).intValue();
+            if (requiredQty <= 0) {
+                continue;
+            }
+            if (requiredQty > availableQty) {
+                return 0;
+            }
+            int possible = availableQty / requiredQty;
+            min = min == -1 ? possible : Math.min(min, possible);
+        }
+        return min == -1 ? initValue : min;
+    }
+
+    private int checkPotAvailableFromConfig(Map<String, Object> potData, Map<String, Object> rawConfig) {
+        if (potData == null || rawConfig == null || rawConfig.isEmpty()) {
+            return 0;
+        }
+        return checkPotAvailable(
+                potData.get("name").toString(),
+                potData.get("size").toString(),
+                buildPotResponse(rawConfig)
+        );
+    }
+
+    private int checkSoilAvailableFromConfig(Map<String, Object> soilData, Map<String, Object> rawConfig) {
+        if (soilData == null || rawConfig == null || rawConfig.isEmpty()) {
+            return 0;
+        }
+        return checkSoilAvailable(
+                soilData.get("name").toString(),
+                ((Number) soilData.get("massAmount")).doubleValue(),
+                buildSoilResponse(rawConfig)
+        );
     }
 
     private int checkPotAvailable(String name, String size, List<Map<String, Object>> potConfig) {
@@ -1552,7 +1767,14 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private int checkSucculentAvailable(int id, String size, int qty) {
-        Succulent succulent = succulentRepo.findById(id).orElse(null);
+        return checkSucculentAvailable(id, size, qty, null);
+    }
+
+    private int checkSucculentAvailable(int id, String size, int qty, Map<Integer, Succulent> succulentCache) {
+        Succulent succulent = succulentCache != null ? succulentCache.get(id) : null;
+        if (succulent == null) {
+            succulent = succulentRepo.findById(id).orElse(null);
+        }
         if (succulent == null || succulent.getSize() == null) {
             return 0;
         }
@@ -1570,7 +1792,12 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ResponseEntity<ResponseObject> viewProduct() {
-        List<Map<String, Object>> data = productRepo.findAll().stream()
+        List<Product> products = productRepo.findAll();
+
+        AccessoryInventoryCache accessoryCache = loadAccessoryInventoryCache();
+        Map<Integer, Succulent> succulentCache = buildSucculentCacheFromProducts(products);
+
+        List<Map<String, Object>> data = products.stream()
                 .filter(Product::isPrivacy)
                 .map(
                         product -> {
@@ -1582,7 +1809,7 @@ public class ProductServiceImpl implements ProductService {
                             map.put("updateAt", product.getUpdatedAt());
                             map.put("status", product.getStatus().getValue().toLowerCase());
                             map.put("images", buildProductImageResponse(product.getProductImages()));
-                            map.put("sizes", buildProductSizeResponse((Map<String, Object>) product.getSize()));
+                            map.put("sizes", buildProductSizeResponse((Map<String, Object>) product.getSize(), accessoryCache, succulentCache));
                             return map;
                         }
                 ).toList();
@@ -1602,49 +1829,50 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<Map<String, Object>> buildProductSizeResponse(Map<String, Object> size) {
+        AccessoryInventoryCache accessoryCache = loadAccessoryInventoryCache();
+        return buildProductSizeResponse(size, accessoryCache, null);
+    }
+
+    private List<Map<String, Object>> buildProductSizeResponse(Map<String, Object> size,
+                                                               AccessoryInventoryCache accessoryCache,
+                                                               Map<Integer, Succulent> succulentCache) {
         if (size == null || size.isEmpty()) {
             return Collections.emptyList();
         }
 
-        AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
-        if (accessoryConfig == null) {
-            return Collections.emptyList();
-        }
-        Map<String, Object> accessoryConfigData = (Map<String, Object>) accessoryConfig.getValue();
+        AccessoryInventoryCache cache = accessoryCache != null ? accessoryCache
+                : loadAccessoryInventoryCache();
 
         return size.keySet().stream()
-                .filter(key -> !key.startsWith("v_")) // Filter out version keys (v_1, v_2, etc.)
-                .map(
-                        key -> {
-                            Map<String, Object> sizeData = (Map<String, Object>) size.get(key);
+                .filter(key -> !key.startsWith("v_"))
+                .map(key -> {
+                    Map<String, Object> sizeData = (Map<String, Object>) size.get(key);
 
-                            List<Map<String, Object>> succulentData = (List<Map<String, Object>>) sizeData.get("succulents");
-                            Map<String, Object> potData = (Map<String, Object>) sizeData.get("pot");
-                            Map<String, Object> soilData = (Map<String, Object>) sizeData.get("soil");
-                            Map<String, Object> decorationData = (Map<String, Object>) sizeData.get("decoration");
+                    List<Map<String, Object>> succulentData = (List<Map<String, Object>>) sizeData.get("succulents");
+                    Map<String, Object> potData = (Map<String, Object>) sizeData.get("pot");
+                    Map<String, Object> soilData = (Map<String, Object>) sizeData.get("soil");
+                    Map<String, Object> decorationData = (Map<String, Object>) sizeData.get("decoration");
 
-                            Map<String, Object> map = new HashMap<>();
-                            map.put("name", key);
-                            map.put("quantity", getProductAvailableQtyBySize(size, key));
-                            map.put("succulents", buildProductSucculentListResponse(succulentData));
-                            map.put("pot", buildProductPotResponse(accessoryConfigData, potData));
-                            map.put("soil", buildProductSoilResponse(accessoryConfigData, soilData));
-                            map.put("decorations", buildProductDecorationListResponse(accessoryConfigData, decorationData)
-                            );
-                            return map;
-                        }
-                ).toList();
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("name", key);
+                    map.put("quantity", getProductAvailableQtyBySize(size, key, cache, succulentCache));
+                    map.put("succulents", buildProductSucculentListResponse(succulentData, succulentCache));
+                    map.put("pot", buildProductPotResponse(cache, potData));
+                    map.put("soil", buildProductSoilResponse(cache, soilData));
+                    map.put("decorations", buildProductDecorationListResponse(cache, decorationData));
+                    return map;
+                })
+                .toList();
     }
 
     @Override
     public ResponseEntity<ResponseObject> viewProductDataList() {
         List<Product> products = productRepo.findAll();
 
-        AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
-        assert accessoryConfig != null;
+        AccessoryInventoryCache accessoryCache = loadAccessoryInventoryCache();
+        Map<Integer, Succulent> succulentCache = buildSucculentCacheFromProducts(products);
 
-        Map<String, Object> accessoryData = (Map<String, Object>) accessoryConfig.getValue();
-
+        Map<String, Object> accessoryData = accessoryCache.rawConfig;
         List<Map<String, Object>> result = new ArrayList<>();
 
         for (Product product : products) {
@@ -1656,13 +1884,13 @@ public class ProductServiceImpl implements ProductService {
 
                 Map<String, Object> sizeDetail = (Map<String, Object>) sizeMap.get(sizeKey);
 
-                long totalPrice = calculateTotalPriceForSize(accessoryData, sizeDetail);
+                long totalPrice = calculateTotalPriceForSize(accessoryData, sizeDetail, succulentCache);
 
                 Map<String, Object> item = new HashMap<>();
                 item.put("nameProduct", product.getName());
                 item.put("nameSize", sizeKey);
                 item.put("price", totalPrice);
-                item.put("quantityAva", getProductAvailableQtyBySize((Map<String, Object>) product.getSize(), sizeKey));
+                item.put("quantityAva", getProductAvailableQtyBySize((Map<String, Object>) product.getSize(), sizeKey, accessoryCache, succulentCache));
 
                 result.add(item);
             }
@@ -1670,7 +1898,8 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.OK, "Danh sách Product - Size - Giá", result);
     }
 
-    private long calculateTotalPriceForSize(Map<String, Object> accessoryData, Map<String, Object> sizeDetail) {
+    private long calculateTotalPriceForSize(Map<String, Object> accessoryData, Map<String, Object> sizeDetail,
+                                            Map<Integer, Succulent> succulentCache) {
         long totalPrice = 0L;
 
         // ----- POT -----
@@ -1712,7 +1941,8 @@ public class ProductServiceImpl implements ProductService {
                 int succulentId = (int) succulentData.get("id");
                 Map<String, Object> sizeCfg = (Map<String, Object>) succulentData.get("size");
 
-                Succulent succulent = succulentRepo.findById(succulentId).orElse(null);
+                Succulent succulent = succulentCache != null ? succulentCache.get(succulentId)
+                        : succulentRepo.findById(succulentId).orElse(null);
                 if (succulent == null) continue;
 
                 Map<String, Object> succulentSizes = (Map<String, Object>) succulent.getSize();
@@ -1749,21 +1979,30 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private List<Map<String, Object>> buildProductSucculentListResponse(List<Map<String, Object>> rawSucculents) {
+        return buildProductSucculentListResponse(rawSucculents, null);
+    }
+
+    private List<Map<String, Object>> buildProductSucculentListResponse(List<Map<String, Object>> rawSucculents,
+                                                                        Map<Integer, Succulent> succulentCache) {
         if (rawSucculents == null || rawSucculents.isEmpty()) {
             return Collections.emptyList();
         }
 
-        Set<Integer> ids = rawSucculents.stream()
-                .map(item -> (int) item.get("id"))
-                .collect(Collectors.toSet());
+        Map<Integer, Succulent> cacheToUse = succulentCache;
+        if (cacheToUse == null || cacheToUse.isEmpty()) {
+            Set<Integer> ids = rawSucculents.stream()
+                    .map(item -> (int) item.get("id"))
+                    .collect(Collectors.toSet());
 
-        Map<Integer, Succulent> succulentMap = succulentRepo.findAllById(ids).stream()
-                .collect(Collectors.toMap(Succulent::getId, s -> s));
+            cacheToUse = succulentRepo.findAllById(ids).stream()
+                    .collect(Collectors.toMap(Succulent::getId, Function.identity()));
+        }
 
+        Map<Integer, Succulent> finalCache = cacheToUse;
         return rawSucculents.stream()
                 .map(succulent -> {
                     int id = (int) succulent.get("id");
-                    Succulent entity = succulentMap.get(id);
+                    Succulent entity = finalCache.get(id);
                     if (entity == null) {
                         return null;
                     }
@@ -1807,6 +2046,46 @@ public class ProductServiceImpl implements ProductService {
         );
     }
 
+    private Map<String, Object> buildProductPotResponse(AccessoryInventoryCache accessoryCache, Map<String, Object> potData) {
+        if (accessoryCache == null || potData == null || accessoryCache.potMap.isEmpty()) {
+            return null;
+        }
+
+        Map<String, Object> pot = accessoryCache.potMap.get(potData.get("name").toString().toLowerCase());
+        if (pot == null) {
+            return null;
+        }
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", pot.get("name"));
+        map.put("material", pot.get("material"));
+        map.put("color", pot.get("color"));
+        map.put("description", pot.get("description"));
+        map.put("image", ((List<Map<String, Object>>) pot.get("image")).stream()
+                .map(img -> img.get("url").toString())
+                .toList());
+
+        List<Map<String, Object>> sizeList = (List<Map<String, Object>>) pot.get("size");
+        if (sizeList != null) {
+            map.put("size", sizeList.stream()
+                    .filter(p -> p.get("name").toString().equalsIgnoreCase(potData.get("size").toString()))
+                    .map(p -> {
+                        Map<String, Object> sizeDetail = new HashMap<>();
+                        sizeDetail.put("name", p.get("name"));
+                        sizeDetail.put("height", p.get("potHeight"));
+                        sizeDetail.put("upperCrossSectionArea", p.get("potUpperCrossSectionArea"));
+                        sizeDetail.put("maxMassValue", p.get("maxSoilMassValue"));
+                        sizeDetail.put("price", p.get("price"));
+                        return sizeDetail;
+                    })
+                    .toList());
+        } else {
+            map.put("size", Collections.emptyList());
+        }
+
+        return map;
+    }
+
     private Map<String, Object> buildProductPotResponse(Map<String, Object> accessoryConfigData, Map<String, Object> potData) {
         return buildPotResponse(accessoryConfigData).stream()
                 .filter(pot -> pot.get("name").toString().equalsIgnoreCase(potData.get("name").toString()))
@@ -1837,6 +2116,22 @@ public class ProductServiceImpl implements ProductService {
                 .orElse(null);
     }
 
+    private Map<String, Object> buildProductSoilResponse(AccessoryInventoryCache accessoryCache, Map<String, Object> soilData) {
+        if (accessoryCache == null || soilData == null || accessoryCache.soilMap.isEmpty()) {
+            return null;
+        }
+
+        Map<String, Object> rawData = accessoryCache.soilMap.get(soilData.get("name").toString().toLowerCase());
+        if (rawData == null) {
+            return null;
+        }
+
+        Map<String, Object> result = new HashMap<>(rawData);
+        result.remove("availableMassValue");
+        result.put("massAmount", soilData.get("massAmount"));
+        return result;
+    }
+
     private Map<String, Object> buildProductSoilResponse(Map<String, Object> accessoryConfigData, Map<String, Object> soilData) {
         Map<String, Object> rawData = buildSoilResponse(accessoryConfigData).stream()
                 .filter(soil -> soil.get("name").toString().equalsIgnoreCase(soilData.get("name").toString()))
@@ -1852,6 +2147,47 @@ public class ProductServiceImpl implements ProductService {
         rawData.put("massAmount", soilData.get("massAmount"));
 
         return rawData;
+    }
+
+    private List<Map<String, Object>> buildProductDecorationListResponse(AccessoryInventoryCache accessoryCache,
+                                                                         Map<String, Object> decorationData) {
+        if (accessoryCache == null || decorationData == null || accessoryCache.decorationMap.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        if (Boolean.TRUE.equals(decorationData.get("included"))) {
+            Map<String, Object> decorationDataMap = MapUtils.checkIfObjectIsMap(decorationData.get("detail"));
+
+            if (decorationDataMap == null) return null;
+
+            return decorationDataMap.entrySet().stream()
+                    .map(entry -> {
+                        String name = entry.getKey();
+                        Number quantityNumber = (Number) entry.getValue();
+                        if (quantityNumber == null) {
+                            return null;
+                        }
+
+                        Map<String, Object> decor = accessoryCache.decorationMap.get(name.toLowerCase());
+                        if (decor == null) {
+                            return null;
+                        }
+                        int quantity = quantityNumber.intValue();
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("name", decor.get("name"));
+                        map.put("description", decor.get("description"));
+                        map.put("quantity", quantity);
+                        map.put("unitPrice", decor.get("price"));
+                        map.put("totalPrice", ((Number) decor.get("price")).longValue() * quantity);
+                        map.put("image", ((List<Map<String, Object>>) decor.get("image")).stream()
+                                .map(img -> img.get("url").toString())
+                                .toList());
+                        return map;
+                    })
+                    .filter(Objects::nonNull)
+                    .toList();
+        }
+        return new ArrayList<>();
     }
 
     private List<Map<String, Object>> buildProductDecorationListResponse(Map<String, Object> accessoryConfigData, Map<String, Object> decorationData) {
