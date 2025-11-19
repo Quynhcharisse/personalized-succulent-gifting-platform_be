@@ -1887,6 +1887,7 @@ public class ProductServiceImpl implements ProductService {
                 long totalPrice = calculateTotalPriceForSize(accessoryData, sizeDetail, succulentCache);
 
                 Map<String, Object> item = new HashMap<>();
+                item.put("prodcutId", product.getId());
                 item.put("nameProduct", product.getName());
                 item.put("nameSize", sizeKey);
                 item.put("price", totalPrice);

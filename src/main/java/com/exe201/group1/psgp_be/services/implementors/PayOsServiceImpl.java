@@ -121,7 +121,7 @@ public class PayOsServiceImpl implements PayOsService {
                     .buyer(buyer)
                     .orderCode(request.getOrderCode())
                     .orderDate(LocalDateTime.now())
-                    .status(Status.SHIPPING)
+                    .status(Status.PACKAGING)
                     .shippingFee(BigDecimal.valueOf(request.getShippingFee()))
                     .orderDetailList(new ArrayList<>())
                     .build();
@@ -163,11 +163,7 @@ public class PayOsServiceImpl implements PayOsService {
             transactionRepo.save(transaction);
 
         }
-
       productService.restoreQuantityOfFailedPayment(request.getProducts());
-
-
-
         return ResponseBuilder.build(HttpStatus.OK, "Ok", null);
     }
 

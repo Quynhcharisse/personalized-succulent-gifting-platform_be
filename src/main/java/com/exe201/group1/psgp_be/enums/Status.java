@@ -31,6 +31,7 @@ public enum Status {
     REJECT("Đã từ chối"),
 
     //----------SHIPPING STATUS---------//
+    PACKAGING("Đang đóng gói"),
     SHIPPING("Đang vận chuyển"),
     DONE("Đơn hàng thành công"),
     FAILED_SHIPPING("Vận chuyển thất bại");
