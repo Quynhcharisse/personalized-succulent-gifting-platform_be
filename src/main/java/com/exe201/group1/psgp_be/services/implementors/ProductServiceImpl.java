@@ -58,7 +58,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -1550,18 +1549,19 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private int checkSucculentAvailable(int id, String size, int qty) {
-        List<Map<String, Object>> succulents = succulentRepo.findAll().stream().map(this::buildSucculentDetail).toList();
+        Succulent succulent = succulentRepo.findById(id).orElse(null);
+        if (succulent == null || succulent.getSize() == null) {
+            return 0;
+        }
 
-        Map<String, Object> succulentData = succulents.stream().filter(s -> ((int) s.get("id")) == id).findFirst().orElse(null);
-        if (succulentData == null) return 0;
+        Map<String, Object> sizeData = (Map<String, Object>) succulent.getSize();
+        Map<String, Object> sizeDetail = (Map<String, Object>) sizeData.get(size.toLowerCase());
+        if (sizeDetail == null) {
+            return 0;
+        }
 
-        Map<String, Object> succulentSizeData = (Map<String, Object>) ((Map<String, Object>) succulentData.get("size")).get(size);
-        if (succulentSizeData == null) return 0;
-
-        int availableQty = (int) succulentSizeData.get("quantity");
-
+        int availableQty = (int) sizeDetail.get("quantity");
         return availableQty / qty;
-//        return availableQty >= qty;
     }
 
 
@@ -1599,6 +1599,16 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<Map<String, Object>> buildProductSizeResponse(Map<String, Object> size) {
+        if (size == null || size.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
+        if (accessoryConfig == null) {
+            return Collections.emptyList();
+        }
+        Map<String, Object> accessoryConfigData = (Map<String, Object>) accessoryConfig.getValue();
+
         return size.keySet().stream()
                 .filter(key -> !key.startsWith("v_")) // Filter out version keys (v_1, v_2, etc.)
                 .map(
@@ -1609,11 +1619,6 @@ public class ProductServiceImpl implements ProductService {
                             Map<String, Object> potData = (Map<String, Object>) sizeData.get("pot");
                             Map<String, Object> soilData = (Map<String, Object>) sizeData.get("soil");
                             Map<String, Object> decorationData = (Map<String, Object>) sizeData.get("decoration");
-
-                            AppConfig accessoryConfig = appConfigRepo.findByKey("accessory").orElse(null);
-                            assert accessoryConfig != null;
-
-                            Map<String, Object> accessoryConfigData = (Map<String, Object>) accessoryConfig.getValue();
 
                             Map<String, Object> map = new HashMap<>();
                             map.put("name", key);
@@ -1741,14 +1746,28 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private List<Map<String, Object>> buildProductSucculentListResponse(List<Map<String, Object>> rawSucculents) {
-        return rawSucculents.stream().map(
-                succulent -> {
+        if (rawSucculents == null || rawSucculents.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Set<Integer> ids = rawSucculents.stream()
+                .map(item -> (int) item.get("id"))
+                .collect(Collectors.toSet());
+
+        Map<Integer, Succulent> succulentMap = succulentRepo.findAllById(ids).stream()
+                .collect(Collectors.toMap(Succulent::getId, s -> s));
+
+        return rawSucculents.stream()
+                .map(succulent -> {
                     int id = (int) succulent.get("id");
-                    Succulent s = succulentRepo.findById(id).orElse(null);
-                    if (s == null) return null;
-                    return buildProductSucculentResponse(s, (Map<String, Object>) succulent.get("size"));
-                }
-        ).toList();
+                    Succulent entity = succulentMap.get(id);
+                    if (entity == null) {
+                        return null;
+                    }
+                    return buildProductSucculentResponse(entity, (Map<String, Object>) succulent.get("size"));
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     private Map<String, Object> buildProductSucculentResponse(Succulent succulent, Map<String, Object> size) {
