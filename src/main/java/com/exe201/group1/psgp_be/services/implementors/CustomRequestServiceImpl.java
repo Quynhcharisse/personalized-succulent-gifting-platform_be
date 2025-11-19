@@ -235,6 +235,45 @@ public class CustomRequestServiceImpl implements CustomRequestService {
         ));
     }
 
+    @Override
+    public ResponseEntity<ResponseObject> getCustomRequestData(HttpServletRequest request) {
+        Account account = CookieUtil.extractAccountFromCookie(request, jwtService, accountRepo);
+
+        List<CustomProductRequest> requests;
+        if (account == null) {
+            requests = customProductRequestRepo.findAll();
+        } else {
+            requests = customProductRequestRepo.findAll().stream()
+                    .filter(customRequest -> Objects.equals(customRequest.getBuyer().getId(), account.getUser().getId()))
+                    .toList();
+        }
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("succulents", productService.viewSucculentList().getBody().getData());
+        payload.put("accessories", productService.getAccessories("all").getBody().getData());
+        return ResponseBuilder.build(HttpStatus.OK, "", payload);
+    }
+
+    private List<Map<String, Object>> buildCustomProductDataOnly(List<CustomProductRequest> requests) {
+        return requests.stream()
+                .map(cp -> {
+                    Map<String, Object> rawData = MapUtils.getMapFromObject(cp.getData());
+
+                    Map<String, Object> customData = new HashMap<>();
+                    for (Map.Entry<String, Object> entry : rawData.entrySet()) {
+                        if (!entry.getKey().startsWith("v_")) {
+                            customData.put(entry.getKey(), entry.getValue());
+                        }
+                    }
+
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("id", cp.getId());
+                    response.put("customData", productService.buildProductSizeResponse(customData));
+                    return response;
+                })
+                .toList();
+    }
+
+
     private ResponseEntity<ResponseObject> viewCustomProduct(List<CustomProductRequest> requests) {
         List<Map<String, Object>> response = requests.stream().map(
                 cp -> {
@@ -251,6 +290,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
 
         return ResponseBuilder.build(HttpStatus.OK, "", response);
     }
+
 
     @Override
     public ResponseEntity<ResponseObject> viewCustomProductRequestDetail(int id) {

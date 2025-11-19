@@ -43,6 +43,11 @@ public class CustomRequestController {
         return customRequestService.viewCustomProductRequest(request);
     }
 
+    @PostMapping("/custom-ai/list")
+    public ResponseEntity<ResponseObject> getCustomRequestData(HttpServletRequest request) {
+        return customRequestService.getCustomRequestData(request);
+    }
+
     @PutMapping("/custom-request/revision")
     @PreAuthorize("hasRole('BUYER')")
     public ResponseEntity<ResponseObject> createRevision(@RequestBody CreateRevisionRequest request) {
