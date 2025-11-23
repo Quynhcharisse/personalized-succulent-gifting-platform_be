@@ -64,7 +64,7 @@ public class Order {
 
     // =========================== THÔNG TIN GIAO HÀNG ========================== \\
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "shippingAddress_id")
     ShippingAddress shippingAddress;
 

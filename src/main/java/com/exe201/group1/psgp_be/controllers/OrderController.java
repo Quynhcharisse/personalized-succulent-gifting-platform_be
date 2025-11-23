@@ -1,14 +1,17 @@
 package com.exe201.group1.psgp_be.controllers;
 
 import com.exe201.group1.psgp_be.dto.requests.CreateOrderRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateOrderRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.OrderService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,5 +36,15 @@ public class OrderController {
     @GetMapping("/detail/{id}")
     public ResponseEntity<ResponseObject> getOrderDetail(@PathVariable int id){
         return orderService.getOrderDetail(id);
+    }
+
+    @PutMapping()
+    public ResponseEntity<ResponseObject> updateOrder(@RequestBody UpdateOrderRequest request){
+        return orderService.updateOrder(request);
+    }
+    @DeleteMapping()
+    public ResponseEntity<ResponseObject> cancelOrder(@RequestBody UpdateOrderRequest request){
+        request.setAction("FAILED_SHIPPING");
+        return orderService.updateOrder(request);
     }
 }

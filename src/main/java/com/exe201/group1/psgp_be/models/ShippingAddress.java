@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -21,6 +22,7 @@ import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -57,9 +59,9 @@ public class ShippingAddress {
     @Column(nullable = false)
     LocalDateTime createdAt;
 
-    @OneToOne(mappedBy = "shippingAddress", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "shippingAddress", fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    Order order;
+    List<Order> orderList;
 
 }
