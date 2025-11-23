@@ -80,7 +80,7 @@ public class PostServiceImpl implements PostService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        createOrUpdatePost(request, post);
+        post = createOrUpdatePost(request, postRepo.saveAndFlush(post));
 
         return ResponseEntity.ok(new ResponseObject("Post created successfully", EntityResponseBuilder.buildPostsResponse(post)));
     }
@@ -213,7 +213,7 @@ public class PostServiceImpl implements PostService {
         return ResponseEntity.ok(new ResponseObject("Tags fetched successfully", tags));
     }
 
-    private void createOrUpdatePost(CreateOrUpdatePostRequest request, Post post) {
+    private Post createOrUpdatePost(CreateOrUpdatePostRequest request, Post post) {
         // Handle images: reconcile existing images with incoming ones to avoid duplicates
         List<CreatePostImageRequest> postImages = request.getPostImages();
         if (postImages != null) {
@@ -319,5 +319,6 @@ public class PostServiceImpl implements PostService {
 
         // ensure DB update immediately
         postRepo.saveAndFlush(post);
+        return post;
     }
 }
