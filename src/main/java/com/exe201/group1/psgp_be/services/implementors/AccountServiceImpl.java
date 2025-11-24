@@ -100,7 +100,18 @@ public class AccountServiceImpl implements AccountService {
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Không tìm thấy thông tin người dùng", null);
         }
 
-        account.getUser().setName(request.getName());
+        // Nếu name không được cung cấp, tự động lấy từ email (cắt bỏ phần sau @)
+        String name = request.getName();
+        if (name == null || name.trim().isEmpty()) {
+            String email = account.getEmail();
+            if (email != null && email.contains("@")) {
+                name = email.substring(0, email.indexOf("@"));
+            } else {
+                name = email != null ? email : "User";
+            }
+        }
+
+        account.getUser().setName(name);
         account.getUser().setPhone(request.getPhone());
         account.getUser().setAddress(request.getAddress());
         account.getUser().setGender(request.getGender());
@@ -117,16 +128,15 @@ public class AccountServiceImpl implements AccountService {
 
     private String UpdateProfileValidation(UpdateProfileRequest request) {
 
-        if (request.getName() == null || request.getName().isEmpty()) {
-            return "Tên là bắt buộc";
-        }
+        // Name không bắt buộc, nhưng nếu có thì phải validate
+        if (request.getName() != null && !request.getName().trim().isEmpty()) {
+            if (request.getName().length() < 3) {
+                return "Tên phải có ít nhất 3 ký tự";
+            }
 
-        if (request.getName().length() < 3) {
-            return "Tên phải có ít nhất 3 ký tự";
-        }
-
-        if (request.getName().length() > 100) {
-            return "Tên phải <= 100 ký tự";
+            if (request.getName().length() > 100) {
+                return "Tên phải <= 100 ký tự";
+            }
         }
 
         if (request.getPhone() == null || request.getPhone().isEmpty()) {
