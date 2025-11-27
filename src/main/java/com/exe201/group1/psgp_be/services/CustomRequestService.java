@@ -23,5 +23,7 @@ public interface CustomRequestService {
 
     ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(UpdateCustomProductRequestDesignImageRequest request, boolean approved);
 
+    ResponseEntity<ResponseObject> completeCustomProductRequest(int id);
+
     ResponseEntity<ResponseObject> createRevision(CreateRevisionRequest request);
 }

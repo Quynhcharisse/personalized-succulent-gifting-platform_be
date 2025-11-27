@@ -462,6 +462,33 @@ public class CustomRequestServiceImpl implements CustomRequestService {
         return ResponseBuilder.build(HttpStatus.OK, "Custom product revision request submitted", null);
     }
 
+    @Override
+    public ResponseEntity<ResponseObject> completeCustomProductRequest(int id) {
+
+        CustomProductRequest customProductRequest = customProductRequestRepo.findById(id).orElse(null);
+        if (customProductRequest == null) {
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
+        }
+
+        Map<String, Object> data = MapUtils.getMapFromObject(customProductRequest.getData());
+
+        int latestVer = data.keySet().stream()
+                .filter(key -> key.startsWith("v_"))
+                .mapToInt(key -> Integer.parseInt(key.substring(2)))
+                .max()
+                .orElse(0);
+
+        Map<String, Object> latestData = MapUtils.getMapFromObject(data, "v_" + latestVer);
+        latestData.replace("status", "confirmed");
+        data.replace("v_" + latestVer, latestData);
+
+        customProductRequest.setStatus(Status.DONE);
+        customProductRequest.setData(data);
+        customProductRequestRepo.save(customProductRequest);
+
+        return ResponseBuilder.build(HttpStatus.OK, "", null);
+    }
+
     private Map<String, Object> buildCustomProductRequestDesignImageVersionData(UpdateCustomProductRequestDesignImageRequest request, int previousVer, String status) {
         Map<String, Object> data = new HashMap<>();
         data.put("images", request.getImages().stream().map(UpdateCustomProductRequestDesignImageRequest.Image::getUrl).toList());
@@ -479,9 +506,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
             return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
         }
 
-        if (!customProductRequest.getStatus().equals(Status.APPROVE) && !customProductRequest.getStatus().equals(Status.FIXED)) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Custom product not approved", null);
-        }
+
 
         Map<String, Object> data = MapUtils.getMapFromObject(customProductRequest.getData());
 

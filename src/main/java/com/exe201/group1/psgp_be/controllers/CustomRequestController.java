@@ -72,6 +72,11 @@ public class CustomRequestController {
         return customRequestService.viewCustomProductRequestDetail(id);
     }
 
+    @PutMapping("/custom-request/status/{id}")
+    public ResponseEntity<ResponseObject> completeCustomProduct(@PathVariable int id) {
+        return customRequestService.completeCustomProductRequest(id);
+    }
+
     @PutMapping("/custom-request/design-image")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(

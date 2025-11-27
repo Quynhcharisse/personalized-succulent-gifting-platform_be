@@ -35,7 +35,7 @@ public enum Status {
     //----------SHIPPING STATUS---------//
     PACKAGING("Đang đóng gói"),
     SHIPPING("Đang vận chuyển"),
-    DONE("Đơn hàng thành công"),
+    DONE("thành công"),
     FAILED_SHIPPING("Vận chuyển thất bại");
 
     private final String value;
