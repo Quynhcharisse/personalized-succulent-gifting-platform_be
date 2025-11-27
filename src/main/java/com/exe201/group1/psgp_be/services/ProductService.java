@@ -2,6 +2,7 @@ package com.exe201.group1.psgp_be.services;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
 import com.exe201.group1.psgp_be.dto.requests.CheckAvailableProductsBySizeRequest;
+import com.exe201.group1.psgp_be.dto.requests.CheckQuantityInStorageRequest;
 import com.exe201.group1.psgp_be.dto.requests.ConfirmPaymentUrlRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomProductRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
@@ -40,9 +41,12 @@ public interface ProductService {
 
     boolean checkProductStatus(Product product);
 
-     ResponseEntity<ResponseObject> checkAvailableProductsBySize(CheckAvailableProductsBySizeRequest request);
+    ResponseEntity<ResponseObject> checkAvailableProductsBySize(CheckAvailableProductsBySizeRequest request);
+    ResponseEntity<ResponseObject> checkAvailableQuantity(CheckQuantityInStorageRequest request);
 
     void restoreQuantityOfFailedPayment(List<ConfirmPaymentUrlRequest.ProductData> productDataList);
+
+    void restoreQuantityInStorage(ConfirmPaymentUrlRequest request);
 
     ResponseEntity<ResponseObject> viewProduct();
 

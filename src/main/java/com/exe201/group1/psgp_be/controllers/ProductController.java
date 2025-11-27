@@ -2,6 +2,7 @@ package com.exe201.group1.psgp_be.controllers;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
 import com.exe201.group1.psgp_be.dto.requests.CheckAvailableProductsBySizeRequest;
+import com.exe201.group1.psgp_be.dto.requests.CheckQuantityInStorageRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
@@ -88,7 +89,10 @@ public class ProductController {
     public ResponseEntity<ResponseObject> checkAvailableProductsBySize(@RequestBody CheckAvailableProductsBySizeRequest request) {
         return productService.checkAvailableProductsBySize(request);
     }
-
+    @PutMapping("/check/availability")
+    public ResponseEntity<ResponseObject> checkAvailableInStorage(@RequestBody CheckQuantityInStorageRequest request) {
+        return productService.checkAvailableQuantity(request);
+    }
     //=================== wish list =====================\\
     @PostMapping("/wishlist/item")
     @PreAuthorize("hasRole('BUYER')")

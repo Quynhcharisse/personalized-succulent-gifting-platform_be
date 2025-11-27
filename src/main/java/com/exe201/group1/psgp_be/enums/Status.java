@@ -27,13 +27,15 @@ public enum Status {
 
     //----------Custom Product Request Status---------//
     PENDING("Đang chờ duyệt"),
+    FIXING("Đang chỉnh sửa"),
+    FIXED("Đã chỉnh sửa"),
     APPROVE("Đã duyệt"),
     REJECT("Đã từ chối"),
 
     //----------SHIPPING STATUS---------//
     PACKAGING("Đang đóng gói"),
     SHIPPING("Đang vận chuyển"),
-    DONE("Đơn hàng thành công"),
+    DONE("thành công"),
     FAILED_SHIPPING("Vận chuyển thất bại");
 
     private final String value;
