@@ -60,6 +60,12 @@ public class CustomRequestController {
         return customRequestService.viewCustomProductRequest();
     }
 
+    @GetMapping("/custom-request/{id}/list/version")
+    @PreAuthorize("hasRole('SELLER')")
+    public ResponseEntity<ResponseObject> viewCustomProductRequestVersions(@PathVariable int id) {
+        return customRequestService.viewCustomProductRequestDetailVersion(id);
+    }
+
     @GetMapping("/custom-request/list/{id}")
     @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<ResponseObject> viewCustomProductRequestDetail(@PathVariable int id) {

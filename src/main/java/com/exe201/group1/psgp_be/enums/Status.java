@@ -27,6 +27,8 @@ public enum Status {
 
     //----------Custom Product Request Status---------//
     PENDING("Đang chờ duyệt"),
+    FIXING("Đang chỉnh sửa"),
+    FIXED("Đã chỉnh sửa"),
     APPROVE("Đã duyệt"),
     REJECT("Đã từ chối"),
 
