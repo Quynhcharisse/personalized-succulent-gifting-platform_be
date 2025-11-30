@@ -114,10 +114,11 @@ public class EntityResponseBuilder {
                 "createdAt", post.getCreatedAt(),
                 "updatedAt", Objects.requireNonNullElse(post.getUpdatedAt(), ""),
                 "images", buildPostImageResponse(post.getPostImageList()),
-                "tags", buildPostTagResponse(post.getPostTagList()),
-                "sellerId", post.getSeller().getId(),
+                "userId", post.getSeller().getId(),
+                "userName", post.getSeller().getName(),
                 "productId", post.getProduct().getId()
         ));
+        response.put("userAvatar", post.getSeller().getAvatarUrl());
         response.put("comments", buildCommentsResponse(post.getComments()));
         return response;
     }
@@ -130,17 +131,6 @@ public class EntityResponseBuilder {
                         "name", postImage.getName(),
                         "link", postImage.getLink(),
                         "postId", postImage.getPost().getId()
-                )).toList()
-        );
-    }
-
-    public static Map<String, Object> buildPostTagResponse(List<PostTag> postTags) {
-        return Map.of(
-                "count", postTags.size(),
-                "postTags", postTags.stream().map(postTag -> Map.of(
-                        "id", postTag.getId(),
-                        "tagName", postTag.getTag().getName(),
-                        "postId", postTag.getPost().getId()
                 )).toList()
         );
     }
@@ -163,7 +153,9 @@ public class EntityResponseBuilder {
                 "createdAt", comment.getCreatedAt(),
                 "updatedAt", Objects.requireNonNullElse(comment.getUpdatedAt(), ""),
                 "postId", comment.getPost().getId(),
-                "buyerName", comment.getBuyer().getName(),
+                "userName", comment.getBuyer().getName(),
+                "userAvatar", comment.getBuyer().getAvatarUrl(),
+                "rating", comment.getRating(),
                 "accountId", comment.getBuyer().getAccount().getId()
         );
     }

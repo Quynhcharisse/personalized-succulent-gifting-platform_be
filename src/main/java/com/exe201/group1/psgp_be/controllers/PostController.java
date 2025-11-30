@@ -27,8 +27,8 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping()
-    @PreAuthorize("hasRole('SELLER')")
-    @Operation(summary = "Create a new post (Seller only)")
+    @PreAuthorize("hasAnyRole('SELLER', 'BUYER')")
+    @Operation(summary = "Create a new post")
     public ResponseEntity<ResponseObject> createPost(
             @RequestBody @Valid CreateOrUpdatePostRequest request,
             HttpServletRequest httpRequest
@@ -55,8 +55,8 @@ public class PostController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('SELLER')")
-    @Operation(summary = "Update a post by ID (Seller only)")
+    @PreAuthorize("hasAnyRole('SELLER', 'BUYER')")
+    @Operation(summary = "Update a post by ID")
     public ResponseEntity<ResponseObject> updatePost(
             @PathVariable Integer id,
             @RequestBody @Valid CreateOrUpdatePostRequest request,
