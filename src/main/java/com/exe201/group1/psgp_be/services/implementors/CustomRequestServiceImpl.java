@@ -56,7 +56,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
     public ResponseEntity<ResponseObject> createCustomProductRequest(CreateCustomProductRequestRequest request, HttpServletRequest httpRequest) {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
         if (account == null) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Account not found", null);
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Không tìm thấy tài khoản", null);
         }
 
         String error = validateCreateCustomProductRequest(request);
@@ -129,7 +129,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
 
     private String validateCreateCustomProductRequest(CreateCustomProductRequestRequest request) {
         if (request.getSize() == null) {
-            return "Thông tin cấu hình sản phẩm không được để trống.";
+            return "Thông tin sản phẩm không được để trống.";
         }
 
         CreateCustomProductRequestRequest.Size size = request.getSize();
@@ -318,7 +318,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
     public ResponseEntity<ResponseObject> viewCustomProductRequestDetail(int id) {
         CustomProductRequest request = customProductRequestRepo.findById(id).orElse(null);
         if (request == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Sản phẩm product không tìm thấy", null);
         }
         Map<String, Object> data = MapUtils.getMapFromObject(request.getData());
         // Separate customData and design versions
@@ -360,7 +360,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
     public ResponseEntity<ResponseObject> viewCustomProductRequestDetailVersion(int id) {
         CustomProductRequest request = customProductRequestRepo.findById(id).orElse(null);
         if (request == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Sản phẩm product không tìm thấy", null);
         }
         Map<String, Object> data = (Map<String, Object>) request.getData();
         List<Map<String, Object>> versions = new ArrayList<>();
@@ -371,7 +371,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
             versions.add(versionData);
             }
         }
-        return ResponseBuilder.build(HttpStatus.OK, "View all versions of custom request product", versions);
+        return ResponseBuilder.build(HttpStatus.OK, "Xem tất cả các phiên bản của sản phẩm yêu cầu tùy chỉnh", versions);
     }
 
     @Override
@@ -379,18 +379,18 @@ public class CustomRequestServiceImpl implements CustomRequestService {
     public ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(UpdateCustomProductRequestDesignImageRequest request, boolean approved) {
         CustomProductRequest customProductRequest = customProductRequestRepo.findById(request.getId()).orElse(null);
         if (customProductRequest == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Sản phẩm product không tìm thấy", null);
         }
 
         if (!approved) {
             customProductRequest.setStatus(Status.REJECT);
             customProductRequest.setReason(request.getRejectReason());
             customProductRequestRepo.save(customProductRequest);
-            return ResponseBuilder.build(HttpStatus.OK, "Custom product rejected", null);
+            return ResponseBuilder.build(HttpStatus.OK, "Sản phẩm tùy chỉnh bị từ chối", null);
         }
 
         if (request.getImages().isEmpty()) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Designed image is empty", null);
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Hình ảnh được thiết kế trống rỗng", null);
         }
 
         Map<String, Object> data = new HashMap<>();
@@ -411,7 +411,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
             customProductRequest.setData(data);
             customProductRequestRepo.save(customProductRequest);
 
-            String productName = "Custom product by " + customProductRequest.getBuyer().getName();
+            String productName = "Sản phẩm tùy chỉnh của " + customProductRequest.getBuyer().getName();
             if (customProductRequest.getOccasion() != null && !customProductRequest.getOccasion().trim().isEmpty()) {
                 productName += " - " + customProductRequest.getOccasion();
             }
@@ -439,7 +439,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
             product.setStatus(productService.checkProductStatus(product) ? Status.AVAILABLE : Status.OUT_OF_STOCK);
             productRepo.save(product);
 
-            return ResponseBuilder.build(HttpStatus.OK, "Custom product approved", null);
+            return ResponseBuilder.build(HttpStatus.OK, "Sản phẩm tùy chỉnh đã được phê duyệt", null);
         }
 
         data = MapUtils.getMapFromObject(customProductRequest.getData());
@@ -460,7 +460,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
 
         customProductRequest.setData(data);
         customProductRequestRepo.save(customProductRequest);
-        return ResponseBuilder.build(HttpStatus.OK, "Custom product revision request submitted", null);
+        return ResponseBuilder.build(HttpStatus.OK, "Đã gửi yêu cầu sửa đổi sản phẩm tùy chỉnh", null);
     }
 
     @Override
@@ -468,7 +468,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
 
         CustomProductRequest customProductRequest = customProductRequestRepo.findById(id).orElse(null);
         if (customProductRequest == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm tùy chỉnh", null);
         }
 
         Map<String, Object> data = MapUtils.getMapFromObject(customProductRequest.getData());
@@ -504,7 +504,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
     public ResponseEntity<ResponseObject> createRevision(CreateRevisionRequest request) {
         CustomProductRequest customProductRequest = customProductRequestRepo.findById(request.getId()).orElse(null);
         if (customProductRequest == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm tùy chỉnh", null);
         }
 
 
@@ -526,7 +526,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
         customProductRequest.setData(data);
         customProductRequest.setStatus(Status.FIXING);
         customProductRequestRepo.save(customProductRequest);
-        return ResponseBuilder.build(HttpStatus.OK, "Submit revision request", null);
+        return ResponseBuilder.build(HttpStatus.OK, "Gửi yêu cầu sửa đổi", null);
     }
 
 }
