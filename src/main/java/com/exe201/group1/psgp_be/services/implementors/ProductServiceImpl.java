@@ -1297,6 +1297,7 @@ public class ProductServiceImpl implements ProductService {
     public ResponseEntity<ResponseObject> checkAvailableProductsBySize(CheckAvailableProductsBySizeRequest request, HttpServletRequest httpServletRequest) {
 
         Account account = CookieUtil.extractAccountFromCookie(httpServletRequest, jWTService, accountRepo);
+        assert account != null;
         User buyer = account.getUser();
         if(buyer.getPhone().isEmpty() || buyer.getName().isEmpty() || buyer.getFengShui() == null || buyer.getGender().isEmpty() || buyer.getAddress().isEmpty() || buyer.getZodiac() == null ){
             return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Bạn vui lòng cập nhật đầy đủ profile của bạn trước khi tạo yêu cầu điện cây", null);
@@ -1306,7 +1307,7 @@ public class ProductServiceImpl implements ProductService {
 
             Optional<Product> product = productRepo.findById(productData.getProductId());
 
-            if(!product.isPresent()) {
+            if(product.isEmpty()) {
                 return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found", null);
             }
 
@@ -1448,7 +1449,7 @@ public class ProductServiceImpl implements ProductService {
 
             if (sizeDetail == null) {
                 return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
-                        "Size '" + data.getSize() + "' không tồn tại cho succulent ID " + data.getSucculentId(),
+                        "Size '" + data.getSize() + "' không tồn tại cho succulent" + data.getSucculentId(),
                         null);
             }
 
@@ -1457,7 +1458,7 @@ public class ProductServiceImpl implements ProductService {
             if (available < data.getQuantity()) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
-                        "Số lượng succulent ID " + data.getSucculentId() +
+                        "Số lượng succulent" + data.getSucculentId() +
                                 " size " + data.getSize() + " không đủ. Hiện còn " + available,
                         null);
             }
@@ -1697,7 +1698,7 @@ public class ProductServiceImpl implements ProductService {
             Map<String, Object> sizeData = (Map<String, Object>) ((Map<?, ?>) product.get().getSize()).get(data.getSize());;
 
             AppConfig accessoryConfig = appConfigRepo.findByKey("accessory")
-                    .orElseThrow(() -> new RuntimeException("Accessory config not found"));
+                    .orElseThrow(() -> new RuntimeException("Accessory not found"));
 
             Map<String, Object> accessory = (Map<String, Object>) accessoryConfig.getValue();
 
@@ -1816,12 +1817,12 @@ public class ProductServiceImpl implements ProductService {
 
         AccessoryInventoryCache cache = accessoryCache != null ? accessoryCache : loadAccessoryInventoryCache();
 
-        int potAvailableQty = cache == null || cache.potMap.isEmpty()
-                ? checkPotAvailableFromConfig(potData, cache != null ? cache.rawConfig : Collections.emptyMap())
+        int potAvailableQty = cache.potMap.isEmpty()
+                ? checkPotAvailableFromConfig(potData, cache.rawConfig)
                 : getPotAvailableFromCache(potData, cache);
 
-        int soilAvailableQty = cache == null || cache.soilMap.isEmpty()
-                ? checkSoilAvailableFromConfig(soilData, cache != null ? cache.rawConfig : Collections.emptyMap())
+        int soilAvailableQty = cache.soilMap.isEmpty()
+                ? checkSoilAvailableFromConfig(soilData, cache.rawConfig)
                 : getSoilAvailableFromCache(soilData, cache);
 
         int succulentAvailableQty = calculateSucculentAvailableQty(succulentData, succulentCache);
@@ -1829,11 +1830,11 @@ public class ProductServiceImpl implements ProductService {
         int decorationAvailableQty = soilAvailableQty + potAvailableQty + succulentAvailableQty;
         if (decorationData != null) {
             List<Map<String, Object>> details = extractDecorationDetails(decorationData);
-            decorationAvailableQty = cache == null || cache.decorationMap.isEmpty()
+            decorationAvailableQty = cache.decorationMap.isEmpty()
                     ? checkDecorationAvailable(
                     Boolean.parseBoolean(String.valueOf(decorationData.get("included"))),
                     details,
-                    cache != null ? buildDecorationResponse(cache.rawConfig) : Collections.emptyList(),
+                    buildDecorationResponse(cache.rawConfig),
                     soilAvailableQty + potAvailableQty + succulentAvailableQty)
                     : getDecorationAvailableFromCache(decorationData, details, cache,
                     soilAvailableQty + potAvailableQty + succulentAvailableQty);

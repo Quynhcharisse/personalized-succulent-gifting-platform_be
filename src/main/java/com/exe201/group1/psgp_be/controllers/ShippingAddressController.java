@@ -23,7 +23,6 @@ public class ShippingAddressController {
     private final ShippingAddressService shippingAddressService;
 
     @PostMapping
-
     public ResponseEntity<ResponseObject> CreateShippingAddress(@RequestBody CreateShippingAddressRequest request){
         return shippingAddressService.createShippingAddress(request);
     }
