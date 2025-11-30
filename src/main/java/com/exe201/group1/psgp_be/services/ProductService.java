@@ -41,8 +41,8 @@ public interface ProductService {
 
     boolean checkProductStatus(Product product);
 
-    ResponseEntity<ResponseObject> checkAvailableProductsBySize(CheckAvailableProductsBySizeRequest request);
-    ResponseEntity<ResponseObject> checkAvailableQuantity(CheckQuantityInStorageRequest request);
+    ResponseEntity<ResponseObject> checkAvailableProductsBySize(CheckAvailableProductsBySizeRequest request, HttpServletRequest httpServletRequest);
+    ResponseEntity<ResponseObject> checkAvailableQuantity(CheckQuantityInStorageRequest request, HttpServletRequest httpServletRequest);
 
     void restoreQuantityOfFailedPayment(List<ConfirmPaymentUrlRequest.ProductData> productDataList);
 

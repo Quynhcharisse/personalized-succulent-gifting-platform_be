@@ -23,7 +23,9 @@ import com.exe201.group1.psgp_be.models.ProductImage;
 import com.exe201.group1.psgp_be.models.ProductSucculent;
 import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.models.SucculentSpecies;
+import com.exe201.group1.psgp_be.models.User;
 import com.exe201.group1.psgp_be.models.WishlistItem;
+import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
 import com.exe201.group1.psgp_be.repositories.ProductImageRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
@@ -31,7 +33,9 @@ import com.exe201.group1.psgp_be.repositories.ProductSucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentSpeciesRepo;
 import com.exe201.group1.psgp_be.repositories.WishListItemRepo;
+import com.exe201.group1.psgp_be.services.JWTService;
 import com.exe201.group1.psgp_be.services.ProductService;
+import com.exe201.group1.psgp_be.utils.CookieUtil;
 import com.exe201.group1.psgp_be.utils.MapUtils;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import com.vladmihalcea.hibernate.util.StringUtils;
@@ -74,6 +78,8 @@ public class ProductServiceImpl implements ProductService {
     WishListItemRepo wishListItemRepo;
     AppConfigRepo appConfigRepo;
     ProductSucculentRepo productSucculentRepo;
+    private final JWTService jWTService;
+    private final AccountRepo accountRepo;
 
     private static class AccessoryInventoryCache {
         private final Map<String, Object> rawConfig;
@@ -1288,7 +1294,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ResponseEntity<ResponseObject> checkAvailableProductsBySize(CheckAvailableProductsBySizeRequest request) {
+    public ResponseEntity<ResponseObject> checkAvailableProductsBySize(CheckAvailableProductsBySizeRequest request, HttpServletRequest httpServletRequest) {
+
+        Account account = CookieUtil.extractAccountFromCookie(httpServletRequest, jWTService, accountRepo);
+        User buyer = account.getUser();
+        if(buyer.getPhone().isEmpty() || buyer.getName().isEmpty() || buyer.getFengShui() == null || buyer.getGender().isEmpty() || buyer.getAddress().isEmpty() || buyer.getZodiac() == null ){
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Bạn vui lòng cập nhật đầy đủ profile của bạn trước khi tạo yêu cầu điện cây", null);
+        }
 
         for (CreatePaymentUrlRequest.ProductData productData : request.getProducts()) {
 
@@ -1410,7 +1422,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ResponseEntity<ResponseObject> checkAvailableQuantity(CheckQuantityInStorageRequest request) {
+    public ResponseEntity<ResponseObject> checkAvailableQuantity(CheckQuantityInStorageRequest request, HttpServletRequest httpServletRequest) {
+
+        Account account = CookieUtil.extractAccountFromCookie(httpServletRequest, jWTService, accountRepo);
+        User buyer = account.getUser();
+        if(buyer.getPhone().isEmpty() || buyer.getName().isEmpty() || buyer.getFengShui() == null || buyer.getGender().isEmpty() || buyer.getAddress().isEmpty() || buyer.getZodiac() == null ){
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Bạn vui lòng cập nhật đầy đủ profile của bạn trước khi tạo yêu cầu điện cây", null);
+        }
 
         AppConfig accessoryConfig = appConfigRepo.findByKey("accessory")
                 .orElseThrow(() -> new RuntimeException("Accessory config not found"));
