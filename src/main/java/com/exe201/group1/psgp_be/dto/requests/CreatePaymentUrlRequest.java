@@ -19,6 +19,8 @@ public class CreatePaymentUrlRequest {
 
     List<ProductData> products;
     long shippingFee;
+    boolean isCustomRequest;
+    long amount;
 
     @Data
     @AllArgsConstructor

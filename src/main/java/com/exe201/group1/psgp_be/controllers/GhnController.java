@@ -22,7 +22,7 @@ public class GhnController {
 
     private final GhnApiService ghnApiService;
 
-    // 🏙️ Danh sách tỉnh
+    // Danh sách tỉnh
     @GetMapping("/provinces")
     public ResponseEntity<ResponseObject> getProvinces() {
         return ghnApiService.getProvinces();
@@ -37,8 +37,6 @@ public class GhnController {
     public ResponseEntity<ResponseObject> getWards(@RequestParam Integer districtId) {
         return ghnApiService.getWards(districtId);
     }
-
-
 
     @PostMapping("/calculate/fee")
     public ResponseEntity<ResponseObject> calculateFee(@RequestBody CaculateFeeRequest request){

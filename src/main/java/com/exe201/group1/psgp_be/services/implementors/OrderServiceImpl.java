@@ -2,6 +2,7 @@ package com.exe201.group1.psgp_be.services.implementors;
 
 import com.exe201.group1.psgp_be.dto.requests.ConfirmPaymentUrlRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrderRequest;
+import com.exe201.group1.psgp_be.dto.requests.UpdateOrderRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.enums.Role;
 import com.exe201.group1.psgp_be.enums.Status;
@@ -43,6 +44,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -158,6 +160,31 @@ public class OrderServiceImpl implements OrderService {
             return ResponseBuilder.build(HttpStatus.OK, "Tạo order thành công", null);
         }
         return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Invalid status (packaging, done)", null);
+    }
+
+    @Override
+    public ResponseEntity<ResponseObject> updateOrder(UpdateOrderRequest request) {
+
+            // 1. Tìm order
+            Optional<Order> optionalOrder = orderRepo.findById(request.getOrderId());
+            if (optionalOrder.isEmpty()) {
+                return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng!", null);
+            }
+                Order order = optionalOrder.get();
+
+                // 2. Validate trạng thái mới
+                Status newStatus;
+                try {
+                    newStatus = Status.valueOf(request.getAction());
+                } catch (IllegalArgumentException e) {
+                    return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Trạng thái không hợp lệ!", null);
+                }
+                // 3. Update trạng thái
+                order.setStatus(newStatus);
+                orderRepo.save(order);
+
+                return ResponseBuilder.build(HttpStatus.OK, "Cập nhật trạng thái đơn hàng thành công!", null);
+
     }
 
     @Override

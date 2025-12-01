@@ -2,6 +2,7 @@ package com.exe201.group1.psgp_be.services.implementors;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
 import com.exe201.group1.psgp_be.dto.requests.CheckAvailableProductsBySizeRequest;
+import com.exe201.group1.psgp_be.dto.requests.CheckQuantityInStorageRequest;
 import com.exe201.group1.psgp_be.dto.requests.ConfirmPaymentUrlRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateCustomProductRequestRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
@@ -22,7 +23,9 @@ import com.exe201.group1.psgp_be.models.ProductImage;
 import com.exe201.group1.psgp_be.models.ProductSucculent;
 import com.exe201.group1.psgp_be.models.Succulent;
 import com.exe201.group1.psgp_be.models.SucculentSpecies;
+import com.exe201.group1.psgp_be.models.User;
 import com.exe201.group1.psgp_be.models.WishlistItem;
+import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.repositories.AppConfigRepo;
 import com.exe201.group1.psgp_be.repositories.ProductImageRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
@@ -30,7 +33,9 @@ import com.exe201.group1.psgp_be.repositories.ProductSucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentRepo;
 import com.exe201.group1.psgp_be.repositories.SucculentSpeciesRepo;
 import com.exe201.group1.psgp_be.repositories.WishListItemRepo;
+import com.exe201.group1.psgp_be.services.JWTService;
 import com.exe201.group1.psgp_be.services.ProductService;
+import com.exe201.group1.psgp_be.utils.CookieUtil;
 import com.exe201.group1.psgp_be.utils.MapUtils;
 import com.exe201.group1.psgp_be.utils.ResponseBuilder;
 import com.vladmihalcea.hibernate.util.StringUtils;
@@ -73,6 +78,8 @@ public class ProductServiceImpl implements ProductService {
     WishListItemRepo wishListItemRepo;
     AppConfigRepo appConfigRepo;
     ProductSucculentRepo productSucculentRepo;
+    private final JWTService jWTService;
+    private final AccountRepo accountRepo;
 
     private static class AccessoryInventoryCache {
         private final Map<String, Object> rawConfig;
@@ -1287,13 +1294,20 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ResponseEntity<ResponseObject> checkAvailableProductsBySize(CheckAvailableProductsBySizeRequest request) {
+    public ResponseEntity<ResponseObject> checkAvailableProductsBySize(CheckAvailableProductsBySizeRequest request, HttpServletRequest httpServletRequest) {
+
+        Account account = CookieUtil.extractAccountFromCookie(httpServletRequest, jWTService, accountRepo);
+        assert account != null;
+        User buyer = account.getUser();
+        if(buyer.getPhone().isEmpty() || buyer.getName().isEmpty() || buyer.getFengShui() == null || buyer.getGender().isEmpty() || buyer.getAddress().isEmpty() || buyer.getZodiac() == null ){
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Bạn vui lòng cập nhật đầy đủ profile của bạn trước khi tạo yêu cầu điện cây", null);
+        }
 
         for (CreatePaymentUrlRequest.ProductData productData : request.getProducts()) {
 
             Optional<Product> product = productRepo.findById(productData.getProductId());
 
-            if(!product.isPresent()) {
+            if(product.isEmpty()) {
                 return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found", null);
             }
 
@@ -1407,6 +1421,272 @@ public class ProductServiceImpl implements ProductService {
         return ResponseBuilder.build(HttpStatus.OK, "Ok", null);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<ResponseObject> checkAvailableQuantity(CheckQuantityInStorageRequest request, HttpServletRequest httpServletRequest) {
+
+        Account account = CookieUtil.extractAccountFromCookie(httpServletRequest, jWTService, accountRepo);
+        User buyer = account.getUser();
+        if(buyer.getPhone().isEmpty() || buyer.getName().isEmpty() || buyer.getFengShui() == null || buyer.getGender().isEmpty() || buyer.getAddress().isEmpty() || buyer.getZodiac() == null ){
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Bạn vui lòng cập nhật đầy đủ profile của bạn trước khi tạo yêu cầu điện cây", null);
+        }
+
+        AppConfig accessoryConfig = appConfigRepo.findByKey("accessory")
+                .orElseThrow(() -> new RuntimeException("Accessory config not found"));
+
+        Map<String, Object> accessory = (Map<String, Object>) accessoryConfig.getValue();
+
+        // ======================================================
+        // 1. CHECK + UPDATE SUCCULENT QUANTITY
+        // ======================================================
+        for (CheckQuantityInStorageRequest.SucculentData data : request.getSucculentDataList()) {
+
+            Succulent succulent = succulentRepo.findById(data.getSucculentId())
+                    .orElseThrow(() -> new RuntimeException("Succulent not found"));
+
+            Map<String, Object> sizeMap = (Map<String, Object>) succulent.getSize();
+            Map<String, Object> sizeDetail = (Map<String, Object>) sizeMap.get(data.getSize().toLowerCase());
+
+            if (sizeDetail == null) {
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                        "Size '" + data.getSize() + "' không tồn tại cho succulent" + data.getSucculentId(),
+                        null);
+            }
+
+            int available = (int) sizeDetail.get("quantity");
+
+            if (available < data.getQuantity()) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                        "Số lượng succulent" + data.getSucculentId() +
+                                " size " + data.getSize() + " không đủ. Hiện còn " + available,
+                        null);
+            }
+
+            // Update giảm số lượng
+            sizeDetail.put("quantity", available - data.getQuantity());
+            succulentRepo.save(succulent);
+        }
+
+        // ======================================================
+        // 2. CHECK + UPDATE SOIL
+        // ======================================================
+        if (request.getSoilData() != null) {
+
+            CheckQuantityInStorageRequest.SoilData soilReq = request.getSoilData();
+
+            Map<String, Object> soil = (Map<String, Object>) accessory.get("soil");
+            Map<String, Object> soilDetail = (Map<String, Object>) soil.get(soilReq.getSoilName().toLowerCase());
+
+            if (soilDetail == null) {
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                        "Soil '" + soilReq.getSoilName() + "' không tồn tại",
+                        null);
+            }
+
+            double available = ((Number) soilDetail.get("availableMassValue")).doubleValue();
+            double required = soilReq.getQuantity();
+
+            if (available < required) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                        "Soil '" + soilReq.getSoilName() +
+                                "' không đủ. Hiện còn " + available + "g",
+                        null);
+            }
+
+            soilDetail.put("availableMassValue", available - required);
+        }
+
+        // ======================================================
+        // 3. CHECK + UPDATE POT
+        // ======================================================
+        if (request.getPotData() != null) {
+
+            CheckQuantityInStorageRequest.PotData potReq = request.getPotData();
+
+            Map<String, Object> pot = (Map<String, Object>) accessory.get("pot");
+            Map<String, Object> potDetail = (Map<String, Object>) pot.get(potReq.getPotName().toLowerCase());
+
+            if (potDetail == null) {
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                        "Pot '" + potReq.getPotName() + "' không tồn tại",
+                        null);
+            }
+
+            Map<String, Object> potSizeDetail =
+                    (Map<String, Object>) ((Map<String, Object>) potDetail.get("size"))
+                            .get(potReq.getSize().toLowerCase());
+
+            if (potSizeDetail == null) {
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                        "Size '" + potReq.getSize() + "' của pot '" + potReq.getPotName() + "' không tồn tại",
+                        null);
+            }
+
+            int available = (int) potSizeDetail.get("availableQty");
+
+            if (available < potReq.getQuantity()) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                        "Số lượng pot '" + potReq.getPotName() +
+                                "' size " + potReq.getSize() + " không đủ. Hiện còn " + available,
+                        null);
+            }
+
+            potSizeDetail.put("availableQty", available - potReq.getQuantity());
+        }
+
+        // ======================================================
+        // 4. CHECK + UPDATE ACCESSORY (DECORATION)
+        // ======================================================
+        if (request.getAccessoryData() != null) {
+
+            CheckQuantityInStorageRequest.AccessoryData accReq = request.getAccessoryData();
+
+            Map<String, Object> decor = (Map<String, Object>) accessory.get("decoration");
+            Map<String, Object> decorDetail = (Map<String, Object>) decor.get(accReq.getAccessoryName().toLowerCase());
+
+            if (decorDetail == null) {
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                        "Decoration '" + accReq.getAccessoryName() + "' không tồn tại",
+                        null);
+            }
+
+            int available = (int) decorDetail.get("availableQty");
+
+            if (available < accReq.getQuantity()) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                return ResponseBuilder.build(HttpStatus.BAD_REQUEST,
+                        "Decoration '" + accReq.getAccessoryName() +
+                                "' không đủ. Hiện còn " + available,
+                        null);
+            }
+
+            decorDetail.put("availableQty", available - accReq.getQuantity());
+        }
+
+        // SAVE ALL ACCESSORY CHANGES
+        accessoryConfig.setValue(accessory);
+        appConfigRepo.save(accessoryConfig);
+
+        return ResponseBuilder.build(HttpStatus.OK, "Kiểm tra & trừ số lượng thành công", null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void restoreQuantityInStorage(ConfirmPaymentUrlRequest request) {
+
+        ConfirmPaymentUrlRequest.Size selected = request.getSize();
+        if (selected == null) return;
+
+        // Load accessory config
+        AppConfig accessoryConfig = appConfigRepo.findByKey("accessory")
+                .orElseThrow(() -> new RuntimeException("Accessory config not found"));
+
+        Map<String, Object> accessory = (Map<String, Object>) accessoryConfig.getValue();
+
+        // ======================================================
+        // 1) RESTORE SUCCULENTS (LIST SIZES)
+        // ======================================================
+        if (selected.getSucculents() != null) {
+
+            for (CreateOrUpdateProductRequest.Succulent suc : selected.getSucculents()) {
+
+                Succulent succulent = succulentRepo.findById(suc.getId())
+                        .orElseThrow(() -> new RuntimeException("Succulent not found"));
+
+                Map<String, Object> sizeMap = (Map<String, Object>) succulent.getSize();
+
+                // Mỗi succulent có list<SucculentSize>
+                for (CreateOrUpdateProductRequest.SucculentSize sz : suc.getSizes()) {
+
+                    Map<String, Object> sizeDetail =
+                            (Map<String, Object>) sizeMap.get(sz.getSize().toLowerCase());
+
+                    if (sizeDetail != null) {
+                        int available = (int) sizeDetail.get("quantity");
+                        sizeDetail.put("quantity", available + sz.getQuantity());
+                    }
+                }
+
+                succulentRepo.save(succulent);
+            }
+        }
+
+        // ======================================================
+        // 2) RESTORE SOIL
+        // ======================================================
+        if (selected.getSoil() != null) {
+
+            var soilReq = selected.getSoil();
+
+            Map<String, Object> soil =
+                    (Map<String, Object>) accessory.get("soil");
+
+            Map<String, Object> soilDetail =
+                    (Map<String, Object>) soil.get(soilReq.getName().toLowerCase());
+
+            if (soilDetail != null) {
+                double available = ((Number) soilDetail.get("availableMassValue")).doubleValue();
+                soilDetail.put("availableMassValue", available + soilReq.getMassAmount());
+            }
+        }
+
+        // ======================================================
+        // 3) RESTORE POT (quantity ALWAYS = 1)
+        // ======================================================
+        if (selected.getPot() != null) {
+
+            var potReq = selected.getPot();
+
+            Map<String, Object> potMap =
+                    (Map<String, Object>) accessory.get("pot");
+
+            Map<String, Object> potDetail =
+                    (Map<String, Object>) potMap.get(potReq.getName().toLowerCase());
+
+            if (potDetail != null) {
+
+                Map<String, Object> potSizeDetail =
+                        (Map<String, Object>)
+                                ((Map<String, Object>) potDetail.get("size"))
+                                        .get(potReq.getSize().toLowerCase());
+
+                if (potSizeDetail != null) {
+                    int available = (int) potSizeDetail.get("availableQty");
+                    potSizeDetail.put("availableQty", available + 1); // ALWAYS 1
+                }
+            }
+        }
+
+        // ======================================================
+        // 4) RESTORE DECORATION (LIST DETAILS)
+        // ======================================================
+        if (selected.getDecoration() != null
+                && selected.getDecoration().getDetails() != null) {
+
+            Map<String, Object> decorMap =
+                    (Map<String, Object>) accessory.get("decoration");
+
+            for (CreateOrUpdateProductRequest.DecorationDetail d :
+                    selected.getDecoration().getDetails()) {
+
+                Map<String, Object> decorDetail =
+                        (Map<String, Object>) decorMap.get(d.getName().toLowerCase());
+
+                if (decorDetail != null) {
+                    int available = (int) decorDetail.get("availableQty");
+                    decorDetail.put("availableQty", available + d.getQuantity());
+                }
+            }
+        }
+
+        // SAVE accessory
+        accessoryConfig.setValue(accessory);
+        appConfigRepo.save(accessoryConfig);
+    }
+
+
     @Transactional(rollbackFor = Exception.class)
     public void restoreQuantityOfFailedPayment(List<ConfirmPaymentUrlRequest.ProductData> productDataList){
 
@@ -1418,7 +1698,7 @@ public class ProductServiceImpl implements ProductService {
             Map<String, Object> sizeData = (Map<String, Object>) ((Map<?, ?>) product.get().getSize()).get(data.getSize());;
 
             AppConfig accessoryConfig = appConfigRepo.findByKey("accessory")
-                    .orElseThrow(() -> new RuntimeException("Accessory config not found"));
+                    .orElseThrow(() -> new RuntimeException("Accessory not found"));
 
             Map<String, Object> accessory = (Map<String, Object>) accessoryConfig.getValue();
 
@@ -1537,12 +1817,12 @@ public class ProductServiceImpl implements ProductService {
 
         AccessoryInventoryCache cache = accessoryCache != null ? accessoryCache : loadAccessoryInventoryCache();
 
-        int potAvailableQty = cache == null || cache.potMap.isEmpty()
-                ? checkPotAvailableFromConfig(potData, cache != null ? cache.rawConfig : Collections.emptyMap())
+        int potAvailableQty = cache.potMap.isEmpty()
+                ? checkPotAvailableFromConfig(potData, cache.rawConfig)
                 : getPotAvailableFromCache(potData, cache);
 
-        int soilAvailableQty = cache == null || cache.soilMap.isEmpty()
-                ? checkSoilAvailableFromConfig(soilData, cache != null ? cache.rawConfig : Collections.emptyMap())
+        int soilAvailableQty = cache.soilMap.isEmpty()
+                ? checkSoilAvailableFromConfig(soilData, cache.rawConfig)
                 : getSoilAvailableFromCache(soilData, cache);
 
         int succulentAvailableQty = calculateSucculentAvailableQty(succulentData, succulentCache);
@@ -1550,11 +1830,11 @@ public class ProductServiceImpl implements ProductService {
         int decorationAvailableQty = soilAvailableQty + potAvailableQty + succulentAvailableQty;
         if (decorationData != null) {
             List<Map<String, Object>> details = extractDecorationDetails(decorationData);
-            decorationAvailableQty = cache == null || cache.decorationMap.isEmpty()
+            decorationAvailableQty = cache.decorationMap.isEmpty()
                     ? checkDecorationAvailable(
                     Boolean.parseBoolean(String.valueOf(decorationData.get("included"))),
                     details,
-                    cache != null ? buildDecorationResponse(cache.rawConfig) : Collections.emptyList(),
+                    buildDecorationResponse(cache.rawConfig),
                     soilAvailableQty + potAvailableQty + succulentAvailableQty)
                     : getDecorationAvailableFromCache(decorationData, details, cache,
                     soilAvailableQty + potAvailableQty + succulentAvailableQty);

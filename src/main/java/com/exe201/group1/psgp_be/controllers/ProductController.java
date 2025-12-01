@@ -2,6 +2,7 @@ package com.exe201.group1.psgp_be.controllers;
 
 import com.exe201.group1.psgp_be.dto.requests.AddWishListItemRequest;
 import com.exe201.group1.psgp_be.dto.requests.CheckAvailableProductsBySizeRequest;
+import com.exe201.group1.psgp_be.dto.requests.CheckQuantityInStorageRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateAccessoryRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateOrUpdateProductRequest;
 import com.exe201.group1.psgp_be.dto.requests.CreateSucculentRequest;
@@ -9,6 +10,7 @@ import com.exe201.group1.psgp_be.dto.requests.UpdateSucculentRequest;
 import com.exe201.group1.psgp_be.dto.response.ResponseObject;
 import com.exe201.group1.psgp_be.services.ProductService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -85,10 +87,13 @@ public class ProductController {
     }
 
     @PutMapping("/check/availability/products")
-    public ResponseEntity<ResponseObject> checkAvailableProductsBySize(@RequestBody CheckAvailableProductsBySizeRequest request) {
-        return productService.checkAvailableProductsBySize(request);
+    public ResponseEntity<ResponseObject> checkAvailableProductsBySize(@RequestBody CheckAvailableProductsBySizeRequest request, HttpServletRequest httpServletRequest) {
+        return productService.checkAvailableProductsBySize(request, httpServletRequest);
     }
-
+    @PutMapping("/check/availability")
+    public ResponseEntity<ResponseObject> checkAvailableInStorage(@RequestBody CheckQuantityInStorageRequest request, HttpServletRequest httpServletRequest) {
+        return productService.checkAvailableQuantity(request, httpServletRequest);
+    }
     //=================== wish list =====================\\
     @PostMapping("/wishlist/item")
     @PreAuthorize("hasRole('BUYER')")

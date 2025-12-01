@@ -9,6 +9,7 @@ import com.exe201.group1.psgp_be.enums.Status;
 import com.exe201.group1.psgp_be.models.Account;
 import com.exe201.group1.psgp_be.models.CustomProductRequest;
 import com.exe201.group1.psgp_be.models.Product;
+import com.exe201.group1.psgp_be.models.User;
 import com.exe201.group1.psgp_be.repositories.AccountRepo;
 import com.exe201.group1.psgp_be.repositories.CustomProductRequestRepo;
 import com.exe201.group1.psgp_be.repositories.ProductRepo;
@@ -55,7 +56,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
     public ResponseEntity<ResponseObject> createCustomProductRequest(CreateCustomProductRequestRequest request, HttpServletRequest httpRequest) {
         Account account = CookieUtil.extractAccountFromCookie(httpRequest, jwtService, accountRepo);
         if (account == null) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Account not found", null);
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Không tìm thấy tài khoản", null);
         }
 
         String error = validateCreateCustomProductRequest(request);
@@ -128,7 +129,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
 
     private String validateCreateCustomProductRequest(CreateCustomProductRequestRequest request) {
         if (request.getSize() == null) {
-            return "Thông tin cấu hình sản phẩm không được để trống.";
+            return "Thông tin sản phẩm không được để trống.";
         }
 
         CreateCustomProductRequestRequest.Size size = request.getSize();
@@ -284,6 +285,27 @@ public class CustomRequestServiceImpl implements CustomRequestService {
                     data.put("status", cp.getStatus().getValue());
                     data.put("occasion", cp.getOccasion());
                     data.put("createdAt", cp.getCreatedAt());
+                    Map<String, Object> dataVersions = (Map<String, Object>) cp.getData();
+
+                    int latestVer = dataVersions.keySet().stream()
+                            .filter(key -> key.startsWith("v_"))
+                            .mapToInt(key -> Integer.parseInt(key.substring(2)))
+                            .max()
+                            .orElse(0);
+
+                    Map<String, Object> latestData = MapUtils.getMapFromObject(dataVersions, "v_" + latestVer);
+
+                    data.put("latestVersion", latestData);
+
+                    List<Map<String, Object>> versions = new ArrayList<>();
+                    for(Map.Entry<String, Object> entry : dataVersions.entrySet()) {
+                        if (entry.getKey().startsWith("v_")) {
+                            Map<String, Object> versionData = (Map<String, Object>) entry.getValue();
+                            versionData.put("version", entry.getKey());
+                            versions.add(versionData);
+                        }
+                    }
+                    data.put("versions", versions.isEmpty() ? new ArrayList<>() : versions);
                     return data;
                 }
         ).toList();
@@ -296,15 +318,12 @@ public class CustomRequestServiceImpl implements CustomRequestService {
     public ResponseEntity<ResponseObject> viewCustomProductRequestDetail(int id) {
         CustomProductRequest request = customProductRequestRepo.findById(id).orElse(null);
         if (request == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Sản phẩm product không tìm thấy", null);
         }
-
         Map<String, Object> data = MapUtils.getMapFromObject(request.getData());
-        
         // Separate customData and design versions
         Map<String, Object> customData = new HashMap<>();
         List<Map<String, Object>> versions = new ArrayList<>();
-        
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             if (entry.getKey().startsWith("v_")) {
                 Map<String, Object> versionData = MapUtils.getMapFromObject(entry.getValue());
@@ -314,17 +333,23 @@ public class CustomRequestServiceImpl implements CustomRequestService {
                 customData.put(entry.getKey(), entry.getValue());
             }
         }
-
         Map<String, Object> response = new HashMap<>();
         response.put("id", request.getId());
         response.put("buyer", EntityResponseBuilder.buildUserResponse(request.getBuyer()));
         response.put("customData", productService.buildProductSizeResponse(customData));
         response.put("occasion", request.getOccasion());
-
         if (request.getStatus().equals(Status.REJECT)) {
             response.put("rejectReason", request.getStatus());
         }
 
+        int latestVer = data.keySet().stream()
+                .filter(key -> key.startsWith("v_"))
+                .mapToInt(key -> Integer.parseInt(key.substring(2)))
+                .max()
+                .orElse(0);
+        Map<String, Object> latestData = MapUtils.getMapFromObject(data, "v_" + latestVer);
+
+        response.put("latestVersion", latestData);
         response.put("versions", versions.isEmpty() ? new ArrayList<>() : versions);
         response.put("status", request.getStatus().getValue());
         response.put("createdAt", request.getCreatedAt());
@@ -332,22 +357,40 @@ public class CustomRequestServiceImpl implements CustomRequestService {
     }
 
     @Override
+    public ResponseEntity<ResponseObject> viewCustomProductRequestDetailVersion(int id) {
+        CustomProductRequest request = customProductRequestRepo.findById(id).orElse(null);
+        if (request == null) {
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Sản phẩm product không tìm thấy", null);
+        }
+        Map<String, Object> data = (Map<String, Object>) request.getData();
+        List<Map<String, Object>> versions = new ArrayList<>();
+        for(Map.Entry<String, Object> entry : data.entrySet()) {
+            if (entry.getKey().startsWith("v_")) {
+            Map<String, Object> versionData = (Map<String, Object>) entry.getValue();
+            versionData.put("version", entry.getKey());
+            versions.add(versionData);
+            }
+        }
+        return ResponseBuilder.build(HttpStatus.OK, "Xem tất cả các phiên bản của sản phẩm yêu cầu tùy chỉnh", versions);
+    }
+
+    @Override
     @Transactional
     public ResponseEntity<ResponseObject> updateCustomProductRequestDesignImage(UpdateCustomProductRequestDesignImageRequest request, boolean approved) {
         CustomProductRequest customProductRequest = customProductRequestRepo.findById(request.getId()).orElse(null);
         if (customProductRequest == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Sản phẩm product không tìm thấy", null);
         }
 
         if (!approved) {
             customProductRequest.setStatus(Status.REJECT);
             customProductRequest.setReason(request.getRejectReason());
             customProductRequestRepo.save(customProductRequest);
-            return ResponseBuilder.build(HttpStatus.OK, "Custom product rejected", null);
+            return ResponseBuilder.build(HttpStatus.OK, "Sản phẩm tùy chỉnh bị từ chối", null);
         }
 
         if (request.getImages().isEmpty()) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Designed image is empty", null);
+            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Hình ảnh được thiết kế trống rỗng", null);
         }
 
         Map<String, Object> data = new HashMap<>();
@@ -361,14 +404,14 @@ public class CustomRequestServiceImpl implements CustomRequestService {
             Map<String, Map<String, Object>> customDataForProduct = (Map<String, Map<String, Object>>) (Object) originalData;
 
             //Thêm version mới
-            data.put("v_1", buildCustomProductRequestDesignImageVersionData(request, 0));
+            data.put("v_1", buildCustomProductRequestDesignImageVersionData(request, 0, "pending"));
               //Merge với data cũ (giữ lại custom: {...})
             data.putAll(originalData);
 
             customProductRequest.setData(data);
             customProductRequestRepo.save(customProductRequest);
 
-            String productName = "Custom product by " + customProductRequest.getBuyer().getName();
+            String productName = "Sản phẩm tùy chỉnh của " + customProductRequest.getBuyer().getName();
             if (customProductRequest.getOccasion() != null && !customProductRequest.getOccasion().trim().isEmpty()) {
                 productName += " - " + customProductRequest.getOccasion();
             }
@@ -396,7 +439,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
             product.setStatus(productService.checkProductStatus(product) ? Status.AVAILABLE : Status.OUT_OF_STOCK);
             productRepo.save(product);
 
-            return ResponseBuilder.build(HttpStatus.OK, "Custom product approved", null);
+            return ResponseBuilder.build(HttpStatus.OK, "Sản phẩm tùy chỉnh đã được phê duyệt", null);
         }
 
         data = MapUtils.getMapFromObject(customProductRequest.getData());
@@ -408,18 +451,50 @@ public class CustomRequestServiceImpl implements CustomRequestService {
                 .max()
                 .orElse(0);
 
-        data.put("v_" + (latestVer + 1), buildCustomProductRequestDesignImageVersionData(request, latestVer));
+        Map<String, Object> latestData = MapUtils.getMapFromObject(data, "v_" + latestVer);
+        latestData.replace("status", "fixed");
+        data.replace("v_" + latestVer, latestData);
+        data.put("v_" + (latestVer + 1), buildCustomProductRequestDesignImageVersionData(request, latestVer, "pending"));
+
+        customProductRequest.setStatus(Status.FIXED);
 
         customProductRequest.setData(data);
         customProductRequestRepo.save(customProductRequest);
-        return ResponseBuilder.build(HttpStatus.OK, "Custom product revision request submitted", null);
+        return ResponseBuilder.build(HttpStatus.OK, "Đã gửi yêu cầu sửa đổi sản phẩm tùy chỉnh", null);
     }
 
-    private Map<String, Object> buildCustomProductRequestDesignImageVersionData(UpdateCustomProductRequestDesignImageRequest request, int previousVer) {
+    @Override
+    public ResponseEntity<ResponseObject> completeCustomProductRequest(int id) {
+
+        CustomProductRequest customProductRequest = customProductRequestRepo.findById(id).orElse(null);
+        if (customProductRequest == null) {
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm tùy chỉnh", null);
+        }
+
+        Map<String, Object> data = MapUtils.getMapFromObject(customProductRequest.getData());
+
+        int latestVer = data.keySet().stream()
+                .filter(key -> key.startsWith("v_"))
+                .mapToInt(key -> Integer.parseInt(key.substring(2)))
+                .max()
+                .orElse(0);
+
+        Map<String, Object> latestData = MapUtils.getMapFromObject(data, "v_" + latestVer);
+        latestData.replace("status", "confirmed");
+        data.replace("v_" + latestVer, latestData);
+
+        customProductRequest.setStatus(Status.DONE);
+        customProductRequest.setData(data);
+        customProductRequestRepo.save(customProductRequest);
+
+        return ResponseBuilder.build(HttpStatus.OK, "", null);
+    }
+
+    private Map<String, Object> buildCustomProductRequestDesignImageVersionData(UpdateCustomProductRequestDesignImageRequest request, int previousVer, String status) {
         Map<String, Object> data = new HashMap<>();
         data.put("images", request.getImages().stream().map(UpdateCustomProductRequestDesignImageRequest.Image::getUrl).toList());
         data.put("createDate", LocalDateTime.now());
-        data.put("status", "pending");
+        data.put("status", status);
         data.put("type", previousVer == 0 ? "design" : "re-design");
         data.put("parentVersion", previousVer == 0 ? "" : previousVer + 1);
         return data;
@@ -429,31 +504,29 @@ public class CustomRequestServiceImpl implements CustomRequestService {
     public ResponseEntity<ResponseObject> createRevision(CreateRevisionRequest request) {
         CustomProductRequest customProductRequest = customProductRequestRepo.findById(request.getId()).orElse(null);
         if (customProductRequest == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Custom product not found", null);
+            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm tùy chỉnh", null);
         }
 
-        if (!customProductRequest.getStatus().equals(Status.APPROVE)) {
-            return ResponseBuilder.build(HttpStatus.BAD_REQUEST, "Custom product not approved", null);
-        }
+
 
         Map<String, Object> data = MapUtils.getMapFromObject(customProductRequest.getData());
-        
-        // Find the latest version by filtering v_* keys
+
         int latestVer = data.keySet().stream()
                 .filter(key -> key.startsWith("v_"))
                 .mapToInt(key -> Integer.parseInt(key.substring(2)))
                 .max()
                 .orElse(0);
-        
+
         // Get the latest version data and add revision info
         Map<String, Object> latestData = MapUtils.getMapFromObject(data, "v_" + latestVer);
         latestData.put("revisionContent", request.getComment());
         latestData.put("revisionDate", LocalDateTime.now());
-        
         data.replace("v_" + latestVer, latestData);
 
         customProductRequest.setData(data);
+        customProductRequest.setStatus(Status.FIXING);
         customProductRequestRepo.save(customProductRequest);
-        return ResponseBuilder.build(HttpStatus.OK, "Submit revision request", null);
+        return ResponseBuilder.build(HttpStatus.OK, "Gửi yêu cầu sửa đổi", null);
     }
+
 }
