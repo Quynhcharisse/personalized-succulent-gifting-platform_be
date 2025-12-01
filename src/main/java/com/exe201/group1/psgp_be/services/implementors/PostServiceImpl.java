@@ -161,6 +161,7 @@ public class PostServiceImpl implements PostService {
         User user = account.getUser();
 
         String content = request.getContent();
+        String imageUrl = request.getImageUrl();
 
         Post post = postRepo.findById(postId).orElse(null);
         if (post == null) {
@@ -171,6 +172,7 @@ public class PostServiceImpl implements PostService {
                 .post(post)
                 .buyer(user)
                 .content(content)
+                .imageUrl(imageUrl != null ? imageUrl.trim() : null)
                 .status(Status.VISIBLE)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -188,6 +190,7 @@ public class PostServiceImpl implements PostService {
         }
 
         String content = request.getContent();
+        String imageUrl = request.getImageUrl();
 
         Comment comment = commentRepo.findById(commentId).orElse(null);
         if (comment == null) {
@@ -199,6 +202,7 @@ public class PostServiceImpl implements PostService {
         }
 
         comment.setContent(content);
+        comment.setImageUrl(imageUrl != null ? imageUrl.trim() : null);
         comment.setStatus(request.getStatus());
         comment.setUpdatedAt(LocalDateTime.now());
         commentRepo.save(comment);

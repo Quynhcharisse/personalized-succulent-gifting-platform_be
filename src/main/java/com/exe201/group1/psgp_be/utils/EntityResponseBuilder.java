@@ -136,6 +136,12 @@ public class EntityResponseBuilder {
     }
 
     public static Map<String, Object> buildCommentsResponse(List<Comment> comments) {
+        if (comments == null) {
+            return Map.of(
+                    "count", 0,
+                    "comments", List.of()
+            );
+        }
         return Map.of(
                 "count", comments.size(),
                 "comments", comments.stream().map(EntityResponseBuilder::buildCommentsResponse
@@ -156,7 +162,8 @@ public class EntityResponseBuilder {
                 "userName", comment.getBuyer().getName(),
                 "userAvatar", comment.getBuyer().getAvatarUrl(),
                 "rating", comment.getRating(),
-                "accountId", comment.getBuyer().getAccount().getId()
+                "accountId", comment.getBuyer().getAccount().getId(),
+                "imageUrl", Objects.requireNonNullElse(comment.getImageUrl(), "")
         );
     }
 
