@@ -134,19 +134,35 @@ public class PostServiceImpl implements PostService {
             return ResponseBuilder.build(HttpStatus.FORBIDDEN, "You do not have permission to update this post", null);
         }
 
-        Integer productId = request.getProductId();
-        Product product = productRepo.findById(productId).orElse(null);
-        if (product == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found with id: " + productId, null);
+        // Update only when request fields are present
+        if (request.getTitle() != null && !request.getTitle().isBlank()) {
+            post.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            post.setDescription(request.getDescription());
+        }
+        if (request.getStatus() != null) {
+            post.setStatus(request.getStatus());
         }
 
-        post.setTitle(request.getTitle());
-        post.setDescription(request.getDescription());
-        post.setStatus(request.getStatus());
-        post.setProduct(product);
+        Integer productId = request.getProductId();
+        if (productId != null) {
+            Product product = productRepo.findById(productId).orElse(null);
+            if (product == null) {
+                return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found with id: " + productId, null);
+            }
+            post.setProduct(product);
+        }
+
+        // always update timestamp when updating
         post.setUpdatedAt(LocalDateTime.now());
 
-        createOrUpdatePost(request, post);
+        // Handle images only if provided in the request
+        if (request.getPostImages() != null) {
+            post = createOrUpdatePost(request, post);
+        } else {
+            postRepo.saveAndFlush(post);
+        }
 
         return ResponseEntity.ok(new ResponseObject("Post updated successfully", EntityResponseBuilder.buildPostsResponse(post)));
     }
@@ -203,7 +219,7 @@ public class PostServiceImpl implements PostService {
 
         comment.setContent(content);
         comment.setImageUrl(imageUrl != null ? imageUrl.trim() : null);
-        comment.setStatus(request.getStatus());
+        if (request.getStatus() != null && !request.getStatus().getValue().isBlank()) comment.setStatus(request.getStatus());
         comment.setUpdatedAt(LocalDateTime.now());
         commentRepo.save(comment);
         return ResponseEntity.ok(new ResponseObject("Comment updated successfully", EntityResponseBuilder.buildCommentsResponse(comment)));
