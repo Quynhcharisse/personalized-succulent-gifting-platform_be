@@ -127,7 +127,6 @@ public class AccountServiceImpl implements AccountService {
     }
 
     private String UpdateProfileValidation(UpdateProfileRequest request) {
-
         // Name không bắt buộc, nhưng nếu có thì phải validate
         if (request.getName() != null && !request.getName().trim().isEmpty()) {
             if (request.getName().length() < 3) {
@@ -165,11 +164,13 @@ public class AccountServiceImpl implements AccountService {
             return "Địa chỉ phải <= 255 ký tự";
         }
 
-        String lower = request.getAvatarUrl().toLowerCase();
-        if (!(lower.endsWith(".jpg") || lower.endsWith(".jpeg") ||
-                lower.endsWith(".png") || lower.endsWith(".gif") ||
-                lower.endsWith(".webp"))) {
-            return "URL ảnh đại diện phải là hình ảnh (jpg, jpeg, png, gif, webp)";
+        if (request.getAvatarUrl() != null && !request.getAvatarUrl().trim().isEmpty()) {
+            String lower = request.getAvatarUrl().toLowerCase();
+            if (!(lower.endsWith(".jpg") || lower.endsWith(".jpeg") ||
+                    lower.endsWith(".png") || lower.endsWith(".gif") ||
+                    lower.endsWith(".webp"))) {
+                return "URL ảnh đại diện phải là hình ảnh (jpg, jpeg, png, gif, webp)";
+            }
         }
 
         return "";
