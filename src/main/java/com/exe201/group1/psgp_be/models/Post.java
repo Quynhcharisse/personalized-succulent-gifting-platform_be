@@ -46,10 +46,12 @@ public class Post {
     User seller;
 
     @Column(length = 200)
-    String title;
+    @Builder.Default
+    String title = "";
 
     @Column(columnDefinition = "TEXT")
-    String description;
+    @Builder.Default
+    String description = "";
 
     @Column(name = "view_count")
     Integer viewCount;

@@ -108,8 +108,8 @@ public class EntityResponseBuilder {
     public static Map<String, Object> buildPostsResponse(Post post) {
         Map<String, Object> response = new HashMap<>(Map.of(
                 "id", post.getId(),
-                "title", post.getTitle(),
-                "description", post.getDescription(),
+                "title", Objects.requireNonNullElse(post.getTitle(), ""),
+                "description", Objects.requireNonNullElse(post.getDescription(), ""),
                 "status", post.getStatus(),
                 "createdAt", post.getCreatedAt(),
                 "updatedAt", Objects.requireNonNullElse(post.getUpdatedAt(), ""),
