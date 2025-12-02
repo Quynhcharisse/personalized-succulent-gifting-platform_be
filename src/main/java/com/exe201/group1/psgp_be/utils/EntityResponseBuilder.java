@@ -114,10 +114,11 @@ public class EntityResponseBuilder {
                 "createdAt", post.getCreatedAt(),
                 "updatedAt", Objects.requireNonNullElse(post.getUpdatedAt(), ""),
                 "images", buildPostImageResponse(post.getPostImageList()),
-                "tags", buildPostTagResponse(post.getPostTagList()),
-                "sellerId", post.getSeller().getId(),
+                "userId", post.getSeller().getId(),
+                "userName", post.getSeller().getName(),
                 "productId", post.getProduct().getId()
         ));
+        response.put("userAvatar", post.getSeller().getAvatarUrl());
         response.put("comments", buildCommentsResponse(post.getComments()));
         return response;
     }
@@ -134,18 +135,13 @@ public class EntityResponseBuilder {
         );
     }
 
-    public static Map<String, Object> buildPostTagResponse(List<PostTag> postTags) {
-        return Map.of(
-                "count", postTags.size(),
-                "postTags", postTags.stream().map(postTag -> Map.of(
-                        "id", postTag.getId(),
-                        "tagName", postTag.getTag().getName(),
-                        "postId", postTag.getPost().getId()
-                )).toList()
-        );
-    }
-
     public static Map<String, Object> buildCommentsResponse(List<Comment> comments) {
+        if (comments == null) {
+            return Map.of(
+                    "count", 0,
+                    "comments", List.of()
+            );
+        }
         return Map.of(
                 "count", comments.size(),
                 "comments", comments.stream().map(EntityResponseBuilder::buildCommentsResponse
@@ -163,8 +159,11 @@ public class EntityResponseBuilder {
                 "createdAt", comment.getCreatedAt(),
                 "updatedAt", Objects.requireNonNullElse(comment.getUpdatedAt(), ""),
                 "postId", comment.getPost().getId(),
-                "buyerName", comment.getBuyer().getName(),
-                "accountId", comment.getBuyer().getAccount().getId()
+                "userName", comment.getBuyer().getName(),
+                "userAvatar", comment.getBuyer().getAvatarUrl(),
+                "rating", comment.getRating(),
+                "accountId", comment.getBuyer().getAccount().getId(),
+                "imageUrl", Objects.requireNonNullElse(comment.getImageUrl(), "")
         );
     }
 

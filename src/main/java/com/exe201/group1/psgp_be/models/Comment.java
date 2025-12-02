@@ -61,4 +61,7 @@ public class Comment {
 
     @Column(name = "updated_at")
     LocalDateTime updatedAt;
-} 
+
+    @Column(name = "image_url")
+    String imageUrl;
+}

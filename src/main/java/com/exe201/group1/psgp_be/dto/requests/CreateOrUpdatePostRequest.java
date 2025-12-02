@@ -24,5 +24,4 @@ public class CreateOrUpdatePostRequest {
     Status status;
     Integer productId;
     List<CreatePostImageRequest> postImages;
-    List<String> tagNames;
 }
