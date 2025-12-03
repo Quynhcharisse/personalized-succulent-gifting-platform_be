@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -276,6 +277,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
 
 
     private ResponseEntity<ResponseObject> viewCustomProduct(List<CustomProductRequest> requests) {
+        ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
         List<Map<String, Object>> response = requests.stream().map(
                 cp -> {
                     Map<String, Object> data = new HashMap<>();
@@ -284,7 +286,7 @@ public class CustomRequestServiceImpl implements CustomRequestService {
                     data.put("customData", productService.buildProductSizeResponse(MapUtils.getMapFromObject(cp.getData())));
                     data.put("status", cp.getStatus().getValue());
                     data.put("occasion", cp.getOccasion());
-                    data.put("createdAt", cp.getCreatedAt());
+                    data.put("createdAt", cp.getCreatedAt().atZone(VN_ZONE));
                     Map<String, Object> dataVersions = (Map<String, Object>) cp.getData();
 
                     int latestVer = dataVersions.keySet().stream()
@@ -352,7 +354,8 @@ public class CustomRequestServiceImpl implements CustomRequestService {
         response.put("latestVersion", latestData);
         response.put("versions", versions.isEmpty() ? new ArrayList<>() : versions);
         response.put("status", request.getStatus().getValue());
-        response.put("createdAt", request.getCreatedAt());
+        ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+        response.put("createdAt", request.getCreatedAt().atZone(VN_ZONE));
         return ResponseBuilder.build(HttpStatus.OK, "", response);
     }
 
@@ -493,7 +496,8 @@ public class CustomRequestServiceImpl implements CustomRequestService {
     private Map<String, Object> buildCustomProductRequestDesignImageVersionData(UpdateCustomProductRequestDesignImageRequest request, int previousVer, String status) {
         Map<String, Object> data = new HashMap<>();
         data.put("images", request.getImages().stream().map(UpdateCustomProductRequestDesignImageRequest.Image::getUrl).toList());
-        data.put("createDate", LocalDateTime.now());
+        ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+        data.put("createDate", LocalDateTime.now().atZone(VN_ZONE));
         data.put("status", status);
         data.put("type", previousVer == 0 ? "design" : "re-design");
         data.put("parentVersion", previousVer == 0 ? "" : previousVer + 1);

@@ -40,6 +40,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -273,7 +275,8 @@ public class OrderServiceImpl implements OrderService {
         Map<String, Object> result = new HashMap<>();
 
         result.put("orderId", order.getId());
-        result.put("orderDate", order.getOrderDate());
+        ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+        result.put("orderDate", order.getOrderDate().atZone(VN_ZONE));
         result.put("finalAmount", order.getFinalAmount());
         result.put("status", order.getStatus());
 
