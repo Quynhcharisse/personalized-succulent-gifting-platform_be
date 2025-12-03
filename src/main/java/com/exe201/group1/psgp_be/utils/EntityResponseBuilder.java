@@ -9,6 +9,7 @@ import com.exe201.group1.psgp_be.models.PostTag;
 import com.exe201.group1.psgp_be.models.Supplier;
 import com.exe201.group1.psgp_be.models.User;
 
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,13 +107,15 @@ public class EntityResponseBuilder {
     }
 
     public static Map<String, Object> buildPostsResponse(Post post) {
+
+        ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
         Map<String, Object> response = new HashMap<>(Map.of(
                 "id", post.getId(),
                 "title", Objects.requireNonNullElse(post.getTitle(), ""),
                 "description", Objects.requireNonNullElse(post.getDescription(), ""),
                 "status", post.getStatus(),
-                "createdAt", post.getCreatedAt(),
-                "updatedAt", Objects.requireNonNullElse(post.getUpdatedAt(), ""),
+                "createdAt", post.getCreatedAt().atZone(VN_ZONE),
+                "updatedAt", Objects.requireNonNullElse(post.getUpdatedAt().atZone(VN_ZONE), ""),
                 "images", buildPostImageResponse(post.getPostImageList()),
                 "userId", post.getSeller().getId(),
                 "userName", post.getSeller().getName(),

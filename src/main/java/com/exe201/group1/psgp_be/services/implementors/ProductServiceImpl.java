@@ -52,6 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -309,8 +310,9 @@ public class ProductServiceImpl implements ProductService {
         response.put("description", species.getDescription());
         response.put("size", sizeResponse);
         response.put("status", mainStatus.getValue());
-        response.put("createdAt", succulent.getCreatedAt());
-        response.put("updatedAt", succulent.getUpdatedAt());
+        ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+        response.put("createdAt", succulent.getCreatedAt().atZone(VN_ZONE));
+        response.put("updatedAt", succulent.getUpdatedAt().atZone(VN_ZONE));
         response.put("fengShuiElements", species.getElements());
         response.put("zodiacs", species.getZodiacs());
         return response;
@@ -2088,8 +2090,9 @@ public class ProductServiceImpl implements ProductService {
                             map.put("id", product.getId());
                             map.put("name", product.getName());
                             map.put("description", product.getDescription());
-                            map.put("createAt", product.getCreatedAt());
-                            map.put("updateAt", product.getUpdatedAt());
+                            ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+                            map.put("createAt", product.getCreatedAt().atZone(VN_ZONE));
+                            map.put("updateAt", product.getUpdatedAt().atZone(VN_ZONE));
                             map.put("status", product.getStatus().getValue().toLowerCase());
                             map.put("images", buildProductImageResponse(product.getProductImages()));
                             map.put("sizes", buildProductSizeResponse((Map<String, Object>) product.getSize(), accessoryCache, succulentCache));
@@ -2306,12 +2309,14 @@ public class ProductServiceImpl implements ProductService {
                 }
         ).toList();
 
+        ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
         return Map.of(
                 "id", succulent.getId(),
                 "name", succulent.getSpecies().getSpeciesName(),
                 "description", succulent.getSpecies().getDescription(),
-                "createAt", succulent.getCreatedAt(),
-                "updateAt", succulent.getUpdatedAt(),
+                "createAt", succulent.getCreatedAt().atZone(VN_ZONE),
+                "updateAt", succulent.getUpdatedAt().atZone(VN_ZONE),
                 "zodiacs", succulent.getSpecies().getZodiacs(),
                 "fengsui", succulent.getSpecies().getElements(),
                 "image", succulent.getImageUrl(),
