@@ -9,7 +9,6 @@ import com.exe201.group1.psgp_be.models.Account;
 import com.exe201.group1.psgp_be.models.Comment;
 import com.exe201.group1.psgp_be.models.Post;
 import com.exe201.group1.psgp_be.models.PostImage;
-import com.exe201.group1.psgp_be.models.PostTag;
 import com.exe201.group1.psgp_be.models.Product;
 import com.exe201.group1.psgp_be.models.Tag;
 import com.exe201.group1.psgp_be.models.User;
@@ -36,7 +35,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -62,7 +60,7 @@ public class PostServiceImpl implements PostService {
             return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không tìm thấy tài khoản", null);
         }
 
-        User seller = account.getUser();
+        User user = account.getUser();
 
         Integer productId = request.getProductId();
         Product product = productRepo.findById(productId).orElse(null);
@@ -71,7 +69,7 @@ public class PostServiceImpl implements PostService {
         }
 
         Post post = Post.builder()
-                .seller(seller)
+                .seller(user)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .status(request.getStatus())
@@ -136,19 +134,35 @@ public class PostServiceImpl implements PostService {
             return ResponseBuilder.build(HttpStatus.FORBIDDEN, "You do not have permission to update this post", null);
         }
 
-        Integer productId = request.getProductId();
-        Product product = productRepo.findById(productId).orElse(null);
-        if (product == null) {
-            return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found with id: " + productId, null);
+        // Update only when request fields are present
+        if (request.getTitle() != null && !request.getTitle().isBlank()) {
+            post.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            post.setDescription(request.getDescription());
+        }
+        if (request.getStatus() != null) {
+            post.setStatus(request.getStatus());
         }
 
-        post.setTitle(request.getTitle());
-        post.setDescription(request.getDescription());
-        post.setStatus(request.getStatus());
-        post.setProduct(product);
+        Integer productId = request.getProductId();
+        if (productId != null) {
+            Product product = productRepo.findById(productId).orElse(null);
+            if (product == null) {
+                return ResponseBuilder.build(HttpStatus.NOT_FOUND, "Product not found with id: " + productId, null);
+            }
+            post.setProduct(product);
+        }
+
+        // always update timestamp when updating
         post.setUpdatedAt(LocalDateTime.now());
 
-        createOrUpdatePost(request, post);
+        // Handle images only if provided in the request
+        if (request.getPostImages() != null) {
+            post = createOrUpdatePost(request, post);
+        } else {
+            postRepo.saveAndFlush(post);
+        }
 
         return ResponseEntity.ok(new ResponseObject("Post updated successfully", EntityResponseBuilder.buildPostsResponse(post)));
     }
@@ -160,9 +174,10 @@ public class PostServiceImpl implements PostService {
             return ResponseBuilder.build(HttpStatus.FORBIDDEN, "Không tìm thấy tài khoản", null);
         }
 
-        User buyer = account.getUser();
+        User user = account.getUser();
 
         String content = request.getContent();
+        String imageUrl = request.getImageUrl();
 
         Post post = postRepo.findById(postId).orElse(null);
         if (post == null) {
@@ -171,8 +186,9 @@ public class PostServiceImpl implements PostService {
 
         Comment comment = Comment.builder()
                 .post(post)
-                .buyer(buyer)
+                .buyer(user)
                 .content(content)
+                .imageUrl(imageUrl != null ? imageUrl.trim() : null)
                 .status(Status.VISIBLE)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -190,6 +206,7 @@ public class PostServiceImpl implements PostService {
         }
 
         String content = request.getContent();
+        String imageUrl = request.getImageUrl();
 
         Comment comment = commentRepo.findById(commentId).orElse(null);
         if (comment == null) {
@@ -201,7 +218,8 @@ public class PostServiceImpl implements PostService {
         }
 
         comment.setContent(content);
-        comment.setStatus(request.getStatus());
+        comment.setImageUrl(imageUrl != null ? imageUrl.trim() : null);
+        if (request.getStatus() != null && !request.getStatus().getValue().isBlank()) comment.setStatus(request.getStatus());
         comment.setUpdatedAt(LocalDateTime.now());
         commentRepo.save(comment);
         return ResponseEntity.ok(new ResponseObject("Comment updated successfully", EntityResponseBuilder.buildCommentsResponse(comment)));
@@ -268,53 +286,6 @@ public class PostServiceImpl implements PostService {
             // if client provided null and you want to remove all images:
             // postImageRepo.deleteAllByPostId(post.getId()); // implement in repo if needed
             // post.setPostImageList(new ArrayList<>());
-        }
-
-        List<String> tagStrings = request.getTagNames();
-        if (tagStrings != null) {
-            // Load current PostTag associations from DB (avoid relying on possibly-stale post.getPostTagList())
-            List<PostTag> existingPostTags = post.getId() != null
-                    ? postTagRepo.findAllByPostId(post.getId())
-                    : new ArrayList<>();
-
-            Map<String, PostTag> existingByName = existingPostTags.stream()
-                    .filter(Objects::nonNull)
-                    .filter(pt -> pt.getTag() != null && pt.getTag().getName() != null)
-                    .collect(Collectors.toMap(pt -> pt.getTag().getName(), pt -> pt, (a, b) -> a));
-
-            List<PostTag> resulting = new ArrayList<>();
-            for (String tagName : tagStrings) {
-                Tag tag;
-                if (tagRepo.existsByName(tagName)) {
-                    tag = tagRepo.findByName(tagName);
-                } else {
-                    tag = Tag.builder().name(tagName).build();
-                    tagRepo.save(tag);
-                }
-
-                if (existingByName.containsKey(tagName)) {
-                    PostTag existingPT = existingByName.remove(tagName);
-                    existingPT.setPost(post);
-                    existingPT.setTag(tag);
-                    resulting.add(existingPT);
-                } else {
-                    PostTag newPT = PostTag.builder().post(post).tag(tag).build();
-                    resulting.add(newPT);
-                }
-            }
-
-            // Delete associations removed by client
-            if (!existingByName.isEmpty()) {
-                List<PostTag> toDelete = new ArrayList<>(existingByName.values());
-                postTagRepo.deleteAllInBatch(toDelete);
-            }
-
-            // Persist new/updated PostTag rows explicitly
-            if (!resulting.isEmpty()) {
-                postTagRepo.saveAll(resulting);
-            }
-
-            post.setPostTagList(resulting);
         }
 
         // ensure DB update immediately

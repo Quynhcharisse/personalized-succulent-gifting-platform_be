@@ -111,16 +111,17 @@ public class EntityResponseBuilder {
         ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
         Map<String, Object> response = new HashMap<>(Map.of(
                 "id", post.getId(),
-                "title", post.getTitle(),
-                "description", post.getDescription(),
+                "title", Objects.requireNonNullElse(post.getTitle(), ""),
+                "description", Objects.requireNonNullElse(post.getDescription(), ""),
                 "status", post.getStatus(),
                 "createdAt", post.getCreatedAt().atZone(VN_ZONE),
                 "updatedAt", Objects.requireNonNullElse(post.getUpdatedAt().atZone(VN_ZONE), ""),
                 "images", buildPostImageResponse(post.getPostImageList()),
-                "tags", buildPostTagResponse(post.getPostTagList()),
-                "sellerId", post.getSeller().getId(),
+                "userId", post.getSeller().getId(),
+                "userName", post.getSeller().getName(),
                 "productId", post.getProduct().getId()
         ));
+        response.put("userAvatar", post.getSeller().getAvatarUrl());
         response.put("comments", buildCommentsResponse(post.getComments()));
         return response;
     }
@@ -137,18 +138,13 @@ public class EntityResponseBuilder {
         );
     }
 
-    public static Map<String, Object> buildPostTagResponse(List<PostTag> postTags) {
-        return Map.of(
-                "count", postTags.size(),
-                "postTags", postTags.stream().map(postTag -> Map.of(
-                        "id", postTag.getId(),
-                        "tagName", postTag.getTag().getName(),
-                        "postId", postTag.getPost().getId()
-                )).toList()
-        );
-    }
-
     public static Map<String, Object> buildCommentsResponse(List<Comment> comments) {
+        if (comments == null) {
+            return Map.of(
+                    "count", 0,
+                    "comments", List.of()
+            );
+        }
         return Map.of(
                 "count", comments.size(),
                 "comments", comments.stream().map(EntityResponseBuilder::buildCommentsResponse
@@ -166,8 +162,11 @@ public class EntityResponseBuilder {
                 "createdAt", comment.getCreatedAt(),
                 "updatedAt", Objects.requireNonNullElse(comment.getUpdatedAt(), ""),
                 "postId", comment.getPost().getId(),
-                "buyerName", comment.getBuyer().getName(),
-                "accountId", comment.getBuyer().getAccount().getId()
+                "userName", comment.getBuyer().getName(),
+                "userAvatar", comment.getBuyer().getAvatarUrl(),
+                "rating", comment.getRating(),
+                "accountId", comment.getBuyer().getAccount().getId(),
+                "imageUrl", Objects.requireNonNullElse(comment.getImageUrl(), "")
         );
     }
 

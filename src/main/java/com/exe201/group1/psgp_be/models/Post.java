@@ -46,10 +46,12 @@ public class Post {
     User seller;
 
     @Column(length = 200)
-    String title;
+    @Builder.Default
+    String title = "";
 
     @Column(columnDefinition = "TEXT")
-    String description;
+    @Builder.Default
+    String description = "";
 
     @Column(name = "view_count")
     Integer viewCount;
@@ -64,7 +66,7 @@ public class Post {
     @Column(length = 20)
     Status status;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "product_id")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

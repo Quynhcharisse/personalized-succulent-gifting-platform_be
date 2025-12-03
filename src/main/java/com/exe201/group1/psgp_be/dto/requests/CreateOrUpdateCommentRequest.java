@@ -16,4 +16,5 @@ import lombok.experimental.FieldDefaults;
 public class CreateOrUpdateCommentRequest {
     String content;
     Status status;
+    String imageUrl;
 }
