@@ -200,15 +200,15 @@ public class ProductServiceImpl implements ProductService {
             return "Mô tả là bắt buộc";
         }
 
-        // imageUrl
         if (request.getImageUrl() == null || request.getImageUrl().trim().isEmpty()) {
             return "Image URL is required";
         } else {
-            if (!request.getImageUrl().matches("^(?i)(http|https)://.*$")) {
-                return "Invalid Image URL format";
+            String imageUrl = request.getImageUrl();
+            if (!imageUrl.matches("^(?i)(http|https)://.*$")) {
+                return "Invalid Image URL format. URL must start with http:// or https://";
             }
-            if (!request.getImageUrl().matches("(?i).*(\\.jpg|\\.jpeg|\\.png|\\.gif)$")) {
-                return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
+            if (!imageUrl.matches("(?i).*(\\.jpg|\\.jpeg|\\.png|\\.gif|\\.webp)$")) {
+                return "Image URL must end with a valid image file extension (.jpg, .jpeg, .png, .gif, .webp)";
             }
         }
 
@@ -391,15 +391,18 @@ public class ProductServiceImpl implements ProductService {
         if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
             return "Mô tả là bắt buộc";
         }
+
+        // imageUrl
         if (request.getImageUrl() == null || request.getImageUrl().trim().isEmpty()) {
             return "Image URL is required";
         }
-        // Regex không phân biệt hoa/thường
+
         if (!request.getImageUrl().matches("^(?i)(http|https)://.*$")) {
             return "Invalid Image URL format";
         }
-        if (!request.getImageUrl().matches("(?i).*(\\.(jpg|jpeg|png|gif))$")) {
-            return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif)";
+
+        if (!request.getImageUrl().matches("(?i).*(\\.(jpg|jpeg|png|gif|webp))$")) {
+            return "Image URL must end with a valid image file extension (jpg, jpeg, png, gif, webp)";
         }
 
         // Gọi validSize đúng 1 lần
